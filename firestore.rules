@@ -18,10 +18,26 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isSupervisor() {
+      return activeUser()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'supervisor';
+    }
+
+    function ownsSupervisorProfile(supervisorId) {
+      return isSupervisor()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.supervisorId == supervisorId;
+    }
+
     match /users/{userId} {
       allow read: if activeUser()
         && (request.auth.uid == userId || isAdmin());
 
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /supervisors/{supervisorId} {
+      allow get: if isAdmin() || ownsSupervisorProfile(supervisorId);
+      allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 

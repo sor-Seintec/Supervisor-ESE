@@ -279,6 +279,22 @@
       background: var(--success);
     }
 
+    .status.security {
+      color: var(--blue-dark);
+      background: var(--blue-soft);
+      border-color: #b9d5e5;
+    }
+
+    .status.security .status-icon { background: var(--blue-dark); }
+
+    .status.danger {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-color: #efc4c8;
+    }
+
+    .status.danger .status-icon { background: var(--danger); }
+
     .details {
       display: grid;
       gap: 1px;
@@ -381,10 +397,16 @@
           <span>Firebase Authentication e Firestore conectados corretamente.</span>
         </div>
 
+        <div class="status security" id="accessTest" hidden>
+          <span class="status-icon" id="accessTestIcon" aria-hidden="true">✓</span>
+          <span id="accessTestText">Validando isolamento de acesso…</span>
+        </div>
+
         <dl class="details">
           <div class="detail"><dt>Nome</dt><dd id="profileName">—</dd></div>
           <div class="detail"><dt>Perfil</dt><dd id="profileRole">—</dd></div>
           <div class="detail"><dt>Situação</dt><dd id="profileStatus">—</dd></div>
+          <div class="detail" id="supervisorIdRow" hidden><dt>Supervisor ID</dt><dd id="profileSupervisorId">—</dd></div>
           <div class="detail"><dt>UID</dt><dd id="profileUid">—</dd></div>
         </dl>
 
@@ -406,8 +428,10 @@
       signOut
     } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js';
     import {
+      collection,
       doc,
       getDoc,
+      getDocs,
       getFirestore
     } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
@@ -462,6 +486,64 @@
       return ({ admin: 'Administrador', gestor: 'Gestor', supervisor: 'Supervisor' })[role] || role;
     }
 
+    function setAccessTest(text, type = 'security', icon = '✓') {
+      const box = document.getElementById('accessTest');
+      box.hidden = false;
+      box.className = `status ${type}`;
+      document.getElementById('accessTestIcon').textContent = icon;
+      document.getElementById('accessTestText').textContent = text;
+    }
+
+    async function validateAccessScope(user, profile) {
+      if (profile.role === 'admin') {
+        try {
+          const listSnapshot = await getDocs(collection(db, 'supervisors'));
+          setAccessTest(`Acesso administrativo confirmado: ${listSnapshot.size} supervisor(es) disponível(is).`);
+        } catch (error) {
+          console.error('Falha no teste administrativo:', error);
+          setAccessTest('O perfil administrativo não conseguiu listar os supervisores.', 'danger', '!');
+        }
+        return;
+      }
+
+      if (profile.role !== 'supervisor' || !profile.supervisorId) {
+        setAccessTest('Este perfil ainda não possui um supervisor vinculado.', 'danger', '!');
+        return;
+      }
+
+      document.getElementById('supervisorIdRow').hidden = false;
+      document.getElementById('profileSupervisorId').textContent = profile.supervisorId;
+
+      try {
+        const ownProfile = await getDoc(doc(db, 'supervisors', profile.supervisorId));
+        if (!ownProfile.exists()) {
+          setAccessTest('O cadastro profissional vinculado não foi encontrado.', 'danger', '!');
+          return;
+        }
+
+        if (ownProfile.data().authUid !== user.uid) {
+          setAccessTest('O UID do cadastro profissional não corresponde à conta autenticada.', 'danger', '!');
+          return;
+        }
+      } catch (error) {
+        console.error('Falha ao abrir o cadastro profissional:', error);
+        setAccessTest('O supervisor não conseguiu abrir seu próprio cadastro.', 'danger', '!');
+        return;
+      }
+
+      try {
+        await getDocs(collection(db, 'supervisors'));
+        setAccessTest('Atenção: esta conta conseguiu listar outros supervisores.', 'danger', '!');
+      } catch (error) {
+        if (error?.code === 'permission-denied') {
+          setAccessTest('Isolamento confirmado: cadastro próprio liberado e lista de outros supervisores bloqueada.');
+        } else {
+          console.error('Falha no teste de isolamento:', error);
+          setAccessTest('Não foi possível concluir o teste de isolamento.', 'danger', '!');
+        }
+      }
+    }
+
     async function showAuthorizedProfile(user) {
       profileMessage.textContent = 'Validando seu perfil no Firestore…';
 
@@ -494,6 +576,7 @@
         profileMessage.textContent = profile.mustChangePassword === true
           ? 'Este perfil está marcado para trocar a senha no primeiro acesso.'
           : 'Teste concluído: conta e perfil reconhecidos.';
+        await validateAccessScope(user, profile);
       } catch (error) {
         console.error('Falha ao validar o perfil:', error);
         sessionNotice = error?.code === 'permission-denied'
