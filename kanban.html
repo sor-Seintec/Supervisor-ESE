@@ -22,6 +22,7 @@
             
             /* Sistema de Cores Unificado */
             --c-visitado: #10b981;    /* Verde (V) */
+            --c-planejado: #f97316;   /* Laranja (P) */
             --c-adiado: #9333ea;      /* Roxo (A) */
             --c-cancelado: #ef4444;   /* Vermelho (C) */
             --c-justificado: #3b82f6; /* Azul (J) */
@@ -496,9 +497,14 @@
         }
 
         .st-realizada { background-color: var(--c-visitado); }
+        .st-planejada { background-color: var(--c-planejado); }
         .st-cancelada { background-color: var(--c-cancelado); }
         .st-adiada { background-color: var(--c-adiado); }
         .st-justificada { background-color: var(--c-justificado); }
+
+        .k-card.is-actionable { cursor: pointer; }
+        .k-card.is-actionable:hover { box-shadow: 0 7px 18px rgba(15, 23, 42, .15); transform: translateY(-1px); }
+        .k-card.is-actionable:focus-visible { outline: 3px solid rgba(37, 99, 235, .3); outline-offset: 2px; }
 
         .c-1 { --cor: #e11d48; }
         .c-2 { --cor: #059669; }
@@ -581,6 +587,45 @@
             from { opacity: 0; transform: translateX(-50%) translateY(20px); }
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
+
+        /* Camada visual Supervisor-ESE: mais contraste e leitura confortável */
+        :root { --bg:#eef4f7; --primary:#32749a; --text-dark:#16344a; --text-muted:#5b7181; --border:#dce7ed; --border-dark:#c3d5df; }
+        body { padding:0; background:var(--bg); font-size:15px; }
+        .header { min-height:76px; margin:0; padding:14px 24px; background:#153c56; border-bottom:1px solid rgba(255,255,255,.12); }
+        .header h1 { color:#fff; font-size:24px; letter-spacing:-.02em; }
+        .header .btn-back { min-height:42px; display:inline-flex; align-items:center; padding:0 15px; border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.1); color:#fff; font-size:14px; }
+        .header .btn-back:first-child { background:#fff; color:#153c56; }
+        .toolbar { margin:18px 24px 16px; padding:16px 18px; border-radius:16px; box-shadow:0 8px 24px rgba(25,65,88,.07); }
+        .form-group label { font-size:12px; color:#486273; }
+        .form-group select { min-height:43px; font-size:15px; font-weight:650; }
+        .btn-save-cloud { min-height:44px; padding-inline:20px; border-radius:11px; background:#153c56; font-size:15px; }
+        .badge-local { padding:7px 12px; font-size:13px; }
+        .main-layout { margin:0 24px 24px; gap:16px; }
+        .sidebar { width:310px; border-radius:16px; background:#e4eef4; box-shadow:0 8px 24px rgba(25,65,88,.05); }
+        .sidebar-header { padding:14px; background:#d8e7f0; font-size:14px; }
+        .schools-container { padding:13px; gap:11px; }
+        .calendar-container { border-radius:16px; box-shadow:0 8px 24px rgba(25,65,88,.05); }
+        .day-name { padding:14px 10px; font-size:14px; }
+        .week-row { min-height:460px; }
+        .day-cell { padding:8px; }
+        .date-number { font-size:14px; margin-bottom:7px; }
+        .day-cell.today .date-number { font-size:17px; }
+        .cards-list { gap:7px; }
+        .k-card { padding:9px 11px 12px; border-radius:10px; gap:4px; font-size:14px; line-height:1.35; }
+        .k-card-supervisor { font-size:11px; padding-bottom:4px; }
+        .k-card-school { font-size:14px; font-weight:750; line-height:1.35; }
+        .k-card-turno,.turno-select-inline { font-size:12px; }
+        .badge-status { width:26px; height:26px; font-size:12px; }
+
+        @media (max-width:900px) {
+            body { height:auto; min-height:100vh; overflow:auto; }
+            .header { align-items:flex-start; padding:13px 15px; }
+            .header h1 { font-size:20px; }
+            .header>div { flex-wrap:wrap; justify-content:flex-end; }
+            .toolbar { margin:12px; }
+            .main-layout { width:1120px; min-height:650px; margin:0 12px 20px; }
+            .sidebar { width:280px; }
+        }
     </style>
 </head>
 
@@ -588,7 +633,10 @@
 
     <div class="header">
         <h1>🗓️ Planejamento de Visitas (Kanban)</h1>
-        <a href="index.html" class="btn-back" id="linkVoltar">⬅ Voltar ao Portal</a>
+        <div style="display:flex;gap:8px;align-items:center">
+            <a href="visita.html" class="btn-back">Registrar visita</a>
+            <a href="index.html" class="btn-back" id="linkVoltar">⬅ Voltar ao Portal</a>
+        </div>
     </div>
 
     <div class="toolbar">
@@ -846,6 +894,7 @@
 
         function cardHtml(item, statusCode = '') {
             const statusBadges = {
+                scheduled: '<div class="badge-status st-planejada" title="Planejada">P</div>',
                 completed: '<div class="badge-status st-realizada" title="Realizada">V</div>',
                 cancelled: '<div class="badge-status st-cancelada" title="Cancelada">C</div>',
                 postponed: '<div class="badge-status st-adiada" title="Adiada">A</div>',
@@ -961,8 +1010,7 @@
             ]);
 
             state.agendaCloud = agendaSnapshot.docs
-                .map((item) => ({ id: item.id, ...item.data() }))
-                .filter((item) => item.status !== 'cancelled');
+                .map((item) => ({ id: item.id, ...item.data() }));
             state.visits = visitsSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
             saveButton.disabled = false;
             saveButton.textContent = 'Salvar planejamento';
@@ -998,6 +1046,7 @@
                     schoolId: item.schoolId,
                     schoolName: item.schoolName,
                     shift: item.shift || 'Manhã',
+                    agendaStatusCode: item.status || 'scheduled',
                     fromCloud: true
                 }));
             const drafts = (state.agendaDraft[date] || [])
@@ -1011,7 +1060,7 @@
                 timestampDateKey(visit.visitDate) === date
                 && visit.supervisorId === item.supervisorId
                 && visit.schoolId === item.schoolId
-            )?.statusCode || '';
+            )?.statusCode || item.agendaStatusCode || '';
         }
 
         function appendCalendarCard(container, date, item) {
@@ -1019,6 +1068,23 @@
             card.className = `k-card ${hashColor(item.supervisorId)}`;
             card.innerHTML = cardHtml(item, visitStatus(date, item));
             card.querySelector('.turno-select-inline').disabled = item.fromCloud;
+
+            if (item.fromCloud && visitStatus(date, item) === 'scheduled') {
+                card.classList.add('is-actionable');
+                card.tabIndex = 0;
+                card.title = 'Abrir para registrar o resultado da visita';
+                const openVisit = (event) => {
+                    if (event.target.closest('select,button')) return;
+                    window.location.href = `visita.html?agenda=${encodeURIComponent(item.agendaId)}`;
+                };
+                card.addEventListener('click', openVisit);
+                card.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openVisit(event);
+                    }
+                });
+            }
 
             if (!item.fromCloud) {
                 const removeButton = document.createElement('button');

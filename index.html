@@ -345,7 +345,7 @@
     .detail dt { color: var(--muted); font-weight: 700; }
     .detail dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
 
-    .actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
 
     .app-link {
       min-height: 52px;
@@ -363,6 +363,14 @@
     }
 
     .app-link:hover { background: #285c7c; }
+
+    .app-link.outline {
+      color: var(--blue-dark);
+      background: white;
+      box-shadow: none;
+    }
+
+    .app-link.outline:hover { background: var(--blue-soft); }
 
     .note {
       margin: 22px 0 0;
@@ -401,8 +409,8 @@
 
       <div class="brand-copy">
         <p class="eyebrow">Gestão Sorocaba</p>
-        <h1 id="portal-title">Planejamento com acesso seguro.</h1>
-        <p>Consulte suas escolas e organize as visitas no novo Firebase, sem alterar o Supervisor_ESE que ainda está conectado à planilha.</p>
+        <h1 id="portal-title">Visitas com acesso seguro.</h1>
+        <p>Planeje o calendário, registre as atividades realizadas nas escolas e acompanhe cada resultado no novo Firebase.</p>
       </div>
 
       <span class="environment">Ambiente de homologação</span>
@@ -464,6 +472,7 @@
         </dl>
 
         <div class="actions">
+          <a class="app-link outline" href="visita.html">Registrar visita</a>
           <a class="app-link" href="kanban.html">Abrir planejamento</a>
           <button class="secondary" id="logoutButton" type="button">Sair</button>
         </div>

@@ -28,6 +28,20 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.supervisorId == supervisorId;
     }
 
+    function schoolBelongsToSupervisor(schoolId, supervisorId) {
+      return exists(/databases/$(database)/documents/schools/$(schoolId))
+        && get(/databases/$(database)/documents/schools/$(schoolId)).data.active == true
+        && get(/databases/$(database)/documents/schools/$(schoolId)).data.supervisorId == supervisorId;
+    }
+
+    function validVisitStatus(statusCode) {
+      return statusCode in ['completed', 'cancelled', 'postponed', 'justified'];
+    }
+
+    function validAgendaStatus(statusCode) {
+      return statusCode in ['scheduled', 'completed', 'cancelled', 'postponed', 'justified'];
+    }
+
     match /users/{userId} {
       allow read: if activeUser()
         && (request.auth.uid == userId || isAdmin());
@@ -55,7 +69,12 @@ service cloud.firestore {
       allow create: if isAdmin()
         || (ownsSupervisorProfile(request.resource.data.supervisorId)
           && request.resource.data.createdByUid == request.auth.uid
-          && request.resource.data.schemaVersion == 1);
+          && request.resource.data.schemaVersion == 1
+          && validVisitStatus(request.resource.data.statusCode)
+          && schoolBelongsToSupervisor(
+            request.resource.data.schoolId,
+            request.resource.data.supervisorId
+          ));
 
       allow update: if isAdmin()
         || (ownsSupervisorProfile(resource.data.supervisorId)
@@ -78,7 +97,12 @@ service cloud.firestore {
       allow create: if isAdmin()
         || (ownsSupervisorProfile(request.resource.data.supervisorId)
           && request.resource.data.createdByUid == request.auth.uid
-          && request.resource.data.schemaVersion == 1);
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.status == 'scheduled'
+          && schoolBelongsToSupervisor(
+            request.resource.data.schoolId,
+            request.resource.data.supervisorId
+          ));
 
       allow update: if isAdmin()
         || (ownsSupervisorProfile(resource.data.supervisorId)
@@ -87,7 +111,8 @@ service cloud.firestore {
             'shift',
             'status',
             'updatedAt'
-          ]));
+          ])
+          && validAgendaStatus(request.resource.data.status));
 
       allow delete: if isAdmin();
     }

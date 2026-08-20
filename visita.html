@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Registro seguro de visitas escolares do Supervisor-ESE">
+  <title>Registrar visita | Supervisor-ESE</title>
+  <style>
+    :root {
+      --navy:#153c56; --blue:#32749a; --blue-soft:#dcecf5; --page:#eef4f7;
+      --surface:#fff; --ink:#16344a; --muted:#5b7181; --line:#cadae4;
+      --planned:#f97316; --completed:#10b981; --justified:#3b82f6;
+      --postponed:#9333ea; --cancelled:#ef4444; --shadow:0 20px 55px rgba(28,65,88,.12);
+    }
+    *{box-sizing:border-box}
+    html{font-size:16px;background:var(--page)}
+    body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(circle at 8% 7%,#fff 0,transparent 28%),var(--page);font-family:Inter,"Segoe UI",system-ui,sans-serif;font-size:1rem;font-weight:500;line-height:1.55}
+    button,input,select,textarea{font:inherit}
+    button,a{ -webkit-tap-highlight-color:transparent }
+    [hidden]{display:none!important}
+    .loading{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--page);color:var(--navy);font-weight:750}
+    .loading::before{content:"";width:34px;height:34px;margin-right:12px;display:inline-block;border:4px solid #c8dce7;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .topbar{position:sticky;z-index:20;top:0;display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:76px;padding:14px clamp(18px,4vw,60px);border-bottom:1px solid rgba(168,193,208,.7);background:rgba(248,251,252,.92);backdrop-filter:blur(16px)}
+    .brand{display:flex;align-items:center;gap:12px;color:var(--navy);text-decoration:none;font-weight:850}
+    .brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:var(--blue);color:#fff;font-size:1.15rem}
+    .brand small{display:block;color:var(--muted);font-size:.76rem;font-weight:650}
+    .top-actions{display:flex;align-items:center;gap:8px}
+    .nav-link,.signout{min-height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 14px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--navy);text-decoration:none;font-size:.9rem;font-weight:750;cursor:pointer}
+    .signout{background:transparent}
+    .layout{width:min(1280px,100%);margin:0 auto;padding:30px clamp(16px,3.5vw,48px) 55px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+    .intro{margin-bottom:22px}
+    .eyebrow{margin:0 0 5px;color:var(--blue);font-size:.77rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
+    h1{margin:0;font-size:clamp(1.8rem,4vw,2.65rem);line-height:1.12;letter-spacing:-.035em}
+    .intro>p:last-child{max-width:710px;margin:10px 0 0;color:var(--muted);font-size:1.02rem}
+    .card{border:1px solid rgba(180,202,215,.72);border-radius:22px;background:rgba(255,255,255,.96);box-shadow:var(--shadow)}
+    .form-card{padding:clamp(20px,4vw,36px)}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:28px}
+    .step{display:flex;align-items:center;gap:8px;color:#6b7f8d;font-size:.78rem;font-weight:750}
+    .step b{width:28px;height:28px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:#eaf1f5;color:var(--blue)}
+    .step.is-active{color:var(--navy)} .step.is-active b{background:var(--blue);color:#fff}
+    .section{padding:24px 0;border-top:1px solid #e3ebf0}.section:first-of-type{padding-top:0;border-top:0}
+    .section-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:17px}
+    .section-number{width:31px;height:31px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:var(--navy);color:#fff;font-size:.85rem;font-weight:850}
+    .section h2{margin:0;font-size:1.08rem;line-height:1.3}.section-head p{margin:3px 0 0;color:var(--muted);font-size:.88rem}
+    .segmented{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:5px;border-radius:14px;background:#edf2f5}
+    .segment{min-height:48px;border:0;border-radius:10px;background:transparent;color:#5c7180;font-weight:750;cursor:pointer}
+    .segment.is-selected{background:#fff;color:var(--navy);box-shadow:0 3px 12px rgba(31,67,89,.1)}
+    .field-grid{display:grid;grid-template-columns:1.5fr .75fr .65fr;gap:14px;margin-top:16px}
+    .field{display:flex;flex-direction:column;gap:7px}.field.span-all{grid-column:1/-1}
+    label,.label{color:var(--ink);font-size:.86rem;font-weight:800}
+    select,input,textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:#f9fbfc;color:var(--ink);outline:0;font-weight:600}
+    select,input{min-height:49px;padding:0 13px}textarea{min-height:108px;padding:13px;resize:vertical}
+    select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(50,116,154,.12);background:#fff}
+    select:disabled,input:disabled{opacity:1;color:#415d70;background:#edf3f6}
+    .hint{margin:0;color:var(--muted);font-size:.79rem}
+    .action-toolbar{display:flex;gap:9px;margin-top:15px}.action-toolbar input{flex:1}
+    .action-list{max-height:260px;margin-top:10px;overflow:auto;border:1px solid var(--line);border-radius:13px;background:#f9fbfc}
+    .action-option{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;border-bottom:1px solid #e5edf1;cursor:pointer}.action-option:last-child{border:0}.action-option:hover{background:#eef6fa}
+    .action-option input{width:19px;height:19px;min-height:0;margin:2px 0 0;accent-color:var(--blue)}
+    .action-option span{font-size:.9rem;font-weight:650}.action-empty{padding:24px;color:var(--muted);text-align:center}
+    .selected-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--blue-soft);color:var(--navy);font-size:.78rem;font-weight:750}
+    .status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .status{position:relative;min-height:86px;padding:13px;border:2px solid transparent;border-radius:15px;background:#f6f9fb;color:var(--ink);text-align:left;cursor:pointer}
+    .status:hover{transform:translateY(-1px)}.status.is-selected{border-color:var(--status);background:color-mix(in srgb,var(--status) 9%,#fff)}
+    .status-code{width:29px;height:29px;display:grid;place-items:center;margin-bottom:8px;border-radius:9px;background:var(--status);color:#fff;font-size:.82rem;font-weight:900}
+    .status strong{display:block;font-size:.86rem}.status small{display:block;margin-top:2px;color:var(--muted);font-size:.73rem}
+    .status[data-status="completed"]{--status:var(--completed)}.status[data-status="cancelled"]{--status:var(--cancelled)}.status[data-status="postponed"]{--status:var(--postponed)}.status[data-status="justified"]{--status:var(--justified)}
+    .submit-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding-top:22px;border-top:1px solid #e3ebf0}.submit-row p{margin:0;color:var(--muted);font-size:.82rem}
+    .primary{min-height:51px;padding:0 23px;border:0;border-radius:12px;background:var(--navy);color:#fff;font-weight:850;cursor:pointer;box-shadow:0 9px 20px rgba(21,60,86,.2)}.primary:disabled{opacity:.55;cursor:not-allowed}
+    .side{position:sticky;top:100px;display:grid;gap:15px}
+    .profile{padding:20px}.profile-head{display:flex;align-items:center;gap:11px}.avatar{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:var(--blue);color:#fff;font-weight:900}.profile h2{margin:0;font-size:1rem}.profile p{margin:3px 0 0;color:var(--muted);font-size:.77rem;overflow-wrap:anywhere}
+    .profile-dl{margin:17px 0 0}.profile-dl div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #e5edf1;font-size:.8rem}.profile-dl dt{color:var(--muted)}.profile-dl dd{margin:0;font-weight:800;text-align:right}
+    .legend{padding:20px}.legend h2{margin:0 0 13px;font-size:1rem}.legend-row{display:flex;align-items:center;gap:10px;margin-top:9px;color:#496173;font-size:.82rem}.legend-row b{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:var(--color);color:#fff;font-size:.75rem}
+    .notice{margin-top:15px;padding:12px 14px;border-radius:12px;background:#fff3cd;color:#725a12;font-size:.82rem;font-weight:650}
+    .toast{position:fixed;z-index:100;right:22px;bottom:22px;width:min(390px,calc(100vw - 32px));padding:15px 17px;border-radius:13px;background:var(--navy);color:#fff;box-shadow:0 15px 40px rgba(15,44,63,.25);font-weight:700}.toast.error{background:#9b2c2c}.toast.success{background:#16734f}
+    .success-panel{padding:32px;text-align:center}.success-icon{width:62px;height:62px;display:grid;place-items:center;margin:0 auto 15px;border-radius:20px;background:#dcf6eb;color:#117453;font-size:1.7rem;font-weight:900}.success-panel h2{margin:0;font-size:1.45rem}.success-panel p{margin:8px auto 20px;max-width:520px;color:var(--muted)}.success-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+    @media(max-width:950px){.layout{grid-template-columns:1fr}.side{position:static;grid-template-columns:1fr 1fr}.steps span{display:none}}
+    @media(max-width:680px){html{font-size:17px}.topbar{padding:10px 14px}.brand small,.top-actions .nav-link:first-child{display:none}.layout{padding:20px 12px 40px}.form-card{padding:18px}.field-grid,.status-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.submit-row{align-items:stretch;flex-direction:column}.primary{width:100%}.segment{font-size:.86rem}.section{padding:20px 0}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">Conectando ao ambiente seguro…</div>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">↗</span><span>Supervisor-ESE<small>Gestão Sorocaba</small></span></a>
+    <nav class="top-actions" aria-label="Navegação principal">
+      <a class="nav-link" href="index.html">Início</a>
+      <a class="nav-link" href="kanban.html">Planejamento</a>
+      <button class="signout" id="signoutButton" type="button">Sair</button>
+    </nav>
+  </header>
+
+  <main class="layout" id="app" hidden>
+    <div>
+      <div class="intro">
+        <p class="eyebrow">Controle de campo · URE</p>
+        <h1>Registrar visita escolar</h1>
+        <p>Confirme uma visita planejada ou registre uma atividade realizada diretamente em uma das suas escolas.</p>
+      </div>
+
+      <section class="card form-card" id="formPanel">
+        <div class="steps" aria-label="Etapas do registro">
+          <div class="step is-active"><b>1</b><span>Visita</span></div><div class="step is-active"><b>2</b><span>Atividade</span></div><div class="step is-active"><b>3</b><span>Resultado</span></div><div class="step"><b>4</b><span>Confirmar</span></div>
+        </div>
+        <form id="visitForm" novalidate>
+          <section class="section">
+            <div class="section-head"><span class="section-number">1</span><div><h2>Qual visita será registrada?</h2><p>Use o planejamento salvo ou faça um registro direto.</p></div></div>
+            <div class="segmented" role="group" aria-label="Origem da visita">
+              <button class="segment is-selected" type="button" data-source="planned">Do planejamento</button>
+              <button class="segment" type="button" data-source="direct">Registro direto</button>
+            </div>
+            <div class="field-grid">
+              <div class="field span-all" id="agendaField"><label for="agendaSelect">Planejamento</label><select id="agendaSelect"><option value="">Selecione a visita planejada</option></select><p class="hint" id="agendaHint">Serão exibidas as visitas ainda aguardando confirmação.</p></div>
+              <div class="field"><label for="schoolSelect">Escola</label><select id="schoolSelect" disabled><option value="">Selecione a escola</option></select></div>
+              <div class="field"><label for="visitDate">Data da visita</label><input id="visitDate" type="date" required></div>
+              <div class="field"><label for="shiftSelect">Turno</label><select id="shiftSelect"><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head"><span class="section-number">2</span><div><h2>Qual foi a atividade?</h2><p>Selecione ações cadastradas ou descreva um assunto novo.</p></div></div>
+            <div class="segmented" role="group" aria-label="Tipo de atividade">
+              <button class="segment is-selected" type="button" data-activity="catalog">Ações cadastradas</button>
+              <button class="segment" type="button" data-activity="custom">Assunto novo</button>
+            </div>
+            <div id="catalogPanel">
+              <div class="action-toolbar"><input type="search" id="actionSearch" placeholder="Pesquisar entre as ações disponíveis" autocomplete="off"></div>
+              <div class="action-list" id="actionList" aria-label="Lista de ações"></div>
+              <div class="selected-actions" id="selectedActions"></div>
+            </div>
+            <div class="field" id="customPanel" hidden><label for="customSubject">Descrição do assunto novo</label><textarea id="customSubject" maxlength="800" placeholder="Descreva com clareza o assunto trabalhado na escola."></textarea><p class="hint">O texto ficará disponível para consulta e acompanhamento do gestor.</p></div>
+            <div class="field" style="margin-top:15px"><label for="notes">Resumo da atividade <span style="font-weight:600;color:var(--muted)">(opcional)</span></label><textarea id="notes" maxlength="1200" placeholder="Registre observações importantes, encaminhamentos ou próximos passos."></textarea></div>
+          </section>
+
+          <section class="section">
+            <div class="section-head"><span class="section-number">3</span><div><h2>Qual é o resultado?</h2><p>O status aparecerá com a mesma letra e cor em todo o sistema.</p></div></div>
+            <div class="status-grid" role="radiogroup" aria-label="Status da visita">
+              <button class="status is-selected" type="button" data-status="completed"><span class="status-code">V</span><strong>Realizada</strong><small>Visita concluída</small></button>
+              <button class="status" type="button" data-status="postponed"><span class="status-code">A</span><strong>Adiada</strong><small>Será reagendada</small></button>
+              <button class="status" type="button" data-status="cancelled"><span class="status-code">C</span><strong>Cancelada</strong><small>Não será realizada</small></button>
+              <button class="status" type="button" data-status="justified"><span class="status-code">J</span><strong>Justificada</strong><small>Ausência com motivo</small></button>
+            </div>
+            <div class="field" id="justificationField" hidden style="margin-top:15px"><label for="justification">Motivo obrigatório</label><textarea id="justification" maxlength="800" placeholder="Explique o motivo do adiamento, cancelamento ou justificativa."></textarea></div>
+          </section>
+
+          <div class="submit-row"><p>O registro será vinculado automaticamente ao seu usuário e ficará disponível para a gestão.</p><button class="primary" id="saveButton" type="submit">Confirmar registro</button></div>
+        </form>
+      </section>
+
+      <section class="card success-panel" id="successPanel" hidden>
+        <div class="success-icon">✓</div><h2>Registro salvo com segurança</h2><p id="successText"></p>
+        <div class="success-actions"><a class="nav-link" href="kanban.html">Ver planejamento</a><button class="primary" type="button" id="newRecordButton">Novo registro</button></div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <section class="card profile"><div class="profile-head"><span class="avatar" id="avatar">—</span><div><h2 id="profileName">Carregando…</h2><p id="profileEmail"></p></div></div><dl class="profile-dl"><div><dt>Perfil</dt><dd id="profileRole">—</dd></div><div><dt>Escolas disponíveis</dt><dd id="schoolCount">—</dd></div><div><dt>Visitas pendentes</dt><dd id="pendingCount">—</dd></div></dl><p class="notice" id="passwordNotice" hidden>Conta marcada para troca de senha no primeiro acesso.</p></section>
+      <section class="card legend"><h2>Padrão de status</h2><div class="legend-row" style="--color:var(--planned)"><b>P</b>Planejada</div><div class="legend-row" style="--color:var(--completed)"><b>V</b>Visitada</div><div class="legend-row" style="--color:var(--justified)"><b>J</b>Justificada</div><div class="legend-row" style="--color:var(--postponed)"><b>A</b>Adiada</div><div class="legend-row" style="--color:var(--cancelled)"><b>C</b>Cancelada</div></section>
+    </aside>
+  </main>
+  <div class="toast" id="toast" hidden role="status"></div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js';
+    import { collection, doc, getDoc, getDocs, getFirestore, query, where, writeBatch, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+
+    const firebaseConfig={apiKey:'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',authDomain:'supervisor-ese.firebaseapp.com',projectId:'supervisor-ese',storageBucket:'supervisor-ese.firebasestorage.app',messagingSenderId:'756390446092',appId:'1:756390446092:web:26a898746dd4e3fab45a29'};
+    const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+    const $=(selector)=>document.querySelector(selector);
+    const state={user:null,profile:null,source:'planned',activity:'catalog',status:'completed',schools:new Map(),agenda:[],visits:[],actions:[],selectedActions:new Set()};
+    const labels={completed:'Realizada',postponed:'Adiada',cancelled:'Cancelada',justified:'Justificada'};
+
+    function dateKey(value){if(!value)return'';const date=value.toDate?value.toDate():new Date(value);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
+    function formatDate(value){const key=dateKey(value);if(!key)return'—';return new Intl.DateTimeFormat('pt-BR').format(new Date(`${key}T12:00:00`))}
+    function initials(name){return String(name||'').trim().split(/\s+/).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'—'}
+    function showToast(message,type=''){const toast=$('#toast');toast.textContent=message;toast.className=`toast ${type}`;toast.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.hidden=true,4300)}
+    function redirectLogin(){location.replace('index.html')}
+    function scoped(name){return state.profile.role==='admin'?collection(db,name):query(collection(db,name),where('supervisorId','==',state.profile.supervisorId))}
+
+    async function loadData(){
+      const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot]=await Promise.all([getDocs(scoped('schools')),getDocs(scoped('agenda')),getDocs(scoped('visits')),getDocs(collection(db,'actions'))]);
+      state.schools=new Map(schoolsSnapshot.docs.map(item=>[item.id,{id:item.id,...item.data()}]));
+      state.agenda=agendaSnapshot.docs.map(item=>({id:item.id,...item.data()}));
+      state.visits=visitsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
+      state.actions=actionsSnapshot.docs.map(item=>({id:item.id,...item.data()})).filter(item=>item.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||a.name.localeCompare(b.name,'pt-BR'));
+      renderSchools();renderAgenda();renderActions();renderProfile();applyQuerySelection();
+    }
+    function pendingAgenda(){const used=new Set(state.visits.map(item=>item.agendaId).filter(Boolean));return state.agenda.filter(item=>!used.has(item.id)&&!['completed','cancelled','justified'].includes(item.status)).sort((a,b)=>(a.scheduledDate?.seconds||0)-(b.scheduledDate?.seconds||0))}
+    function renderProfile(){const name=state.profile.displayName||state.user.email;$('#profileName').textContent=name;$('#profileEmail').textContent=state.profile.email||state.user.email;$('#profileRole').textContent=state.profile.role==='admin'?'Administrador':'Supervisor';$('#avatar').textContent=initials(name);$('#schoolCount').textContent=state.schools.size;$('#pendingCount').textContent=pendingAgenda().length;$('#passwordNotice').hidden=state.profile.mustChangePassword!==true}
+    function renderSchools(){const select=$('#schoolSelect'),value=select.value;select.innerHTML='<option value="">Selecione a escola</option>';[...state.schools.values()].filter(item=>item.active!==false).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).forEach(item=>select.add(new Option(item.name,item.id)));select.value=value}
+    function renderAgenda(){const select=$('#agendaSelect');select.innerHTML='<option value="">Selecione a visita planejada</option>';pendingAgenda().forEach(item=>{const shift=item.shift||'Turno não informado';select.add(new Option(`${formatDate(item.scheduledDate)} · ${shift} · ${item.schoolName}`,item.id))});$('#agendaHint').textContent=pendingAgenda().length?`${pendingAgenda().length} visita(s) aguardando confirmação.`:'Nenhuma visita planejada aguarda confirmação.'}
+    function renderActions(){const term=$('#actionSearch').value.trim().toLocaleLowerCase('pt-BR'),list=$('#actionList');list.replaceChildren();const visible=state.actions.filter(item=>!term||item.name.toLocaleLowerCase('pt-BR').includes(term));if(!visible.length){const empty=document.createElement('div');empty.className='action-empty';empty.textContent='Nenhuma ação encontrada.';list.append(empty)}else visible.forEach(item=>{const label=document.createElement('label');label.className='action-option';const input=document.createElement('input');input.type='checkbox';input.checked=state.selectedActions.has(item.id);input.addEventListener('change',()=>{input.checked?state.selectedActions.add(item.id):state.selectedActions.delete(item.id);renderSelectedActions()});const span=document.createElement('span');span.textContent=item.name;label.append(input,span);list.append(label)});renderSelectedActions()}
+    function renderSelectedActions(){const area=$('#selectedActions');area.replaceChildren();[...state.selectedActions].forEach(id=>{const item=state.actions.find(action=>action.id===id);if(!item)return;const chip=document.createElement('span');chip.className='chip';chip.textContent=item.name;area.append(chip)})}
+    function setSource(source){state.source=source;document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSelect').disabled=source==='planned';if(source==='direct'){ $('#agendaSelect').value='';$('#schoolSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã'}else{$('#schoolSelect').value='';$('#visitDate').value=''} }
+    function setActivity(activity){state.activity=activity;document.querySelectorAll('[data-activity]').forEach(button=>button.classList.toggle('is-selected',button.dataset.activity===activity));$('#catalogPanel').hidden=activity!=='catalog';$('#customPanel').hidden=activity!=='custom'}
+    function setStatus(status){state.status=status;document.querySelectorAll('[data-status]').forEach(button=>button.classList.toggle('is-selected',button.dataset.status===status));$('#justificationField').hidden=status==='completed'}
+    function selectAgenda(id){const item=state.agenda.find(entry=>entry.id===id);if(!item)return;$('#schoolSelect').value=item.schoolId;$('#visitDate').value=dateKey(item.scheduledDate);$('#shiftSelect').value=item.shift||'Manhã'}
+    function applyQuerySelection(){const agendaId=new URLSearchParams(location.search).get('agenda');if(agendaId&&pendingAgenda().some(item=>item.id===agendaId)){setSource('planned');$('#agendaSelect').value=agendaId;selectAgenda(agendaId)}}
+    function validate(){const school=state.schools.get($('#schoolSelect').value),date=$('#visitDate').value,agendaId=$('#agendaSelect').value; if(state.source==='planned'&&!agendaId)throw new Error('Selecione uma visita do planejamento.');if(!school)throw new Error('Selecione uma escola válida.');if(!date)throw new Error('Informe a data da visita.');if(state.activity==='catalog'&&!state.selectedActions.size)throw new Error('Selecione pelo menos uma ação realizada.');if(state.activity==='custom'&&!$('#customSubject').value.trim())throw new Error('Descreva o assunto novo.');if(state.status!=='completed'&&!$('#justification').value.trim())throw new Error('Informe o motivo do status selecionado.');if(agendaId&&state.visits.some(item=>item.agendaId===agendaId))throw new Error('Este planejamento já possui um registro de visita.');return{school,date,agendaId}}
+    async function saveVisit(event){event.preventDefault();let values;try{values=validate()}catch(error){showToast(error.message,'error');return}const button=$('#saveButton');button.disabled=true;button.textContent='Salvando…';try{const supervisorId=state.profile.role==='admin'?(state.agenda.find(item=>item.id===values.agendaId)?.supervisorId||values.school.supervisorId):state.profile.supervisorId;const actionItems=[...state.selectedActions].map(id=>state.actions.find(item=>item.id===id)).filter(Boolean);const visitRef=doc(collection(db,'visits'));const batch=writeBatch(db);batch.set(visitRef,{supervisorId,schoolId:values.school.id,schoolName:values.school.name,assignedSupervisorId:values.school.supervisorId,isOutsideAssignedPortfolio:supervisorId!==values.school.supervisorId,agendaId:values.agendaId||null,visitType:state.source,activityType:state.activity,actionIds:state.activity==='catalog'?actionItems.map(item=>item.id):[],actionNames:state.activity==='catalog'?actionItems.map(item=>item.name):[],folderAction:state.activity==='catalog'?(actionItems[0]?.name||null):null,customSubject:state.activity==='custom'?$('#customSubject').value.trim():null,notes:$('#notes').value.trim()||null,status:labels[state.status],statusCode:state.status,justification:state.status==='completed'?null:$('#justification').value.trim(),shift:$('#shiftSelect').value,visitDate:Timestamp.fromDate(new Date(`${values.date}T12:00:00`)),authorEmail:state.user.email,createdByUid:state.user.uid,recordedAt:serverTimestamp(),updatedAt:serverTimestamp(),schemaVersion:1});if(values.agendaId)batch.update(doc(db,'agenda',values.agendaId),{status:state.status,updatedAt:serverTimestamp()});await batch.commit();$('#formPanel').hidden=true;$('#successPanel').hidden=false;$('#successText').textContent=`${labels[state.status]} · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`;window.scrollTo({top:0,behavior:'smooth'})}catch(error){console.error(error);showToast('Não foi possível salvar o registro. Verifique sua conexão e tente novamente.','error')}finally{button.disabled=false;button.textContent='Confirmar registro'}}
+    function resetForm(){state.selectedActions.clear();$('#visitForm').reset();setSource('planned');setActivity('catalog');setStatus('completed');renderAgenda();renderActions();$('#formPanel').hidden=false;$('#successPanel').hidden=true;window.scrollTo({top:0,behavior:'smooth'})}
+
+    document.querySelectorAll('[data-source]').forEach(button=>button.addEventListener('click',()=>setSource(button.dataset.source)));
+    document.querySelectorAll('[data-activity]').forEach(button=>button.addEventListener('click',()=>setActivity(button.dataset.activity)));
+    document.querySelectorAll('[data-status]').forEach(button=>button.addEventListener('click',()=>setStatus(button.dataset.status)));
+    $('#agendaSelect').addEventListener('change',event=>selectAgenda(event.target.value));$('#actionSearch').addEventListener('input',renderActions);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);$('#signoutButton').addEventListener('click',async()=>{await signOut(auth);redirectLogin()});
+    onAuthStateChanged(auth,async user=>{if(!user){redirectLogin();return}try{const profileSnapshot=await getDoc(doc(db,'users',user.uid));if(!profileSnapshot.exists()||profileSnapshot.data().active!==true)throw new Error('Perfil sem acesso.');state.user=user;state.profile=profileSnapshot.data();await loadData();$('#loading').hidden=true;$('#app').hidden=false}catch(error){console.error(error);$('#loading').textContent='Seu perfil não possui acesso a esta página.'}});
+  </script>
+</body>
+</html>
