@@ -91,7 +91,7 @@
     .steps{margin-bottom:30px;padding:12px 15px;border:1px solid #dfE8ed;border-radius:10px;background:#f7fafb}.step b{border-radius:8px}
     .section{padding:28px 0}.section-head{margin-bottom:20px}.section-number{border-radius:8px}
     .segmented{max-width:720px;border:1px solid #dce6eb;border-radius:10px;background:#edf2f5}.segment{border-radius:7px}
-    #activityMode{grid-template-columns:repeat(3,minmax(0,1fr))}#activityMode[data-options="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+    #activityMode{grid-template-columns:repeat(2,minmax(0,1fr))}#activityMode[data-options="1"]{grid-template-columns:1fr}
     .field-grid{grid-template-columns:minmax(330px,1.5fr) minmax(170px,.65fr) minmax(150px,.55fr);gap:16px}
     select,input,textarea{border-radius:9px;background:#fbfcfd}.action-list{border-radius:9px}.status{border-radius:10px}.status-code{border-radius:7px}
     .side{top:30px;gap:18px}.profile,.legend{padding:22px}.notice{border-radius:8px}
@@ -142,11 +142,11 @@
           </section>
 
           <section class="section">
-            <div class="section-head"><span class="section-number">2</span><div><h2>Qual foi a atividade?</h2><p>Selecione ações cadastradas ou descreva um assunto novo.</p></div></div>
+            <div class="section-head"><span class="section-number">2</span><div><h2>Qual foi a atividade?</h2><p>Registre uma passagem simples ou selecione as ações realizadas.</p></div></div>
             <div class="segmented" id="activityMode" role="group" aria-label="Tipo de atividade">
               <button class="segment is-selected" type="button" data-activity="none">Acompanhamento simples</button>
               <button class="segment" type="button" data-activity="catalog">Ações cadastradas</button>
-              <button class="segment" type="button" data-activity="custom">Assunto novo</button>
+              <button class="segment" type="button" data-activity="custom" hidden>Assunto novo</button>
             </div>
             <div id="noActivityPanel"><p class="hint" style="margin-top:13px">Use esta opção quando a visita planejada não estiver vinculada a uma ação específica.</p></div>
             <div id="catalogPanel" hidden>
@@ -220,7 +220,7 @@
     function renderAgenda(){const select=$('#agendaSelect');select.innerHTML='<option value="">Selecione a visita planejada</option>';pendingAgenda().forEach(item=>{const shift=item.shift||'Turno não informado';select.add(new Option(`${formatDate(item.scheduledDate)} · ${shift} · ${item.schoolName}`,item.id))});$('#agendaHint').textContent=pendingAgenda().length?`${pendingAgenda().length} visita(s) aguardando confirmação.`:'Nenhuma visita planejada aguarda confirmação.'}
     function renderActions(){const term=$('#actionSearch').value.trim().toLocaleLowerCase('pt-BR'),list=$('#actionList');list.replaceChildren();const visible=state.actions.filter(item=>!term||item.name.toLocaleLowerCase('pt-BR').includes(term));if(!visible.length){const empty=document.createElement('div');empty.className='action-empty';empty.textContent='Nenhuma ação encontrada.';list.append(empty)}else visible.forEach(item=>{const label=document.createElement('label');label.className='action-option';const input=document.createElement('input');input.type='checkbox';input.checked=state.selectedActions.has(item.id);input.addEventListener('change',()=>{input.checked?state.selectedActions.add(item.id):state.selectedActions.delete(item.id);renderSelectedActions()});const span=document.createElement('span');span.textContent=item.name;label.append(input,span);list.append(label)});renderSelectedActions()}
     function renderSelectedActions(){const area=$('#selectedActions');area.replaceChildren();[...state.selectedActions].forEach(id=>{const item=state.actions.find(action=>action.id===id);if(!item)return;const chip=document.createElement('span');chip.className='chip';chip.textContent=item.name;area.append(chip)})}
-    function setSource(source){state.source=source;document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSelect').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=source==='direct';$('#activityMode').dataset.options=source==='direct'?'2':'3';renderSchools();if(source==='direct'){setActivity('catalog');$('#agendaSelect').value='';$('#schoolSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã'}else{setActivity('none');$('#schoolSelect').value='';$('#visitDate').value=''} }
+    function setSource(source){state.source=source;document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSelect').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=source==='direct';$('#activityMode').hidden=source==='direct';$('#activityMode').dataset.options=source==='direct'?'1':'2';renderSchools();if(source==='direct'){setActivity('catalog');$('#agendaSelect').value='';$('#schoolSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã'}else{setActivity('none');$('#schoolSelect').value='';$('#visitDate').value=''} }
     function setActivity(activity){state.activity=activity;document.querySelectorAll('[data-activity]').forEach(button=>button.classList.toggle('is-selected',button.dataset.activity===activity));$('#noActivityPanel').hidden=activity!=='none';$('#catalogPanel').hidden=activity!=='catalog';$('#customPanel').hidden=activity!=='custom'}
     function setStatus(status){state.status=status;document.querySelectorAll('[data-status]').forEach(button=>button.classList.toggle('is-selected',button.dataset.status===status));$('#justificationField').hidden=status==='completed'}
     function selectAgenda(id){const item=state.agenda.find(entry=>entry.id===id);if(!item)return;$('#schoolSelect').value=item.schoolId;$('#visitDate').value=dateKey(item.scheduledDate);$('#shiftSelect').value=item.shift||'Manhã'}
