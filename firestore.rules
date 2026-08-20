@@ -130,6 +130,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Justificativas com possível impacto em metas ficam isoladas dos
+    // motivos operacionais de cancelamento e adiamento.
+    match /goalJustifications/{justificationId} {
+      allow read: if isAdmin()
+        || ownsSupervisorProfile(resource.data.supervisorId);
+
+      allow create: if isAdmin()
+        || (ownsSupervisorProfile(request.resource.data.supervisorId)
+          && request.resource.data.createdByUid == request.auth.uid
+          && request.resource.data.validationStatus == 'pending'
+          && request.resource.data.goalCreditRequested == 1
+          && request.resource.data.goalCreditApproved == 0
+          && request.resource.data.schemaVersion == 1
+          && activeSchool(request.resource.data.schoolId));
+
+      // Aprovação, rejeição e definição do crédito serão feitas somente
+      // no futuro módulo administrativo do Gestor-ESE.
+      allow update, delete: if isAdmin();
+    }
+
     match /actions/{actionId} {
       allow read: if activeUser();
       allow create, update, delete: if isAdmin();

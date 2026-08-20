@@ -61,6 +61,7 @@
     .action-option span{font-size:.9rem;font-weight:650}.action-empty{padding:24px;color:var(--muted);text-align:center}
     .selected-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--blue-soft);color:var(--navy);font-size:.78rem;font-weight:750}
     .status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .status-grid[data-options="3"]{grid-template-columns:repeat(3,1fr)}
     .status{position:relative;min-height:86px;padding:13px;border:2px solid transparent;border-radius:15px;background:#f6f9fb;color:var(--ink);text-align:left;cursor:pointer}
     .status:hover{transform:translateY(-1px)}.status.is-selected{border-color:var(--status);background:color-mix(in srgb,var(--status) 9%,#fff)}
     .status-code{width:29px;height:29px;display:grid;place-items:center;margin-bottom:8px;border-radius:9px;background:var(--status);color:#fff;font-size:.82rem;font-weight:900}
@@ -160,13 +161,13 @@
 
           <section class="section">
             <div class="section-head"><span class="section-number">3</span><div><h2>Qual é o resultado?</h2><p>O status aparecerá com a mesma letra e cor em todo o sistema.</p></div></div>
-            <div class="status-grid" role="radiogroup" aria-label="Status da visita">
+            <div class="status-grid" id="statusGrid" data-options="4" role="radiogroup" aria-label="Status da visita">
               <button class="status is-selected" type="button" data-status="completed"><span class="status-code">V</span><strong>Realizada</strong><small>Visita concluída</small></button>
               <button class="status" type="button" data-status="postponed"><span class="status-code">A</span><strong>Adiada</strong><small>Será reagendada</small></button>
               <button class="status" type="button" data-status="cancelled"><span class="status-code">C</span><strong>Cancelada</strong><small>Não será realizada</small></button>
-              <button class="status" type="button" data-status="justified"><span class="status-code">J</span><strong>Justificada</strong><small>Ausência com motivo</small></button>
+              <button class="status" type="button" data-status="justified"><span class="status-code">J</span><strong>Justificar meta</strong><small>Será analisada pela gestão</small></button>
             </div>
-            <div class="field" id="justificationField" hidden style="margin-top:15px"><label for="justification">Motivo obrigatório</label><textarea id="justification" maxlength="800" placeholder="Explique o motivo do adiamento, cancelamento ou justificativa."></textarea></div>
+            <div class="field" id="justificationField" hidden style="margin-top:15px"><label for="justification" id="reasonLabel">Motivo obrigatório</label><textarea id="justification" maxlength="800" placeholder="Explique o motivo com clareza."></textarea><p class="hint" id="reasonHint"></p></div>
           </section>
 
           <div class="submit-row"><p>O registro será vinculado automaticamente ao seu usuário e ficará disponível para a gestão.</p><button class="primary" id="saveButton" type="submit">Confirmar registro</button></div>
@@ -220,13 +221,66 @@
     function renderAgenda(){const select=$('#agendaSelect');select.innerHTML='<option value="">Selecione a visita planejada</option>';pendingAgenda().forEach(item=>{const shift=item.shift||'Turno não informado';select.add(new Option(`${formatDate(item.scheduledDate)} · ${shift} · ${item.schoolName}`,item.id))});$('#agendaHint').textContent=pendingAgenda().length?`${pendingAgenda().length} visita(s) aguardando confirmação.`:'Nenhuma visita planejada aguarda confirmação.'}
     function renderActions(){const term=$('#actionSearch').value.trim().toLocaleLowerCase('pt-BR'),list=$('#actionList');list.replaceChildren();const visible=state.actions.filter(item=>!term||item.name.toLocaleLowerCase('pt-BR').includes(term));if(!visible.length){const empty=document.createElement('div');empty.className='action-empty';empty.textContent='Nenhuma ação encontrada.';list.append(empty)}else visible.forEach(item=>{const label=document.createElement('label');label.className='action-option';const input=document.createElement('input');input.type='checkbox';input.checked=state.selectedActions.has(item.id);input.addEventListener('change',()=>{input.checked?state.selectedActions.add(item.id):state.selectedActions.delete(item.id);renderSelectedActions()});const span=document.createElement('span');span.textContent=item.name;label.append(input,span);list.append(label)});renderSelectedActions()}
     function renderSelectedActions(){const area=$('#selectedActions');area.replaceChildren();[...state.selectedActions].forEach(id=>{const item=state.actions.find(action=>action.id===id);if(!item)return;const chip=document.createElement('span');chip.className='chip';chip.textContent=item.name;area.append(chip)})}
-    function setSource(source){state.source=source;document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSelect').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=source==='direct';$('#activityMode').hidden=source==='direct';$('#activityMode').dataset.options=source==='direct'?'1':'2';renderSchools();if(source==='direct'){setActivity('catalog');$('#agendaSelect').value='';$('#schoolSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã'}else{setActivity('none');$('#schoolSelect').value='';$('#visitDate').value=''} }
+    function setSource(source){state.source=source;document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSelect').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=source==='direct';$('#activityMode').hidden=source==='direct';$('#activityMode').dataset.options=source==='direct'?'1':'2';document.querySelector('[data-status="justified"]').hidden=source==='direct';$('#statusGrid').dataset.options=source==='direct'?'3':'4';renderSchools();if(source==='direct'){setActivity('catalog');if(state.status==='justified')setStatus('completed');$('#agendaSelect').value='';$('#schoolSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã'}else{setActivity('none');$('#schoolSelect').value='';$('#visitDate').value=''} }
     function setActivity(activity){state.activity=activity;document.querySelectorAll('[data-activity]').forEach(button=>button.classList.toggle('is-selected',button.dataset.activity===activity));$('#noActivityPanel').hidden=activity!=='none';$('#catalogPanel').hidden=activity!=='catalog';$('#customPanel').hidden=activity!=='custom'}
-    function setStatus(status){state.status=status;document.querySelectorAll('[data-status]').forEach(button=>button.classList.toggle('is-selected',button.dataset.status===status));$('#justificationField').hidden=status==='completed'}
+    function setStatus(status){state.status=status;document.querySelectorAll('[data-status]').forEach(button=>button.classList.toggle('is-selected',button.dataset.status===status));$('#justificationField').hidden=status==='completed';const reasonConfig={postponed:{label:'Motivo do adiamento',placeholder:'Explique por que a visita será reagendada.',hint:'Este motivo é operacional e não altera o cálculo da meta.'},cancelled:{label:'Motivo do cancelamento',placeholder:'Explique por que a visita foi cancelada.',hint:'Este motivo é operacional e não altera o cálculo da meta.'},justified:{label:'Justificativa para a meta',placeholder:'Explique por que a meta não pôde ser cumprida neste planejamento.',hint:'Será enviada separadamente para validação futura no Gestor-ESE.'}}[status];if(reasonConfig){$('#reasonLabel').textContent=reasonConfig.label;$('#justification').placeholder=reasonConfig.placeholder;$('#reasonHint').textContent=reasonConfig.hint}else{$('#reasonHint').textContent=''}}
     function selectAgenda(id){const item=state.agenda.find(entry=>entry.id===id);if(!item)return;$('#schoolSelect').value=item.schoolId;$('#visitDate').value=dateKey(item.scheduledDate);$('#shiftSelect').value=item.shift||'Manhã'}
     function applyQuerySelection(){const agendaId=new URLSearchParams(location.search).get('agenda');if(agendaId&&pendingAgenda().some(item=>item.id===agendaId)){setSource('planned');$('#agendaSelect').value=agendaId;selectAgenda(agendaId)}}
     function validate(){const school=state.schools.get($('#schoolSelect').value),date=$('#visitDate').value,agendaId=$('#agendaSelect').value; if(state.source==='planned'&&!agendaId)throw new Error('Selecione uma visita do planejamento.');if(!school)throw new Error('Selecione uma escola válida.');if(!date)throw new Error('Informe a data da visita.');if(state.activity==='catalog'&&!state.selectedActions.size)throw new Error('Selecione pelo menos uma ação realizada.');if(state.activity==='custom'&&!$('#customSubject').value.trim())throw new Error('Descreva o assunto novo.');if(state.status!=='completed'&&!$('#justification').value.trim())throw new Error('Informe o motivo do status selecionado.');if(agendaId&&state.visits.some(item=>item.agendaId===agendaId))throw new Error('Este planejamento já possui um registro de visita.');return{school,date,agendaId}}
-    async function saveVisit(event){event.preventDefault();let values;try{values=validate()}catch(error){showToast(error.message,'error');return}const button=$('#saveButton');button.disabled=true;button.textContent='Salvando…';try{const supervisorId=state.profile.role==='admin'?(state.agenda.find(item=>item.id===values.agendaId)?.supervisorId||values.school.supervisorId):state.profile.supervisorId;const actionItems=[...state.selectedActions].map(id=>state.actions.find(item=>item.id===id)).filter(Boolean);const visitRef=doc(collection(db,'visits'));const batch=writeBatch(db);batch.set(visitRef,{supervisorId,schoolId:values.school.id,schoolName:values.school.name,assignedSupervisorId:values.school.supervisorId,isOutsideAssignedPortfolio:supervisorId!==values.school.supervisorId,agendaId:values.agendaId||null,visitType:state.source,activityType:state.activity,actionIds:state.activity==='catalog'?actionItems.map(item=>item.id):[],actionNames:state.activity==='catalog'?actionItems.map(item=>item.name):[],folderAction:state.activity==='catalog'?(actionItems[0]?.name||null):null,customSubject:state.activity==='custom'?$('#customSubject').value.trim():null,notes:$('#notes').value.trim()||null,status:labels[state.status],statusCode:state.status,justification:state.status==='completed'?null:$('#justification').value.trim(),shift:$('#shiftSelect').value,visitDate:Timestamp.fromDate(new Date(`${values.date}T12:00:00`)),authorEmail:state.user.email,createdByUid:state.user.uid,recordedAt:serverTimestamp(),updatedAt:serverTimestamp(),schemaVersion:1});if(values.agendaId)batch.update(doc(db,'agenda',values.agendaId),{status:state.status,updatedAt:serverTimestamp()});await batch.commit();$('#formPanel').hidden=true;$('#successPanel').hidden=false;$('#successText').textContent=`${labels[state.status]} · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`;window.scrollTo({top:0,behavior:'smooth'})}catch(error){console.error(error);showToast('Não foi possível salvar o registro. Verifique sua conexão e tente novamente.','error')}finally{button.disabled=false;button.textContent='Confirmar registro'}}
+    async function saveVisit(event){
+      event.preventDefault();
+      let values;
+      try{values=validate()}catch(error){showToast(error.message,'error');return}
+      const button=$('#saveButton');button.disabled=true;button.textContent='Salvando…';
+      try{
+        const supervisorId=state.profile.role==='admin'?(state.agenda.find(item=>item.id===values.agendaId)?.supervisorId||values.school.supervisorId):state.profile.supervisorId;
+        const actionItems=[...state.selectedActions].map(id=>state.actions.find(item=>item.id===id)).filter(Boolean);
+        const reason=$('#justification').value.trim();
+        const visitTimestamp=Timestamp.fromDate(new Date(`${values.date}T12:00:00`));
+        const visitRef=doc(collection(db,'visits'));
+        const goalJustificationRef=state.status==='justified'?doc(collection(db,'goalJustifications')):null;
+        const batch=writeBatch(db);
+
+        batch.set(visitRef,{
+          supervisorId,schoolId:values.school.id,schoolName:values.school.name,
+          assignedSupervisorId:values.school.supervisorId,
+          isOutsideAssignedPortfolio:supervisorId!==values.school.supervisorId,
+          agendaId:values.agendaId||null,visitType:state.source,activityType:state.activity,
+          actionIds:state.activity==='catalog'?actionItems.map(item=>item.id):[],
+          actionNames:state.activity==='catalog'?actionItems.map(item=>item.name):[],
+          folderAction:state.activity==='catalog'?(actionItems[0]?.name||null):null,
+          customSubject:state.activity==='custom'?$('#customSubject').value.trim():null,
+          notes:$('#notes').value.trim()||null,status:labels[state.status],statusCode:state.status,
+          reasonType:state.status==='justified'?'goal_justification':state.status==='postponed'?'postponement':state.status==='cancelled'?'cancellation':null,
+          operationalReason:['postponed','cancelled'].includes(state.status)?reason:null,
+          justification:state.status==='justified'?reason:null,
+          goalJustificationId:goalJustificationRef?.id||null,
+          shift:$('#shiftSelect').value,visitDate:visitTimestamp,authorEmail:state.user.email,
+          createdByUid:state.user.uid,recordedAt:serverTimestamp(),updatedAt:serverTimestamp(),schemaVersion:1
+        });
+
+        if(goalJustificationRef){
+          batch.set(goalJustificationRef,{
+            supervisorId,visitId:visitRef.id,agendaId:values.agendaId||null,
+            schoolId:values.school.id,schoolName:values.school.name,
+            referenceDate:visitTimestamp,periodKey:values.date.slice(0,7),
+            referenceYear:Number(values.date.slice(0,4)),referenceMonth:Number(values.date.slice(5,7)),
+            reason,validationStatus:'pending',goalCreditRequested:1,goalCreditApproved:0,
+            createdByUid:state.user.uid,submittedByEmail:state.user.email,
+            submittedAt:serverTimestamp(),updatedAt:serverTimestamp(),schemaVersion:1
+          });
+        }
+
+        if(values.agendaId)batch.update(doc(db,'agenda',values.agendaId),{status:state.status,updatedAt:serverTimestamp()});
+        await batch.commit();
+        $('#formPanel').hidden=true;$('#successPanel').hidden=false;
+        $('#successText').textContent=state.status==='justified'
+          ?`Justificativa enviada para validação da meta · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`
+          :`${labels[state.status]} · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`;
+        window.scrollTo({top:0,behavior:'smooth'});
+      }catch(error){console.error(error);showToast('Não foi possível salvar o registro. Verifique sua conexão e tente novamente.','error')}
+      finally{button.disabled=false;button.textContent='Confirmar registro'}
+    }
     function resetForm(){state.selectedActions.clear();$('#visitForm').reset();setSource('planned');setActivity('none');setStatus('completed');renderAgenda();renderActions();$('#formPanel').hidden=false;$('#successPanel').hidden=true;window.scrollTo({top:0,behavior:'smooth'})}
 
     document.querySelectorAll('[data-source]').forEach(button=>button.addEventListener('click',()=>setSource(button.dataset.source)));
