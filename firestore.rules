@@ -34,6 +34,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/schools/$(schoolId)).data.supervisorId == supervisorId;
     }
 
+    function activeSchool(schoolId) {
+      return exists(/databases/$(database)/documents/schools/$(schoolId))
+        && get(/databases/$(database)/documents/schools/$(schoolId)).data.active == true;
+    }
+
     function validVisitStatus(statusCode) {
       return statusCode in ['completed', 'cancelled', 'postponed', 'justified'];
     }
@@ -56,8 +61,9 @@ service cloud.firestore {
     }
 
     match /schools/{schoolId} {
-      allow read: if isAdmin()
-        || ownsSupervisorProfile(resource.data.supervisorId);
+      // A relação de escolas é institucional e pode ser consultada pelos
+      // usuários ativos. O planejamento continua filtrado pelo supervisor.
+      allow read: if activeUser();
 
       allow create, update, delete: if isAdmin();
     }
@@ -71,9 +77,16 @@ service cloud.firestore {
           && request.resource.data.createdByUid == request.auth.uid
           && request.resource.data.schemaVersion == 1
           && validVisitStatus(request.resource.data.statusCode)
-          && schoolBelongsToSupervisor(
-            request.resource.data.schoolId,
-            request.resource.data.supervisorId
+          && activeSchool(request.resource.data.schoolId)
+          && request.resource.data.assignedSupervisorId
+            == get(/databases/$(database)/documents/schools/$(request.resource.data.schoolId)).data.supervisorId
+          && (
+            (request.resource.data.visitType == 'planned'
+              && schoolBelongsToSupervisor(
+                request.resource.data.schoolId,
+                request.resource.data.supervisorId
+              ))
+            || request.resource.data.visitType == 'direct'
           ));
 
       allow update: if isAdmin()
