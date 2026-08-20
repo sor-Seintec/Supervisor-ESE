@@ -420,11 +420,11 @@
       <form class="card" id="loginView" novalidate>
         <p class="eyebrow" style="color: var(--blue-dark); opacity: 1;">Acesso restrito</p>
         <h2>Entrar no Supervisor-ESE</h2>
-        <p class="subtitle">Use a conta administrativa criada no Firebase Authentication.</p>
+        <p class="subtitle">Use o usuário de acesso fornecido pela gestão.</p>
 
         <div class="field">
-          <label for="email">E-mail</label>
-          <input id="email" name="email" type="email" autocomplete="username" required placeholder="seu-email@educacao.sp.gov.br">
+          <label for="email">Usuário</label>
+          <input id="email" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="Ex.: supchanes">
         </div>
 
         <div class="field">
@@ -522,8 +522,9 @@
     sessionStorage.removeItem('supervisorESELoginNotice');
 
     const authMessages = {
-      'auth/invalid-credential': 'E-mail ou senha inválidos.',
-      'auth/invalid-email': 'Confira o endereço de e-mail informado.',
+      'auth/invalid-credential': 'Usuário ou senha inválidos.',
+      'auth/invalid-email': 'Confira o usuário informado.',
+      'auth/invalid-login': 'Use o identificador recebido da gestão, como supchanes.',
       'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
       'auth/network-request-failed': 'Não foi possível conectar. Verifique sua internet.',
       'auth/user-disabled': 'Esta conta está bloqueada.'
@@ -550,6 +551,25 @@
 
     function roleLabel(role) {
       return ({ admin: 'Administrador', gestor: 'Gestor', supervisor: 'Supervisor' })[role] || role;
+    }
+
+    function emailFromAccessLogin(identifier) {
+      const normalized = String(identifier || '').trim().toLowerCase();
+      if (normalized.includes('@')) return normalized;
+      if (normalized === 'admmaster') return 'desornit@prof.educacao.sp.gov.br';
+      if (!/^(sup|adm)[a-z0-9._-]+$/.test(normalized)) {
+        throw Object.assign(new Error('INVALID_LOGIN'), { code: 'auth/invalid-login' });
+      }
+      return `desornit+${normalized.slice(3)}@prof.educacao.sp.gov.br`;
+    }
+
+    function accessLoginForProfile(profile, user) {
+      if (profile.loginAlias) return profile.loginAlias;
+      const email = String(profile.email || user.email || '').trim().toLowerCase();
+      if (email === 'desornit@prof.educacao.sp.gov.br') return 'admmaster';
+      const match = email.match(/^desornit\+([a-z0-9._-]+)@prof\.educacao\.sp\.gov\.br$/);
+      if (!match) return email;
+      return `${profile.role === 'admin' ? 'adm' : 'sup'}${match[1]}`;
     }
 
     function setAccessTest(text, type = 'security', icon = '✓') {
@@ -661,7 +681,7 @@
         profileView.hidden = false;
         document.getElementById('avatar').textContent = initials(displayName);
         document.getElementById('profileTitle').textContent = displayName;
-        document.getElementById('profileEmail').textContent = profile.email || user.email || '';
+        document.getElementById('profileEmail').textContent = `Usuário: ${accessLoginForProfile(profile, user)}`;
         document.getElementById('profileName').textContent = displayName;
         document.getElementById('profileRole').textContent = roleLabel(profile.role);
         document.getElementById('profileStatus').textContent = 'Ativo';
@@ -682,11 +702,11 @@
 
     loginView.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const email = document.getElementById('email').value.trim();
+      const identifier = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
 
-      if (!email || !password) {
-        setLoginMessage('Informe o e-mail e a senha.', 'error');
+      if (!identifier || !password) {
+        setLoginMessage('Informe o usuário e a senha.', 'error');
         return;
       }
 
@@ -695,6 +715,7 @@
       setLoginMessage('Conectando ao Firebase…', 'info');
 
       try {
+        const email = emailFromAccessLogin(identifier);
         await signInWithEmailAndPassword(auth, email, password);
       } catch (error) {
         setLoginMessage(authMessages[error?.code] || 'Não foi possível entrar. Tente novamente.', 'error');
