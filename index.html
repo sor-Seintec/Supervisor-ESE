@@ -345,7 +345,24 @@
     .detail dt { color: var(--muted); font-weight: 700; }
     .detail dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
 
-    .actions { display: flex; justify-content: flex-end; }
+    .actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+    .app-link {
+      min-height: 52px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      color: white;
+      text-decoration: none;
+      border: 1px solid var(--blue-dark);
+      border-radius: 12px;
+      background: var(--blue-dark);
+      box-shadow: 0 10px 22px rgba(51, 107, 141, 0.2);
+      font-weight: 800;
+    }
+
+    .app-link:hover { background: #285c7c; }
 
     .note {
       margin: 22px 0 0;
@@ -384,8 +401,8 @@
 
       <div class="brand-copy">
         <p class="eyebrow">Gestão Sorocaba</p>
-        <h1 id="portal-title">Novo ambiente seguro.</h1>
-        <p>Esta página valida a autenticação e o perfil individual no novo Firebase, sem alterar o Supervisor_ESE conectado à planilha.</p>
+        <h1 id="portal-title">Planejamento com acesso seguro.</h1>
+        <p>Consulte suas escolas e organize as visitas no novo Firebase, sem alterar o Supervisor_ESE que ainda está conectado à planilha.</p>
       </div>
 
       <span class="environment">Ambiente de homologação</span>
@@ -447,6 +464,7 @@
         </dl>
 
         <div class="actions">
+          <a class="app-link" href="kanban.html">Abrir planejamento</a>
           <button class="secondary" id="logoutButton" type="button">Sair</button>
         </div>
 
@@ -491,7 +509,8 @@
     const loginButton = document.getElementById('loginButton');
     const loginMessage = document.getElementById('loginMessage');
     const profileMessage = document.getElementById('profileMessage');
-    let sessionNotice = '';
+    let sessionNotice = sessionStorage.getItem('supervisorESELoginNotice') || '';
+    sessionStorage.removeItem('supervisorESELoginNotice');
 
     const authMessages = {
       'auth/invalid-credential': 'E-mail ou senha inválidos.',
