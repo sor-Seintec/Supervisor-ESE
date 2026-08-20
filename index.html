@@ -305,6 +305,35 @@
       background: var(--line);
     }
 
+    .data-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 0 0 22px;
+    }
+
+    .data-metric {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #f8fbfd;
+    }
+
+    .data-metric strong {
+      display: block;
+      font-size: 1.45rem;
+      line-height: 1;
+      color: var(--blue-dark);
+    }
+
+    .data-metric span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 750;
+    }
+
     .detail {
       display: grid;
       grid-template-columns: 145px 1fr;
@@ -356,7 +385,7 @@
       <div class="brand-copy">
         <p class="eyebrow">Gestão Sorocaba</p>
         <h1 id="portal-title">Novo ambiente seguro.</h1>
-        <p>Esta página valida a autenticação e o perfil administrativo no novo Firebase, sem alterar o Supervisor_ESE conectado à planilha.</p>
+        <p>Esta página valida a autenticação e o perfil individual no novo Firebase, sem alterar o Supervisor_ESE conectado à planilha.</p>
       </div>
 
       <span class="environment">Ambiente de homologação</span>
@@ -402,6 +431,13 @@
           <span id="accessTestText">Validando isolamento de acesso…</span>
         </div>
 
+        <section class="data-summary" id="dataSummary" hidden aria-label="Dados liberados para o perfil">
+          <div class="data-metric"><strong id="schoolCount">—</strong><span>Escolas</span></div>
+          <div class="data-metric"><strong id="visitCount">—</strong><span>Visitas</span></div>
+          <div class="data-metric"><strong id="agendaCount">—</strong><span>Agendamentos</span></div>
+          <div class="data-metric"><strong id="actionCount">—</strong><span>Ações disponíveis</span></div>
+        </section>
+
         <dl class="details">
           <div class="detail"><dt>Nome</dt><dd id="profileName">—</dd></div>
           <div class="detail"><dt>Perfil</dt><dd id="profileRole">—</dd></div>
@@ -432,7 +468,9 @@
       doc,
       getDoc,
       getDocs,
-      getFirestore
+      getFirestore,
+      query,
+      where
     } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -544,6 +582,33 @@
       }
     }
 
+    async function loadDataSummary(profile) {
+      const isAdmin = profile.role === 'admin';
+      const supervisorId = profile.supervisorId;
+      const scopedCollection = (collectionName) => isAdmin
+        ? collection(db, collectionName)
+        : query(collection(db, collectionName), where('supervisorId', '==', supervisorId));
+
+      try {
+        const [schoolsSnapshot, visitsSnapshot, agendaSnapshot, actionsSnapshot] = await Promise.all([
+          getDocs(scopedCollection('schools')),
+          getDocs(scopedCollection('visits')),
+          getDocs(scopedCollection('agenda')),
+          getDocs(collection(db, 'actions'))
+        ]);
+
+        document.getElementById('schoolCount').textContent = schoolsSnapshot.size;
+        document.getElementById('visitCount').textContent = visitsSnapshot.size;
+        document.getElementById('agendaCount').textContent = agendaSnapshot.size;
+        document.getElementById('actionCount').textContent = actionsSnapshot.size;
+        document.getElementById('dataSummary').hidden = false;
+      } catch (error) {
+        console.error('Falha ao carregar o resumo de dados:', error);
+        document.getElementById('dataSummary').hidden = true;
+        profileMessage.textContent = 'O perfil foi reconhecido, mas os dados migrados ainda não foram liberados pelas regras.';
+      }
+    }
+
     async function showAuthorizedProfile(user) {
       profileMessage.textContent = 'Validando seu perfil no Firestore…';
 
@@ -577,6 +642,7 @@
           ? 'Este perfil está marcado para trocar a senha no primeiro acesso.'
           : 'Teste concluído: conta e perfil reconhecidos.';
         await validateAccessScope(user, profile);
+        await loadDataSummary(profile);
       } catch (error) {
         console.error('Falha ao validar o perfil:', error);
         sessionNotice = error?.code === 'permission-denied'
