@@ -5,20 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planejamento Kanban - URE</title>
+    <script>
+        try {
+            const savedTheme = localStorage.getItem('supervisor-ese-paleta') || localStorage.getItem('portal-ure-paleta');
+            document.documentElement.dataset.theme = ['blue','yellow','green','rose','lavender','peach'].includes(savedTheme) ? savedTheme : 'blue';
+        } catch (_) { document.documentElement.dataset.theme = 'blue'; }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8fafc;
+            --theme-dark:#477c9e;
+            --theme-medium:#d5eaf5;
+            --theme-light:#eef4f8;
+            --bg: var(--theme-light);
             --surface: #ffffff;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --border-dark: #cbd5e1;
-            --primary: #2563eb;
-            --week-bg: #1e293b;
-            --weekend-bg: #f1f5f9;
-            --weekend-border: #e2e8f0;
-            --weekend-text: #94a3b8;
+            --text-dark: color-mix(in srgb,var(--theme-dark) 55%,#102536);
+            --text-muted: color-mix(in srgb,var(--theme-dark) 65%,#596873);
+            --border: color-mix(in srgb,var(--theme-dark) 17%,#fff);
+            --border-dark: color-mix(in srgb,var(--theme-dark) 28%,#fff);
+            --primary: var(--theme-dark);
+            --week-bg: color-mix(in srgb,var(--theme-dark) 55%,#102536);
+            --weekend-bg: color-mix(in srgb,var(--theme-light) 65%,#fff);
+            --weekend-border: var(--border);
+            --weekend-text: color-mix(in srgb,var(--theme-dark) 45%,#8d9aa3);
             
             /* Sistema de Cores Unificado */
             --c-visitado: #10b981;    /* Verde (V) */
@@ -27,6 +36,12 @@
             --c-cancelado: #ef4444;   /* Vermelho (C) */
             --c-justificado: #3b82f6; /* Azul (J) */
         }
+
+        :root[data-theme="yellow"]{--theme-dark:#99752e;--theme-medium:#f5e4a9;--theme-light:#fff9e8}
+        :root[data-theme="green"]{--theme-dark:#507c68;--theme-medium:#d8ebdd;--theme-light:#f2f7f3}
+        :root[data-theme="rose"]{--theme-dark:#9b6674;--theme-medium:#f0d9df;--theme-light:#faf2f4}
+        :root[data-theme="lavender"]{--theme-dark:#706d9b;--theme-medium:#deddf1;--theme-light:#f4f3fa}
+        :root[data-theme="peach"]{--theme-dark:#17191b;--theme-medium:#aeb3b7;--theme-light:#fafaf8}
 
         body {
             font-family: 'Inter', sans-serif;
@@ -711,21 +726,23 @@
         }
 
         /* Camada visual Supervisor-ESE: mais contraste e leitura confortável */
-        :root { --bg:#eef4f7; --primary:#32749a; --text-dark:#16344a; --text-muted:#5b7181; --border:#dce7ed; --border-dark:#c3d5df; }
+        :root { --bg:var(--theme-light); --primary:var(--theme-dark); --text-dark:color-mix(in srgb,var(--theme-dark) 55%,#102536); --text-muted:color-mix(in srgb,var(--theme-dark) 65%,#596873); --border:color-mix(in srgb,var(--theme-dark) 17%,#fff); --border-dark:color-mix(in srgb,var(--theme-dark) 28%,#fff); }
         body { padding:0; background:var(--bg); font-size:15px; }
-        .header { min-height:76px; margin:0; padding:14px 24px; background:#153c56; border-bottom:1px solid rgba(255,255,255,.12); }
+        .header { min-height:76px; margin:0; padding:14px 24px; background:linear-gradient(90deg,color-mix(in srgb,var(--theme-dark) 58%,#102536),var(--theme-dark)); border-bottom:1px solid rgba(255,255,255,.12); }
         .header h1 { color:#fff; font-size:24px; letter-spacing:-.02em; }
         .header .btn-back { min-height:42px; display:inline-flex; align-items:center; gap:7px; padding:0 15px; border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.1); color:#fff; font-size:14px; }
-        .header .header-register { margin-left:0; background:#fff; color:#153c56; border-color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+        .header .header-register { margin-left:0; background:#fff; color:var(--theme-dark); border-color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.12); }
         .header .header-back svg { width:16px; height:16px; }
         .toolbar { margin:18px 24px 16px; padding:16px 18px; border-radius:16px; box-shadow:0 8px 24px rgba(25,65,88,.07); }
-        .form-group label { font-size:12px; color:#486273; }
+        .form-group label { font-size:12px; color:var(--text-muted); }
         .form-group select { min-height:43px; font-size:15px; font-weight:650; }
-        .btn-save-cloud { min-height:44px; padding-inline:20px; border-radius:11px; background:#153c56; font-size:15px; }
+        .btn-save-cloud { min-height:44px; padding-inline:20px; border-radius:11px; background:var(--theme-dark); font-size:15px; }
+        .btn-save-cloud:hover { background:color-mix(in srgb,var(--theme-dark) 82%,#102536); }
+        .btn-back:hover,.week-selector button:hover,.btn-clear-filter:hover { background:color-mix(in srgb,var(--theme-medium) 42%,#fff); }
         .badge-local { padding:5px 2px; font-size:12px; }
         .main-layout { margin:0 24px 24px; gap:16px; }
-        .sidebar { width:310px; border-radius:16px; background:#e4eef4; box-shadow:0 8px 24px rgba(25,65,88,.05); }
-        .sidebar-header { padding:14px; background:#d8e7f0; font-size:14px; }
+        .sidebar { width:310px; border-radius:16px; background:color-mix(in srgb,var(--theme-medium) 52%,#fff); box-shadow:0 8px 24px rgba(25,65,88,.05); }
+        .sidebar-header { padding:14px; background:color-mix(in srgb,var(--theme-medium) 78%,#fff); font-size:14px; }
         .schools-container { padding:13px; gap:11px; }
         .calendar-container { border-radius:16px; box-shadow:0 8px 24px rgba(25,65,88,.05); }
         .day-name { padding:14px 10px; font-size:14px; }
@@ -746,8 +763,8 @@
         .correction-modal { position:fixed; inset:0; z-index:10020; display:grid; place-items:center; padding:22px; background:rgba(12,35,51,.56); backdrop-filter:blur(5px); }
         .correction-dialog { width:min(570px,100%); overflow:hidden; border:1px solid #c9d9e2; border-radius:18px; background:#fff; box-shadow:0 28px 70px rgba(12,35,51,.28); }
         .correction-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:22px 24px 17px; border-bottom:1px solid #dce6eb; }
-        .correction-head small { display:block; margin-bottom:5px; color:#4c7b98; font-size:10px; font-weight:850; letter-spacing:.12em; text-transform:uppercase; }
-        .correction-head h2 { margin:0; color:#153c56; font-size:22px; }
+        .correction-head small { display:block; margin-bottom:5px; color:var(--theme-dark); font-size:10px; font-weight:850; letter-spacing:.12em; text-transform:uppercase; }
+        .correction-head h2 { margin:0; color:var(--text-dark); font-size:22px; }
         .correction-close { width:34px; height:34px; display:grid; place-items:center; border:0; border-radius:10px; background:#edf3f6; color:#456275; cursor:pointer; font-size:20px; }
         .correction-body { display:grid; gap:15px; padding:20px 24px; }
         .correction-summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; border:1px solid #d8e4ea; border-radius:12px; background:#f5f9fb; }
@@ -757,13 +774,38 @@
         .correction-body select,.correction-body textarea { width:100%; margin-top:6px; border:1px solid #c7d8e2; border-radius:11px; background:#fbfcfd; color:#17374d; font:600 14px/1.45 Inter,sans-serif; outline:0; }
         .correction-body select { min-height:44px; padding:0 12px; }
         .correction-body textarea { min-height:104px; padding:11px 12px; resize:vertical; }
-        .correction-body :is(select,textarea):focus { border-color:#4f8caf; box-shadow:0 0 0 3px rgba(79,140,175,.14); background:#fff; }
+        .correction-body :is(select,textarea):focus { border-color:var(--theme-dark); box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-dark) 18%,transparent); background:#fff; }
         .correction-note { margin:0; padding:11px 13px; border-radius:10px; background:#fff4d6; color:#795000; font-size:12px; font-weight:650; line-height:1.5; }
         .correction-actions { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px 21px; border-top:1px solid #e1e8ec; }
         .correction-actions button { min-height:42px; padding:0 16px; border-radius:10px; cursor:pointer; font:750 13px/1 Inter,sans-serif; }
         .correction-cancel { border:1px solid #cad9e1; background:#fff; color:#38576a; }
-        .correction-submit { border:0; background:#153c56; color:#fff; box-shadow:0 7px 16px rgba(21,60,86,.18); }
+        .correction-submit { border:0; background:var(--theme-dark); color:#fff; box-shadow:0 7px 16px rgba(21,60,86,.18); }
         .correction-submit:disabled { cursor:wait; opacity:.6; }
+        .toolbar,.calendar-container,.status-legend { border-color:var(--border); }
+        .form-group select,.turno-select-inline {
+            border-color:var(--border-dark);
+            background:color-mix(in srgb,var(--theme-light) 46%,#fff);
+            color:var(--text-dark);
+        }
+        .form-group select:focus,.turno-select-inline:focus {
+            border-color:var(--theme-dark);
+            box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-dark) 17%,transparent);
+        }
+        .cal-header-days { background:color-mix(in srgb,var(--theme-light) 58%,#fff); }
+        .cal-body { background:color-mix(in srgb,var(--theme-light) 18%,#fff); }
+        .day-cell { border-color:var(--border); }
+        .day-cell.drag-over { background:color-mix(in srgb,var(--theme-medium) 58%,#fff); }
+        .day-cell.out-of-month { background:color-mix(in srgb,var(--theme-light) 62%,#fff); }
+        .day-cell.weekend { background:color-mix(in srgb,var(--theme-light) 46%,#fff); }
+        .cards-list::-webkit-scrollbar-track { background:color-mix(in srgb,var(--theme-light) 72%,#fff); }
+        .cards-list::-webkit-scrollbar-thumb { background:color-mix(in srgb,var(--theme-dark) 34%,#fff); }
+        .cards-list::-webkit-scrollbar-thumb:hover { background:color-mix(in srgb,var(--theme-dark) 52%,#fff); }
+        .k-card { border-color:var(--border-dark); }
+        .turno-select-inline:hover { background:color-mix(in srgb,var(--theme-medium) 55%,#fff); }
+        .correction-dialog,.correction-summary,.correction-body select,.correction-body textarea { border-color:var(--border); }
+        .correction-close,.correction-summary { background:color-mix(in srgb,var(--theme-light) 62%,#fff); }
+        .correction-head,.correction-actions { border-color:var(--border); }
+        :root[data-theme="peach"] body { background:radial-gradient(ellipse at 18% 8%,rgba(28,31,34,.08),transparent 30%),radial-gradient(ellipse at 82% 72%,rgba(92,98,103,.09),transparent 34%),#f7f7f5; }
 
         @media (max-width:900px) {
             body { height:auto; min-height:100vh; overflow:auto; }

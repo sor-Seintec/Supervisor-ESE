@@ -7,7 +7,7 @@
   <title>Supervisor-ESE | Acesso seguro</title>
   <script>
     try {
-      const savedTheme = localStorage.getItem('portal-ure-paleta');
+      const savedTheme = localStorage.getItem('supervisor-ese-paleta') || localStorage.getItem('portal-ure-paleta');
       document.documentElement.dataset.theme = ['blue','yellow','green','rose','lavender','peach'].includes(savedTheme) ? savedTheme : 'blue';
     } catch (_) { document.documentElement.dataset.theme = 'blue'; }
   </script>
@@ -60,7 +60,7 @@
     .shell {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: minmax(280px, 38%) minmax(360px, 1fr);
+      grid-template-columns: minmax(320px, 32%) minmax(520px, 1fr);
     }
 
     .brand-panel {
@@ -256,6 +256,10 @@
       display: grid;
       place-items: center;
     }
+
+    .session-loading { display:flex; align-items:center; gap:11px; padding:15px 18px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.9); color:var(--muted); box-shadow:var(--shadow); font-size:.86rem; font-weight:750; }
+    .session-loading::before { content:""; width:22px; height:22px; border:3px solid var(--theme-medium); border-top-color:var(--theme-dark); border-radius:50%; animation:session-spin .8s linear infinite; }
+    @keyframes session-spin { to { transform:rotate(360deg); } }
 
     .card {
       width: min(100%, 640px);
@@ -1063,7 +1067,8 @@
           </div>
         </div>
       </div>
-      <form class="card" id="loginView" novalidate>
+      <div class="session-loading" id="sessionLoading">Validando sua sessão…</div>
+      <form class="card" id="loginView" hidden novalidate>
         <p class="eyebrow" style="color: var(--blue-dark); opacity: 1;">Acesso restrito</p>
         <h2>Entrar no Supervisor-ESE</h2>
         <p class="subtitle">Use o usuário de acesso fornecido pela gestão.</p>
@@ -1184,11 +1189,12 @@
     const loginButton = document.getElementById('loginButton');
     const loginMessage = document.getElementById('loginMessage');
     const profileMessage = document.getElementById('profileMessage');
+    const sessionLoading = document.getElementById('sessionLoading');
     const accountFooter = document.getElementById('accountFooter');
     const themePickerButton = document.getElementById('themePickerButton');
     const themePicker = document.getElementById('themePicker');
     const themeChoices = [...document.querySelectorAll('[data-theme-choice]')];
-    const themeKey = 'portal-ure-paleta';
+    const themeKey = 'supervisor-ese-paleta';
     const allowedThemes = new Set(['blue','yellow','green','rose','lavender','peach']);
     let sessionNotice = sessionStorage.getItem('supervisorESELoginNotice') || '';
     sessionStorage.removeItem('supervisorESELoginNotice');
@@ -1243,6 +1249,7 @@
     }
 
     function showLogin() {
+      sessionLoading.hidden = true;
       loginView.hidden = false;
       profileView.hidden = true;
       accountFooter.hidden = true;
@@ -1475,7 +1482,7 @@
 
         const displayName = profile.displayName || user.email || 'Usuário';
         loginView.hidden = true;
-        profileView.hidden = false;
+        profileView.hidden = true;
         document.getElementById('avatar').textContent = initials(displayName);
         document.getElementById('profileTitle').textContent = displayName;
         document.getElementById('profileEmail').textContent = `${roleLabel(profile.role)} · ${accessLoginForProfile(profile, user)}`;
@@ -1487,6 +1494,8 @@
         profileMessage.hidden = true;
         await validateAccessScope(user, profile);
         await loadDataSummary(profile);
+        sessionLoading.hidden = true;
+        profileView.hidden = false;
       } catch (error) {
         console.error('Falha ao validar o perfil:', error);
         sessionNotice = error?.code === 'permission-denied'
@@ -1532,7 +1541,8 @@
       }
 
       loginView.hidden = true;
-      profileView.hidden = false;
+      profileView.hidden = true;
+      sessionLoading.hidden = false;
       await showAuthorizedProfile(user);
     });
   </script>

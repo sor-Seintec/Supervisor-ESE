@@ -5,13 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Registro seguro de visitas escolares do Supervisor-ESE">
   <title>Registrar visita | Supervisor-ESE</title>
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('supervisor-ese-paleta') || localStorage.getItem('portal-ure-paleta');
+      document.documentElement.dataset.theme = ['blue','yellow','green','rose','lavender','peach'].includes(savedTheme) ? savedTheme : 'blue';
+    } catch (_) { document.documentElement.dataset.theme = 'blue'; }
+  </script>
   <style>
     :root {
-      --navy:#153c56; --blue:#32749a; --blue-soft:#dcecf5; --page:#eef4f7;
-      --surface:#fff; --ink:#16344a; --muted:#5b7181; --line:#cadae4;
+      --theme-dark:#477c9e; --theme-medium:#d5eaf5; --theme-light:#eef4f8;
+      --navy:color-mix(in srgb,var(--theme-dark) 55%,#102536); --blue:var(--theme-dark); --blue-soft:var(--theme-medium); --page:var(--theme-light);
+      --surface:#fff; --ink:color-mix(in srgb,var(--theme-dark) 55%,#102536); --muted:color-mix(in srgb,var(--theme-dark) 65%,#596873); --line:color-mix(in srgb,var(--theme-dark) 22%,#fff);
       --planned:#f97316; --completed:#10b981; --justified:#3b82f6;
       --postponed:#9333ea; --cancelled:#ef4444; --shadow:0 20px 55px rgba(28,65,88,.12);
     }
+    :root[data-theme="yellow"]{--theme-dark:#99752e;--theme-medium:#f5e4a9;--theme-light:#fff9e8}
+    :root[data-theme="green"]{--theme-dark:#507c68;--theme-medium:#d8ebdd;--theme-light:#f2f7f3}
+    :root[data-theme="rose"]{--theme-dark:#9b6674;--theme-medium:#f0d9df;--theme-light:#faf2f4}
+    :root[data-theme="lavender"]{--theme-dark:#706d9b;--theme-medium:#deddf1;--theme-light:#f4f3fa}
+    :root[data-theme="peach"]{--theme-dark:#17191b;--theme-medium:#aeb3b7;--theme-light:#fafaf8}
     *{box-sizing:border-box}
     html{font-size:16px;background:var(--page)}
     body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(circle at 8% 7%,#fff 0,transparent 28%),var(--page);font-family:Inter,"Segoe UI",system-ui,sans-serif;font-size:1rem;font-weight:500;line-height:1.55}
@@ -28,6 +40,10 @@
     .top-actions{display:flex;align-items:center;gap:8px}
     .nav-link,.signout{min-height:42px;display:inline-flex;align-items:center;justify-content:center;padding:0 14px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--navy);text-decoration:none;font-size:.9rem;font-weight:750;cursor:pointer}
     .signout{background:transparent}
+    .sidebar-account{display:grid;grid-template-columns:38px minmax(0,1fr) 36px;align-items:center;gap:10px;padding-top:15px;border-top:1px solid rgba(255,255,255,.16)}
+    .sidebar-account-avatar{width:38px;height:38px;display:grid;place-items:center;border-radius:50%;color:#fff;background:color-mix(in srgb,var(--theme-dark) 72%,#fff);border:1px solid rgba(255,255,255,.2);font-size:.73rem;font-weight:850}
+    .sidebar-account-copy{min-width:0}.sidebar-account-copy strong,.sidebar-account-copy span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sidebar-account-copy strong{color:#fff;font-size:.78rem}.sidebar-account-copy span{margin-top:2px;color:rgba(255,255,255,.66);font-size:.68rem}
+    .sidebar-account-exit{width:36px;height:36px;display:grid;place-items:center;padding:0;border:0;border-radius:10px;color:rgba(255,255,255,.78);background:transparent;cursor:pointer}.sidebar-account-exit:hover{color:#fff;background:rgba(173,46,54,.82)}.sidebar-account-exit svg{width:18px;height:18px}
     .layout{width:min(1280px,100%);margin:0 auto;padding:30px clamp(16px,3.5vw,48px) 55px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
     .intro{margin-bottom:22px}
     .eyebrow{margin:0 0 5px;color:var(--blue);font-size:.77rem;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
@@ -96,8 +112,8 @@
     @media(max-width:680px){html{font-size:17px}.topbar{padding:10px 14px}.brand small,.top-actions .nav-link:first-child{display:none}.layout{padding:20px 12px 40px}.form-card{padding:18px}.field-grid,.status-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.submit-row{align-items:stretch;flex-direction:column}.primary{width:100%}.segment{font-size:.86rem}.section{padding:20px 0}}
 
     /* Experiência desktop: navegação institucional e área de trabalho ampla */
-    body{padding-left:252px;background:#edf3f6}
-    .topbar{position:fixed;inset:0 auto 0 0;width:252px;height:100vh;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:28px 18px;border:0;border-right:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,#153c56 0%,#204f6d 100%);box-shadow:8px 0 30px rgba(17,51,72,.08)}
+    body{padding-left:252px;background:var(--page)}
+    .topbar{position:fixed;inset:0 auto 0 0;width:252px;height:100vh;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:28px 18px;border:0;border-right:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,color-mix(in srgb,var(--theme-dark) 58%,#102536) 0%,var(--theme-dark) 100%);box-shadow:8px 0 30px rgba(17,51,72,.08)}
     .brand{padding:0 8px 25px;border-bottom:1px solid rgba(255,255,255,.14);color:#fff;font-size:1.02rem}.brand-mark{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18)}.brand small{margin-top:3px;color:rgba(255,255,255,.66)}
     .top-actions{min-height:0;flex:1;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding-top:28px}
     .nav-link,.signout{justify-content:flex-start;min-height:48px;padding:0 14px;border-color:transparent;background:transparent;color:rgba(255,255,255,.82);font-size:.93rem}
@@ -113,10 +129,29 @@
     select,input,textarea{border-radius:9px;background:#fbfcfd}.action-list{border-radius:9px}.status{border-radius:10px}.status-code{border-radius:7px}
     .side{top:30px;gap:18px}.profile,.legend{padding:22px}.notice{border-radius:8px}
 
+    /* A paleta escolhida na página inicial acompanha todos os campos. */
+    body{background:radial-gradient(circle at 8% 7%,color-mix(in srgb,var(--theme-light) 34%,#fff) 0,transparent 28%),var(--page)}
+    .intro{border-bottom-color:var(--line)}
+    .card{border-color:var(--line)}
+    .steps{border-color:var(--line);background:color-mix(in srgb,var(--theme-light) 58%,#fff)}
+    .step b{background:color-mix(in srgb,var(--theme-medium) 54%,#fff);color:var(--blue)}
+    .segmented{border-color:var(--line);background:color-mix(in srgb,var(--theme-medium) 42%,#fff)}
+    select,input,textarea,.action-list{border-color:var(--line);background:color-mix(in srgb,var(--theme-light) 46%,#fff)}
+    select:disabled,input:disabled{color:var(--muted);background:color-mix(in srgb,var(--theme-medium) 42%,#fff)}
+    .agenda-picker{border-color:var(--line)}
+    .agenda-date-nav{border-bottom-color:var(--line);background:color-mix(in srgb,var(--theme-light) 48%,#fff)}
+    .agenda-date-tab:hover{border-color:var(--blue);background:color-mix(in srgb,var(--theme-medium) 38%,#fff)}
+    .agenda-date-tab.is-selected{background:color-mix(in srgb,var(--theme-medium) 62%,#fff)}
+    .agenda-option:not([data-shift="tarde"]):not([data-shift="noite"]):not([data-shift="integral"]){border-color:var(--line);background:color-mix(in srgb,var(--theme-medium) 38%,#fff)}
+    .action-option{border-bottom-color:var(--line)}.action-option:hover{background:color-mix(in srgb,var(--theme-medium) 34%,#fff)}
+    .status{background:color-mix(in srgb,var(--theme-light) 52%,#fff)}
+    .section,.submit-row,.profile-dl div{border-color:var(--line)}
+    :root[data-theme="peach"] body{background:radial-gradient(ellipse at 18% 8%,rgba(28,31,34,.08),transparent 30%),radial-gradient(ellipse at 82% 72%,rgba(92,98,103,.09),transparent 34%),#f7f7f5}
+
     @media(max-width:1250px){
-      body{padding-left:0}.topbar{position:sticky;inset:auto;top:0;width:auto;height:auto;min-height:76px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 22px;background:#153c56}.brand{padding:0;border:0}.top-actions{min-height:auto;flex:0 0 auto;flex-direction:row;align-items:center;padding:0}.nav-link,.signout{justify-content:center;min-height:43px}.signout{margin:0}.layout{grid-template-columns:minmax(0,1fr) 310px;padding:32px 28px 55px}}
+      body{padding-left:0}.topbar{position:sticky;inset:auto;top:0;width:auto;height:auto;min-height:76px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 22px;background:linear-gradient(90deg,color-mix(in srgb,var(--theme-dark) 58%,#102536),var(--theme-dark))}.brand{padding:0;border:0}.top-actions{min-height:auto;flex:0 0 auto;flex-direction:row;align-items:center;padding:0}.nav-link,.signout{justify-content:center;min-height:43px}.signout{margin:0}.sidebar-account{padding:0 0 0 12px;border-top:0;border-left:1px solid rgba(255,255,255,.16)}.sidebar-account-copy{display:none}.layout{grid-template-columns:minmax(0,1fr) 310px;padding:32px 28px 55px}}
     @media(max-width:1080px){.layout{grid-template-columns:1fr;max-width:940px}.side{position:static;grid-template-columns:1fr 1fr}.steps span{display:inline}.form-card{padding:30px 34px}}
-    @media(max-width:720px){html{font-size:16px}.topbar{padding:10px 13px}.brand small,.top-actions .nav-link:first-child{display:none}.layout{padding:22px 12px 42px}.form-card{padding:18px}.steps span{display:none}.field-grid,.status-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.submit-row{align-items:stretch;flex-direction:column}.primary{width:100%}.section{padding:21px 0}.segmented,#activityMode,#activityMode[data-options="2"]{grid-template-columns:1fr}.segment{min-height:44px}.agenda-date-nav{grid-template-columns:30px minmax(0,1fr) 30px;gap:5px;padding:8px}.agenda-date-tabs{gap:5px}.agenda-date-tab{padding-inline:4px}.agenda-option{grid-template-columns:18px 1fr}.agenda-school{grid-column:2;white-space:normal}.agenda-shift{grid-column:2}}
+    @media(max-width:720px){html{font-size:16px}.topbar{padding:10px 13px}.brand small,.top-actions .nav-link:first-child{display:none}.sidebar-account-avatar{display:none}.sidebar-account{grid-template-columns:36px;padding-left:5px}.layout{padding:22px 12px 42px}.form-card{padding:18px}.steps span{display:none}.field-grid,.status-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.submit-row{align-items:stretch;flex-direction:column}.primary{width:100%}.section{padding:21px 0}.segmented,#activityMode,#activityMode[data-options="2"]{grid-template-columns:1fr}.segment{min-height:44px}.agenda-date-nav{grid-template-columns:30px minmax(0,1fr) 30px;gap:5px;padding:8px}.agenda-date-tabs{gap:5px}.agenda-date-tab{padding-inline:4px}.agenda-option{grid-template-columns:18px 1fr}.agenda-school{grid-column:2;white-space:normal}.agenda-shift{grid-column:2}}
 
   </style>
 </head>
@@ -127,8 +162,12 @@
     <nav class="top-actions" aria-label="Navegação principal">
       <a class="nav-link" href="index.html">Início</a>
       <a class="nav-link" href="kanban.html">Planejamento</a>
-      <button class="signout" id="signoutButton" type="button">Sair</button>
     </nav>
+    <div class="sidebar-account" id="sidebarAccount" hidden>
+      <div class="sidebar-account-avatar" id="sidebarAccountAvatar" aria-hidden="true">--</div>
+      <div class="sidebar-account-copy"><strong id="sidebarAccountName">Usuário</strong><span id="sidebarAccountRole">Supervisor</span></div>
+      <button class="sidebar-account-exit" id="signoutButton" type="button" aria-label="Sair do portal" title="Sair"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5m5 5H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg></button>
+    </div>
   </header>
 
   <main class="layout" id="app" hidden>
@@ -251,7 +290,7 @@
       renderSchools();renderAgenda();renderActions();renderProfile();applyQuerySelection();
     }
     function pendingAgenda(){const used=new Set(state.visits.map(item=>item.agendaId).filter(Boolean));return state.agenda.filter(item=>!used.has(item.id)&&!['completed','cancelled','justified'].includes(item.status)).sort((a,b)=>(a.scheduledDate?.seconds||0)-(b.scheduledDate?.seconds||0))}
-    function renderProfile(){const name=state.profile.displayName||state.user.email;$('#profileName').textContent=name;$('#profileEmail').textContent=state.profile.email||state.user.email;$('#profileRole').textContent=state.profile.role==='admin'?'Administrador':'Supervisor';$('#avatar').textContent=initials(name);$('#schoolCount').textContent=state.ownSchoolIds.size;$('#pendingCount').textContent=pendingAgenda().length;$('#passwordNotice').hidden=state.profile.mustChangePassword!==true;$('#schoolAccessNotice').hidden=!state.schoolReadLimited}
+    function renderProfile(){const name=state.profile.displayName||state.user.email,role=state.profile.role==='admin'?'Administrador':'Supervisor';$('#profileName').textContent=name;$('#profileEmail').textContent=state.profile.email||state.user.email;$('#profileRole').textContent=role;$('#avatar').textContent=initials(name);$('#sidebarAccountAvatar').textContent=initials(name);$('#sidebarAccountName').textContent=name;$('#sidebarAccountRole').textContent=role;$('#sidebarAccount').hidden=false;$('#schoolCount').textContent=state.ownSchoolIds.size;$('#pendingCount').textContent=pendingAgenda().length;$('#passwordNotice').hidden=state.profile.mustChangePassword!==true;$('#schoolAccessNotice').hidden=!state.schoolReadLimited}
     function renderSchools(){const select=$('#schoolSelect'),value=select.value;select.innerHTML='<option value="">Selecione a escola</option>';[...state.schools.values()].filter(item=>item.active!==false&&(state.source==='direct'||state.ownSchoolIds.has(item.id))).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).forEach(item=>select.add(new Option(item.name,item.id)));select.value=[...select.options].some(option=>option.value===value)?value:''}
     function agendaDates(items=pendingAgenda()){return [...new Set(items.map(item=>dateKey(item.scheduledDate)).filter(Boolean))].sort()}
     function agendaDateLabel(key){const date=new Date(`${key}T12:00:00`),weekday=new Intl.DateTimeFormat('pt-BR',{weekday:'short'}).format(date).replace('.','');return `${weekday.charAt(0).toUpperCase()+weekday.slice(1)} ${new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit'}).format(date)}`}
