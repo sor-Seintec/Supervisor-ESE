@@ -1046,6 +1046,14 @@
             return state.supervisors.get(supervisorId)?.displayName || supervisorId;
         }
 
+        function schoolSupervisorIds(school = {}) {
+            return [...new Set([...(Array.isArray(school.supervisorIds) ? school.supervisorIds : []),school.supervisorId].filter(Boolean))];
+        }
+
+        function schoolHasSupervisor(school, supervisorId) {
+            return Boolean(supervisorId) && schoolSupervisorIds(school).includes(supervisorId);
+        }
+
         function makeShiftSelector(selectedShift) {
             return ['Manhã', 'Tarde', 'Integral']
                 .map((shift) => `<option value="${shift}" ${shift === selectedShift ? 'selected' : ''}>${shift}</option>`)
@@ -1105,11 +1113,11 @@
             schoolsContainer.innerHTML = '<div class="empty-schools">Carregando escolas…</div>';
             if (!supervisorId) return;
 
-            const snapshot = await getDocs(query(
-                collection(db, 'schools'),
-                where('supervisorId', '==', supervisorId)
-            ));
-            snapshot.forEach((item) => state.schools.set(item.id, { id: item.id, ...item.data() }));
+            const snapshot = await getDocs(collection(db, 'schools'));
+            snapshot.forEach((item) => {
+                const school = { id: item.id, ...item.data() };
+                if (school.active !== false && schoolHasSupervisor(school,supervisorId)) state.schools.set(item.id,school);
+            });
             renderAvailableSchools();
         }
 
@@ -1130,7 +1138,7 @@
                     supervisorName: name,
                     schoolId: school.id,
                     schoolName: school.name,
-                    assignedSupervisorId: school.supervisorId,
+                    assignedSupervisorId: supervisorId,
                     shift: 'Manhã'
                 };
                 const card = document.createElement('div');

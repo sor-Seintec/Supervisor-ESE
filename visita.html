@@ -233,6 +233,8 @@
 
     function dateKey(value){if(!value)return'';const date=value.toDate?value.toDate():new Date(value);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
     function formatDate(value){const key=dateKey(value);if(!key)return'—';return new Intl.DateTimeFormat('pt-BR').format(new Date(`${key}T12:00:00`))}
+    function schoolSupervisorIds(school={}){return[...new Set([...(Array.isArray(school.supervisorIds)?school.supervisorIds:[]),school.supervisorId].filter(Boolean))]}
+    function schoolHasSupervisor(school,supervisorId){return Boolean(supervisorId)&&schoolSupervisorIds(school).includes(supervisorId)}
     function initials(name){return String(name||'').trim().split(/\s+/).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'—'}
     function showToast(message,type=''){const toast=$('#toast');toast.textContent=message;toast.className=`toast ${type}`;toast.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.hidden=true,4300)}
     function redirectLogin(){location.replace('index.html')}
@@ -242,7 +244,7 @@
       const schoolsPromise=(async()=>{try{return await getDocs(collection(db,'schools'))}catch(error){if(error?.code!=='permission-denied'||state.profile.role==='admin')throw error;state.schoolReadLimited=true;return getDocs(scoped('schools'))}})();
       const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot]=await Promise.all([schoolsPromise,getDocs(scoped('agenda')),getDocs(scoped('visits')),getDocs(collection(db,'actions'))]);
       state.schools=new Map(schoolsSnapshot.docs.map(item=>[item.id,{id:item.id,...item.data()}]));
-      state.ownSchoolIds=new Set([...state.schools.values()].filter(item=>state.profile.role==='admin'||item.supervisorId===state.profile.supervisorId).map(item=>item.id));
+      state.ownSchoolIds=new Set([...state.schools.values()].filter(item=>state.profile.role==='admin'||schoolHasSupervisor(item,state.profile.supervisorId)).map(item=>item.id));
       state.agenda=agendaSnapshot.docs.map(item=>({id:item.id,...item.data()}));
       state.visits=visitsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
       state.actions=actionsSnapshot.docs.map(item=>({id:item.id,...item.data()})).filter(item=>item.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||a.name.localeCompare(b.name,'pt-BR'));
@@ -295,7 +297,9 @@
       try{values=validate()}catch(error){showToast(error.message,'error');return}
       const button=$('#saveButton');button.disabled=true;button.textContent='Salvando…';
       try{
-        const supervisorId=state.profile.role==='admin'?(state.agenda.find(item=>item.id===values.agendaId)?.supervisorId||values.school.supervisorId):state.profile.supervisorId;
+        const linkedSupervisorIds=schoolSupervisorIds(values.school);
+        const supervisorId=state.profile.role==='admin'?(state.agenda.find(item=>item.id===values.agendaId)?.supervisorId||linkedSupervisorIds[0]):state.profile.supervisorId;
+        const assignedSupervisorId=linkedSupervisorIds.includes(supervisorId)?supervisorId:(linkedSupervisorIds[0]||null);
         const actionItems=[...state.selectedActions].map(id=>state.actions.find(item=>item.id===id)).filter(Boolean);
         const reason=$('#justification').value.trim();
         const visitTimestamp=Timestamp.fromDate(new Date(`${values.date}T12:00:00`));
@@ -305,8 +309,8 @@
 
         batch.set(visitRef,{
           supervisorId,schoolId:values.school.id,schoolName:values.school.name,
-          assignedSupervisorId:values.school.supervisorId,
-          isOutsideAssignedPortfolio:supervisorId!==values.school.supervisorId,
+          assignedSupervisorId,
+          isOutsideAssignedPortfolio:!linkedSupervisorIds.includes(supervisorId),
           agendaId:values.agendaId||null,visitType:state.source,activityType:state.activity,
           actionIds:state.activity==='catalog'?actionItems.map(item=>item.id):[],
           actionNames:state.activity==='catalog'?actionItems.map(item=>item.name):[],

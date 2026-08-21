@@ -1136,6 +1136,14 @@
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     }
 
+    function schoolSupervisorIds(school = {}) {
+      return [...new Set([...(Array.isArray(school.supervisorIds) ? school.supervisorIds : []),school.supervisorId].filter(Boolean))];
+    }
+
+    function schoolHasSupervisor(school,supervisorId) {
+      return Boolean(supervisorId) && schoolSupervisorIds(school).includes(supervisorId);
+    }
+
     function renderUpcomingVisits(agendaSnapshot) {
       const section = document.getElementById('upcomingVisits');
       const list = document.getElementById('upcomingVisitsList');
@@ -1261,11 +1269,16 @@
         : query(collection(db, collectionName), where('supervisorId', '==', supervisorId));
 
       try {
-        const [schoolsSnapshot, visitsSnapshot, agendaSnapshot] = await Promise.all([
-          getDocs(scopedCollection('schools')),
+        const [allSchoolsSnapshot, visitsSnapshot, agendaSnapshot] = await Promise.all([
+          getDocs(collection(db, 'schools')),
           getDocs(scopedCollection('visits')),
           getDocs(scopedCollection('agenda'))
         ]);
+
+        const schoolDocs = isAdmin
+          ? allSchoolsSnapshot.docs
+          : allSchoolsSnapshot.docs.filter((snapshot) => schoolHasSupervisor(snapshot.data(),supervisorId));
+        const schoolsSnapshot = { docs: schoolDocs, size: schoolDocs.length };
 
         document.getElementById('schoolCount').textContent = schoolsSnapshot.size;
         document.getElementById('visitCount').textContent = visitsSnapshot.size;
