@@ -693,8 +693,7 @@
 
         <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
             <span id="statusBadge" class="badge-local">✅ Sincronizado</span>
-            <button class="btn-save-cloud" id="btnSalvarNuvem" onclick="salvarAgendaNaNuvem()">Sincronizar com
-                Nuvem</button>
+            <button class="btn-save-cloud" id="btnSalvarNuvem" type="button" disabled>Salvamento automático</button>
         </div>
     </div>
 
@@ -759,7 +758,10 @@
             agendaDraft: {},
             currentWeek: 0,
             dragging: null,
-            dirty: false
+            dirty: false,
+            saving: false,
+            syncError: false,
+            preventOpenUntil: 0
         };
 
         const selectYear = document.getElementById('selectAno');
@@ -773,7 +775,7 @@
         document.querySelector('#filtroGlobalContainer').style.display = 'none';
         document.querySelector('label[for="selectSup"]')?.removeAttribute('for');
         selectSupervisor.closest('.form-group').querySelector('label').textContent = 'Supervisor';
-        saveButton.textContent = 'Salvar planejamento';
+        saveButton.textContent = 'Salvamento automático';
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -807,11 +809,8 @@
         }
 
         function loadDrafts() {
-            try {
-                state.agendaDraft = JSON.parse(localStorage.getItem(draftStorageKey()) || '{}');
-            } catch {
-                state.agendaDraft = {};
-            }
+            state.agendaDraft = {};
+            localStorage.removeItem(draftStorageKey());
         }
 
         function saveDrafts() {
@@ -820,12 +819,42 @@
 
         function updateSyncBadge() {
             const badge = document.getElementById('statusBadge');
-            if (state.dirty) {
+            if (state.saving) {
+                badge.className = 'badge-local dirty';
+                badge.textContent = 'Salvando automaticamente…';
+            } else if (state.syncError) {
+                badge.className = 'badge-local dirty';
+                badge.textContent = 'Falha ao salvar';
+            } else if (state.dirty) {
                 badge.className = 'badge-local dirty';
                 badge.textContent = 'Alterações pendentes';
             } else {
                 badge.className = 'badge-local';
-                badge.textContent = 'Sincronizado com Firebase';
+                badge.textContent = 'Salvo automaticamente';
+            }
+        }
+
+        async function runAutoSave(action, successMessage) {
+            if (state.saving) {
+                showToast('Aguarde a alteração atual terminar de salvar.');
+                return false;
+            }
+            state.saving = true;
+            state.syncError = false;
+            updateSyncBadge();
+            try {
+                await action();
+                state.dirty = false;
+                if (successMessage) showToast(successMessage, 'success');
+                return true;
+            } catch (error) {
+                console.error('Falha no salvamento automático:', error);
+                state.syncError = true;
+                showToast('Não foi possível salvar automaticamente. Verifique sua conexão.');
+                return false;
+            } finally {
+                state.saving = false;
+                updateSyncBadge();
             }
         }
 
@@ -1000,8 +1029,6 @@
 
         async function loadCloudData() {
             const supervisorId = currentSupervisorId();
-            saveButton.disabled = true;
-            saveButton.textContent = 'Carregando…';
             if (!supervisorId) return;
 
             const [agendaSnapshot, visitsSnapshot] = await Promise.all([
@@ -1012,14 +1039,12 @@
             state.agendaCloud = agendaSnapshot.docs
                 .map((item) => ({ id: item.id, ...item.data() }));
             state.visits = visitsSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-            saveButton.disabled = false;
-            saveButton.textContent = 'Salvar planejamento';
             renderCalendar();
         }
 
-        function isDuplicate(date, schoolId) {
+        function isDuplicate(date, schoolId, excludedAgendaId = '') {
             if ((state.agendaDraft[date] || []).some((item) => item.schoolId === schoolId)) return true;
-            return state.agendaCloud.some((item) => timestampDateKey(item.scheduledDate) === date && item.schoolId === schoolId);
+            return state.agendaCloud.some((item) => item.id !== excludedAgendaId && timestampDateKey(item.scheduledDate) === date && item.schoolId === schoolId);
         }
 
         function addDraft(date, item) {
@@ -1063,18 +1088,84 @@
             )?.statusCode || item.agendaStatusCode || '';
         }
 
+        async function createAgendaAutomatically(date, item) {
+            return runAutoSave(async () => {
+                const reference = doc(collection(db, 'agenda'));
+                const batch = writeBatch(db);
+                batch.set(reference, {
+                    recordedAt: serverTimestamp(),
+                    scheduledDate: Timestamp.fromDate(new Date(`${date}T08:00:00`)),
+                    supervisorId: item.supervisorId,
+                    schoolId: item.schoolId,
+                    schoolName: item.schoolName,
+                    assignedSupervisorId: item.assignedSupervisorId,
+                    isOutsideAssignedPortfolio: item.supervisorId !== item.assignedSupervisorId,
+                    shift: item.shift || 'Manhã',
+                    authorEmail: state.user.email,
+                    createdByUid: state.user.uid,
+                    status: 'scheduled',
+                    schemaVersion: 1,
+                    updatedAt: serverTimestamp()
+                });
+                await batch.commit();
+                await loadCloudData();
+            }, `${item.schoolName} adicionada e salva.`);
+        }
+
+        async function moveAgendaAutomatically(item, targetDate) {
+            if (!item.agendaId || targetDate === item.sourceDate) return true;
+            return runAutoSave(async () => {
+                const batch = writeBatch(db);
+                batch.update(doc(db, 'agenda', item.agendaId), {
+                    scheduledDate: Timestamp.fromDate(new Date(`${targetDate}T08:00:00`)),
+                    updatedAt: serverTimestamp()
+                });
+                await batch.commit();
+                await loadCloudData();
+            }, `${item.schoolName} movida para ${new Intl.DateTimeFormat('pt-BR').format(new Date(`${targetDate}T12:00:00`))}.`);
+        }
+
+        async function updateAgendaShift(item, shift) {
+            if (!item.agendaId || shift === item.shift) return true;
+            return runAutoSave(async () => {
+                const batch = writeBatch(db);
+                batch.update(doc(db, 'agenda', item.agendaId), {
+                    shift,
+                    updatedAt: serverTimestamp()
+                });
+                await batch.commit();
+                await loadCloudData();
+            }, `Turno de ${item.schoolName} atualizado.`);
+        }
+
+        async function deleteAgendaAutomatically(date, item) {
+            const formattedDate = new Intl.DateTimeFormat('pt-BR').format(new Date(`${date}T12:00:00`));
+            if (!confirm(`Deseja apagar este planejamento?\n\n${item.schoolName}\nData: ${formattedDate}\nTurno: ${item.shift}\n\nEsta ação não apaga visitas já registradas.`)) return false;
+            return runAutoSave(async () => {
+                const batch = writeBatch(db);
+                batch.delete(doc(db, 'agenda', item.agendaId));
+                await batch.commit();
+                await loadCloudData();
+            }, `Planejamento de ${item.schoolName} apagado.`);
+        }
+
         function appendCalendarCard(container, date, item) {
             const card = document.createElement('div');
             card.className = `k-card ${hashColor(item.supervisorId)}`;
-            card.innerHTML = cardHtml(item, visitStatus(date, item));
-            card.querySelector('.turno-select-inline').disabled = item.fromCloud;
+            const statusCode = visitStatus(date, item);
+            const editableCloudCard = item.fromCloud && statusCode === 'scheduled';
+            card.innerHTML = cardHtml(item, statusCode);
+            const shiftSelect = card.querySelector('.turno-select-inline');
+            shiftSelect.disabled = item.fromCloud && !editableCloudCard;
+            shiftSelect.addEventListener('mousedown', (event) => event.stopPropagation());
 
-            if (item.fromCloud && visitStatus(date, item) === 'scheduled') {
+            if (editableCloudCard) {
                 card.classList.add('is-actionable');
                 card.tabIndex = 0;
                 card.title = 'Abrir para registrar o resultado da visita';
                 const openVisit = (event) => {
                     if (event.target.closest('select,button')) return;
+                    if (Date.now() < state.preventOpenUntil) return;
                     window.location.href = `visita.html?agenda=${encodeURIComponent(item.agendaId)}`;
                 };
                 card.addEventListener('click', openVisit);
@@ -1084,6 +1175,34 @@
                         openVisit(event);
                     }
                 });
+
+                card.draggable = true;
+                card.addEventListener('dragstart', (event) => {
+                    state.dragging = { ...item, sourceDate: date, moveExisting: true };
+                    event.dataTransfer.effectAllowed = 'move';
+                    setTimeout(() => { card.style.opacity = '0.5'; }, 0);
+                });
+                card.addEventListener('dragend', () => {
+                    card.style.opacity = '1';
+                    state.dragging = null;
+                    state.preventOpenUntil = Date.now() + 250;
+                });
+
+                const removeButton = document.createElement('button');
+                removeButton.className = 'btn-remove-card';
+                removeButton.type = 'button';
+                removeButton.textContent = '✕';
+                removeButton.title = 'Apagar planejamento';
+                removeButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    void deleteAgendaAutomatically(date, item);
+                });
+                card.prepend(removeButton);
+                shiftSelect.addEventListener('change', async (event) => {
+                    event.stopPropagation();
+                    const saved = await updateAgendaShift(item, event.target.value);
+                    if (!saved) event.target.value = item.shift;
+                });
             }
 
             if (!item.fromCloud) {
@@ -1092,9 +1211,11 @@
                 removeButton.type = 'button';
                 removeButton.textContent = '✕';
                 removeButton.title = 'Remover alteração ainda não salva';
-                removeButton.addEventListener('click', () => removeDraft(date, item.localId));
+                removeButton.addEventListener('click', () => {
+                    if (confirm(`Deseja remover ${item.schoolName} do planejamento?`)) removeDraft(date, item.localId);
+                });
                 card.prepend(removeButton);
-                card.querySelector('.turno-select-inline').addEventListener('change', (event) => {
+                shiftSelect.addEventListener('change', (event) => {
                     const draft = (state.agendaDraft[date] || []).find((entry) => entry.localId === item.localId);
                     if (draft) draft.shift = event.target.value;
                     markDirty();
@@ -1137,17 +1258,25 @@
                     cell.classList.add('drag-over');
                 });
                 cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
-                cell.addEventListener('drop', (event) => {
+                cell.addEventListener('drop', async (event) => {
                     event.preventDefault();
                     cell.classList.remove('drag-over');
                     if (!state.dragging) return;
-                    if (isDuplicate(dayKey, state.dragging.schoolId)) {
-                        showToast(`${state.dragging.schoolName} já está agendada nessa data.`);
+                    const dragged = { ...state.dragging };
+                    if (state.saving) {
+                        showToast('Aguarde o salvamento atual antes de mover outro card.');
                         return;
                     }
-                    addDraft(dayKey, state.dragging);
-                    renderCalendar();
-                    showToast(`${state.dragging.schoolName} adicionada ao planejamento.`, 'success');
+                    if (dragged.moveExisting && dragged.sourceDate === dayKey) return;
+                    if (isDuplicate(dayKey, dragged.schoolId, dragged.agendaId || '')) {
+                        showToast(`${dragged.schoolName} já está agendada nessa data.`);
+                        return;
+                    }
+                    if (dragged.moveExisting) {
+                        await moveAgendaAutomatically(dragged, dayKey);
+                    } else {
+                        await createAgendaAutomatically(dayKey, dragged);
+                    }
                 });
                 weekRow.appendChild(cell);
             }
