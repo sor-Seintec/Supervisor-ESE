@@ -164,20 +164,56 @@
         }
 
         .badge-local {
-            background: #f1f5f9;
             color: var(--text-muted);
-            padding: 4px 12px;
-            border-radius: 20px;
+            padding: 4px 2px;
             font-size: 12px;
             font-weight: 600;
-            border: 1px solid var(--border-dark);
             margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .badge-local::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
         }
 
         .badge-local.dirty {
-            background: #fef3c7;
             color: #92400e;
-            border-color: #f59e0b;
+        }
+
+        .badge-local.dirty::before {
+            background: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+        }
+
+        .badge-local.saving {
+            color: #32749a;
+        }
+
+        .badge-local.saving::before {
+            background: #32749a;
+            box-shadow: 0 0 0 3px rgba(50, 116, 154, 0.12);
+            animation: syncPulse 1.1s ease-in-out infinite;
+        }
+
+        .badge-local.error {
+            color: #b91c1c;
+        }
+
+        .badge-local.error::before {
+            background: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+        }
+
+        @keyframes syncPulse {
+            50% { opacity: 0.35; }
         }
 
         .main-layout {
@@ -634,7 +670,7 @@
         .form-group label { font-size:12px; color:#486273; }
         .form-group select { min-height:43px; font-size:15px; font-weight:650; }
         .btn-save-cloud { min-height:44px; padding-inline:20px; border-radius:11px; background:#153c56; font-size:15px; }
-        .badge-local { padding:7px 12px; font-size:13px; }
+        .badge-local { padding:5px 2px; font-size:12px; }
         .main-layout { margin:0 24px 24px; gap:16px; }
         .sidebar { width:310px; border-radius:16px; background:#e4eef4; box-shadow:0 8px 24px rgba(25,65,88,.05); }
         .sidebar-header { padding:14px; background:#d8e7f0; font-size:14px; }
@@ -727,8 +763,7 @@
         </div>
 
         <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
-            <span id="statusBadge" class="badge-local">✅ Sincronizado</span>
-            <button class="btn-save-cloud" id="btnSalvarNuvem" type="button" disabled>Salvamento automático</button>
+            <span id="statusBadge" class="badge-local" role="status" aria-live="polite">Salvo</span>
         </div>
     </div>
 
@@ -804,14 +839,10 @@
         const selectSupervisor = document.getElementById('selectSup');
         const supervisorFilter = document.getElementById('filtroSupervisor');
         const schoolsContainer = document.getElementById('schoolsContainer');
-        const saveButton = document.getElementById('btnSalvarNuvem');
-
         document.querySelector('.header h1').textContent = 'Planejamento semanal de visitas';
         document.querySelector('#filtroGlobalContainer').style.display = 'none';
         document.querySelector('label[for="selectSup"]')?.removeAttribute('for');
         selectSupervisor.closest('.form-group').querySelector('label').textContent = 'Supervisor';
-        saveButton.textContent = 'Salvamento automático';
-
         function escapeHtml(value) {
             return String(value ?? '')
                 .replaceAll('&', '&amp;')
@@ -855,17 +886,17 @@
         function updateSyncBadge() {
             const badge = document.getElementById('statusBadge');
             if (state.saving) {
-                badge.className = 'badge-local dirty';
-                badge.textContent = 'Salvando automaticamente…';
+                badge.className = 'badge-local saving';
+                badge.textContent = 'Salvando…';
             } else if (state.syncError) {
-                badge.className = 'badge-local dirty';
+                badge.className = 'badge-local error';
                 badge.textContent = 'Falha ao salvar';
             } else if (state.dirty) {
                 badge.className = 'badge-local dirty';
-                badge.textContent = 'Alterações pendentes';
+                badge.textContent = 'Pendente';
             } else {
                 badge.className = 'badge-local';
-                badge.textContent = 'Salvo automaticamente';
+                badge.textContent = 'Salvo';
             }
         }
 
@@ -1323,52 +1354,6 @@
             calendarBody.appendChild(weekRow);
         }
 
-        async function savePlanning() {
-            const drafts = Object.entries(state.agendaDraft)
-                .flatMap(([date, items]) => items.map((item) => ({ date, ...item })));
-            if (!drafts.length) {
-                showToast('Não há alterações para salvar.');
-                return;
-            }
-
-            saveButton.disabled = true;
-            saveButton.textContent = 'Salvando…';
-            try {
-                const batch = writeBatch(db);
-                drafts.forEach((item) => {
-                    const reference = doc(collection(db, 'agenda'));
-                    batch.set(reference, {
-                        recordedAt: serverTimestamp(),
-                        scheduledDate: Timestamp.fromDate(new Date(`${item.date}T08:00:00`)),
-                        supervisorId: item.supervisorId,
-                        schoolId: item.schoolId,
-                        schoolName: item.schoolName,
-                        assignedSupervisorId: item.assignedSupervisorId,
-                        isOutsideAssignedPortfolio: item.supervisorId !== item.assignedSupervisorId,
-                        shift: item.shift,
-                        authorEmail: state.user.email,
-                        createdByUid: state.user.uid,
-                        status: 'scheduled',
-                        schemaVersion: 1,
-                        updatedAt: serverTimestamp()
-                    });
-                });
-                await batch.commit();
-                state.agendaDraft = {};
-                state.dirty = false;
-                saveDrafts();
-                updateSyncBadge();
-                await loadCloudData();
-                showToast('Planejamento salvo no Firebase.', 'success');
-            } catch (error) {
-                console.error('Falha ao salvar planejamento:', error);
-                showToast('Não foi possível salvar. Verifique sua conexão e tente novamente.');
-            } finally {
-                saveButton.disabled = false;
-                saveButton.textContent = 'Salvar planejamento';
-            }
-        }
-
         async function changeSupervisor() {
             supervisorFilter.value = selectSupervisor.value;
             await loadSchools();
@@ -1393,7 +1378,6 @@
         window.aplicarFiltroSupervisor = () => {};
         window.limparFiltroSupervisor = () => {};
         window.carregarEscolasDisponiveis = changeSupervisor;
-        window.salvarAgendaNaNuvem = savePlanning;
         window.marcarModificado = markDirty;
 
         const currentYear = new Date().getFullYear();
