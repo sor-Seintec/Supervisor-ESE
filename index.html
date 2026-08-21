@@ -471,6 +471,292 @@
       line-height: 1.5;
     }
 
+    /* Painel do perfil: composição inspirada na agenda, mantendo a identidade azul. */
+    .card.dashboard {
+      width: min(100%, 1180px);
+      padding: 0;
+      display: grid;
+      grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: stretch;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    .dashboard-side { display: flex; flex-direction: column; gap: 13px; }
+
+    .profile-mini,
+    .dashboard .data-metric,
+    .dashboard-action,
+    .agenda-panel {
+      background: rgba(255, 255, 255, 0.97);
+      border: 1px solid rgba(202, 217, 226, 0.95);
+      box-shadow: 0 9px 24px rgba(18, 49, 74, 0.09);
+    }
+
+    .profile-mini {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      align-items: center;
+      gap: 13px;
+      padding: 15px;
+      border-radius: 17px;
+    }
+
+    .profile-mini .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      color: var(--navy);
+      background: #eaf2f7;
+      border: 1px solid #dae6ed;
+    }
+
+    .profile-mini h2 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.25;
+      letter-spacing: -.015em;
+    }
+
+    .profile-mini p {
+      margin: 3px 0 7px;
+      color: var(--muted);
+      font-size: .75rem;
+      overflow-wrap: anywhere;
+    }
+
+    .active-chip {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: #12643f;
+      background: #dff4e8;
+      font-size: .7rem;
+      font-weight: 800;
+    }
+
+    .dashboard .data-summary {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 13px;
+      margin: 0;
+    }
+
+    .dashboard .data-metric {
+      min-height: 92px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 48px;
+      align-items: center;
+      padding: 15px 17px;
+      border-radius: 16px;
+      background: white;
+    }
+
+    .dashboard .data-metric::after { content: none; }
+    .metric-copy { min-width: 0; }
+
+    .dashboard .data-metric strong {
+      font-size: 1.85rem;
+      color: var(--navy);
+    }
+
+    .dashboard .data-metric span {
+      margin-top: 4px;
+      color: #273d4d;
+      font-size: .82rem;
+      font-weight: 650;
+    }
+
+    .metric-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      justify-self: end;
+      color: var(--navy);
+    }
+
+    .metric-icon svg { width: 38px; height: 38px; }
+
+    .dashboard-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 9px;
+      margin-top: auto;
+    }
+
+    .dashboard-action {
+      min-width: 0;
+      min-height: 88px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 6px;
+      color: var(--navy);
+      text-decoration: none;
+      border-radius: 14px;
+      font-size: .71rem;
+      font-weight: 800;
+      line-height: 1.15;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    button.dashboard-action { font: inherit; }
+    .dashboard-action svg { width: 31px; height: 31px; }
+
+    .dashboard-action:hover {
+      transform: translateY(-3px);
+      color: white;
+      background: var(--blue-dark);
+      box-shadow: 0 13px 27px rgba(51, 107, 141, 0.23);
+    }
+
+    .dashboard-action.logout:hover { background: #a83b43; }
+
+    .agenda-panel {
+      min-width: 0;
+      min-height: 590px;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 18px;
+    }
+
+    .agenda-header {
+      padding: 19px 24px 16px;
+      border-bottom: 1px solid #e1e9ee;
+    }
+
+    .agenda-header h3 { margin: 0; font-size: 1.3rem; letter-spacing: -.025em; }
+    .agenda-header p { margin: 5px 0 0; color: var(--muted); font-size: .82rem; }
+
+    .agenda-timeline {
+      flex: 1;
+      padding: 17px 24px 9px;
+    }
+
+    .timeline-day {
+      margin: 0 0 10px 43px;
+      color: var(--navy);
+      font-size: .84rem;
+      font-weight: 850;
+    }
+
+    .timeline-day:not(:first-child) { margin-top: 18px; }
+
+    .timeline-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 13px;
+      padding-bottom: 13px;
+    }
+
+    .timeline-row::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 39px;
+      bottom: -2px;
+      width: 2px;
+      background: #dfe8ed;
+    }
+
+    .timeline-row.last-in-day::before { display: none; }
+
+    .timeline-marker {
+      position: relative;
+      z-index: 1;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: #4389c4;
+      border: 4px solid #eaf3fa;
+      border-radius: 50%;
+    }
+
+    .timeline-marker svg { width: 20px; height: 20px; }
+
+    .visit-card {
+      position: relative;
+      padding: 18px 18px 14px;
+      overflow: hidden;
+      border: 1px solid #dce6ec;
+      border-radius: 13px;
+      background: white;
+      box-shadow: 0 6px 15px rgba(18, 49, 74, 0.08);
+    }
+
+    .visit-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 6px;
+      background: #4389c4;
+    }
+
+    .visit-card h4 {
+      margin: 0 0 9px;
+      font-size: 1rem;
+      line-height: 1.3;
+      letter-spacing: -.01em;
+    }
+
+    .visit-card p { margin: 4px 0 0; color: #304554; font-size: .82rem; }
+    .visit-card p strong { color: var(--navy); }
+
+    .scheduled-chip {
+      display: inline-flex;
+      margin-top: 10px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      color: #304554;
+      background: #e9eef2;
+      font-size: .7rem;
+      font-weight: 750;
+    }
+
+    .agenda-empty {
+      display: grid;
+      place-items: center;
+      min-height: 310px;
+      padding: 36px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.55;
+    }
+
+    .agenda-all {
+      min-height: 47px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 24px 20px 79px;
+      color: var(--navy);
+      text-decoration: none;
+      border-radius: 11px;
+      background: #edf2f5;
+      font-size: .84rem;
+      font-weight: 800;
+      transition: background 160ms ease, color 160ms ease;
+    }
+
+    .agenda-all:hover { color: white; background: var(--blue-dark); }
+
     [hidden] { display: none !important; }
 
     @media (max-width: 820px) {
@@ -478,6 +764,10 @@
       .brand-panel { min-height: 310px; gap: 44px; }
       .brand-copy h1 { max-width: 15ch; }
       .content-panel { padding: 22px; }
+      .card.dashboard { grid-template-columns: 1fr; }
+      .dashboard-side { display: grid; grid-template-columns: 1fr; }
+      .dashboard .data-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .agenda-panel { min-height: 520px; }
     }
 
     @media (max-width: 520px) {
@@ -487,6 +777,10 @@
       .actions { grid-template-columns: 1fr; }
       .upcoming-item { grid-template-columns: 34px minmax(0, 1fr); }
       .upcoming-date { grid-column: 2; }
+      .dashboard .data-summary { grid-template-columns: 1fr; }
+      .dashboard-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .agenda-header, .agenda-timeline { padding-left: 16px; padding-right: 16px; }
+      .agenda-all { margin-left: 71px; margin-right: 16px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -540,40 +834,65 @@
         <p class="note">A recuperação de senha ficará sob responsabilidade do gestor e não será oferecida nesta tela.</p>
       </form>
 
-      <section class="card" id="profileView" hidden aria-labelledby="profileTitle">
-        <div class="profile-head">
-          <div class="avatar" id="avatar" aria-hidden="true">AD</div>
-          <div>
-            <h2 id="profileTitle">Perfil autenticado</h2>
-            <p id="profileEmail"></p>
+      <section class="card dashboard" id="profileView" hidden aria-labelledby="profileTitle">
+        <aside class="dashboard-side" aria-label="Resumo do perfil">
+          <div class="profile-mini">
+            <div class="avatar" id="avatar" aria-hidden="true">AD</div>
+            <div>
+              <h2 id="profileTitle">Perfil autenticado</h2>
+              <p id="profileEmail"></p>
+              <span class="active-chip">Ativo</span>
+            </div>
           </div>
-        </div>
 
-        <section class="data-summary" id="dataSummary" hidden aria-label="Dados liberados para o perfil">
-          <div class="data-metric" data-icon="🏫"><strong id="schoolCount">—</strong><span>Escolas vinculadas</span></div>
-          <div class="data-metric" data-icon="✓"><strong id="visitCount">—</strong><span>Visitas realizadas</span></div>
-          <div class="data-metric" data-icon="▦"><strong id="agendaCount">—</strong><span>Visitas agendadas</span></div>
-        </section>
+          <section class="data-summary" id="dataSummary" hidden aria-label="Resumo de visitas e escolas">
+            <div class="data-metric">
+              <div class="metric-copy"><strong id="schoolCount">—</strong><span>Escolas</span></div>
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V9l7-4 7 4v12M9 21v-5h6v5M8 11h.01M12 11h.01M16 11h.01"/><path d="M12 5V2m0 0 3 1.5M12 2v3"/></svg>
+              </span>
+            </div>
+            <div class="data-metric">
+              <div class="metric-copy"><strong id="visitCount">—</strong><span>Visitas concluídas</span></div>
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+              </span>
+            </div>
+            <div class="data-metric">
+              <div class="metric-copy"><strong id="agendaCount">—</strong><span>Visitas agendadas</span></div>
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="16" height="16" rx="2"/><path d="M7 3v4m8-4v4M3 10h16M8 14h.01M12 14h.01M8 17h.01"/><circle cx="18" cy="18" r="4" fill="white"/><path d="M18 16v2l1.5 1"/></svg>
+              </span>
+            </div>
+          </section>
 
-        <section class="upcoming" id="upcomingVisits" hidden aria-labelledby="upcomingTitle">
-          <div class="upcoming-head">
+          <nav class="dashboard-actions" aria-label="Ações principais">
+            <a class="dashboard-action" href="visita.html">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6m3-3h-6"/></svg>
+              <span>Registrar<br>visita</span>
+            </a>
+            <a class="dashboard-action" href="kanban.html">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3"/><rect x="9" y="2" width="6" height="5" rx="1"/><path d="m8 13 2 2 4-4m-6 8h8"/></svg>
+              <span>Planejamento</span>
+            </a>
+            <button class="dashboard-action logout" id="logoutButton" type="button">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5m5 5H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>
+              <span>Sair</span>
+            </button>
+          </nav>
+        </aside>
+
+        <section class="agenda-panel" id="upcomingVisits" hidden aria-labelledby="upcomingTitle">
+          <div class="agenda-header">
             <h3 id="upcomingTitle">Próximas visitas</h3>
-            <span>Hoje e amanhã</span>
+            <p>Agenda de hoje e do próximo dia</p>
           </div>
-          <div class="upcoming-list" id="upcomingVisitsList"></div>
+          <div class="agenda-timeline" id="upcomingVisitsList"></div>
+          <a class="agenda-all" href="kanban.html">
+            <span aria-hidden="true">▦</span>
+            Ver todo o planejamento
+          </a>
         </section>
-
-        <dl class="details">
-          <div class="detail"><dt>Nome</dt><dd id="profileName">—</dd></div>
-          <div class="detail"><dt>Perfil</dt><dd id="profileRole">—</dd></div>
-          <div class="detail"><dt>Situação</dt><dd id="profileStatus">—</dd></div>
-        </dl>
-
-        <div class="actions">
-          <a class="app-link" href="visita.html"><span class="action-icon" aria-hidden="true">✓</span>Registrar visita</a>
-          <a class="app-link outline" href="kanban.html"><span class="action-icon" aria-hidden="true">▦</span>Abrir planejamento</a>
-          <button class="secondary" id="logoutButton" type="button"><span class="action-icon" aria-hidden="true">↪</span>Sair</button>
-        </div>
 
         <p class="message info" id="profileMessage" aria-live="polite" hidden></p>
       </section>
@@ -713,31 +1032,57 @@
 
       list.replaceChildren();
       if (!visits.length) {
-        const empty = document.createElement('p');
-        empty.className = 'upcoming-empty';
+        const empty = document.createElement('div');
+        empty.className = 'agenda-empty';
         empty.textContent = 'Nenhuma visita agendada para hoje ou amanhã.';
         list.appendChild(empty);
       } else {
-        visits.forEach((visit) => {
-          const item = document.createElement('div');
-          item.className = 'upcoming-item';
+        [
+          { key: todayKey, label: 'Hoje' },
+          { key: tomorrowKey, label: 'Amanhã' }
+        ].forEach((group) => {
+          const dayVisits = visits.filter((visit) => dateKey(visit.date) === group.key);
+          if (!dayVisits.length) return;
 
-          const icon = document.createElement('span');
-          icon.className = 'upcoming-icon';
-          icon.setAttribute('aria-hidden', 'true');
-          icon.textContent = '🏫';
+          const dayTitle = document.createElement('h4');
+          dayTitle.className = 'timeline-day';
+          dayTitle.textContent = group.label;
+          list.appendChild(dayTitle);
 
-          const name = document.createElement('span');
-          name.className = 'upcoming-name';
-          name.textContent = visit.schoolName || 'Escola não informada';
+          dayVisits.forEach((visit, index) => {
+            const row = document.createElement('div');
+            row.className = `timeline-row${index === dayVisits.length - 1 ? ' last-in-day' : ''}`;
 
-          const date = document.createElement('span');
-          date.className = 'upcoming-date';
-          const dayLabel = dateKey(visit.date) === todayKey ? 'Hoje' : 'Amanhã';
-          date.textContent = `${dayLabel} · ${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(visit.date)}`;
+            const marker = document.createElement('span');
+            marker.className = 'timeline-marker';
+            marker.setAttribute('aria-hidden', 'true');
+            marker.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 
-          item.append(icon, name, date);
-          list.appendChild(item);
+            const card = document.createElement('article');
+            card.className = 'visit-card';
+
+            const name = document.createElement('h4');
+            name.textContent = visit.schoolName || 'Escola não informada';
+
+            const date = document.createElement('p');
+            const dateLabel = new Intl.DateTimeFormat('pt-BR').format(visit.date);
+            const dateStrong = document.createElement('strong');
+            dateStrong.textContent = 'Data:';
+            date.append(dateStrong, ` ${dateLabel}`);
+
+            const shift = document.createElement('p');
+            const shiftStrong = document.createElement('strong');
+            shiftStrong.textContent = 'Turno:';
+            shift.append(shiftStrong, ` ${String(visit.shift || 'Não informado')}`);
+
+            const status = document.createElement('span');
+            status.className = 'scheduled-chip';
+            status.textContent = 'Agendado';
+
+            card.append(name, date, shift, status);
+            row.append(marker, card);
+            list.appendChild(row);
+          });
         });
       }
       section.hidden = false;
@@ -793,10 +1138,7 @@
         profileView.hidden = false;
         document.getElementById('avatar').textContent = initials(displayName);
         document.getElementById('profileTitle').textContent = displayName;
-        document.getElementById('profileEmail').textContent = `Usuário: ${accessLoginForProfile(profile, user)}`;
-        document.getElementById('profileName').textContent = displayName;
-        document.getElementById('profileRole').textContent = roleLabel(profile.role);
-        document.getElementById('profileStatus').textContent = 'Ativo';
+        document.getElementById('profileEmail').textContent = `${roleLabel(profile.role)} · ${accessLoginForProfile(profile, user)}`;
         profileMessage.textContent = '';
         profileMessage.hidden = true;
         await validateAccessScope(user, profile);
