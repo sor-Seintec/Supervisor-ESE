@@ -102,7 +102,10 @@
     .top-actions{min-height:0;flex:1;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding-top:28px}
     .nav-link,.signout{justify-content:flex-start;min-height:48px;padding:0 14px;border-color:transparent;background:transparent;color:rgba(255,255,255,.82);font-size:.93rem}
     .nav-link:hover,.signout:hover{border-color:rgba(255,255,255,.13);background:rgba(255,255,255,.1);color:#fff}.top-actions .nav-link:last-of-type{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.12);color:#fff}.signout{margin-top:auto}
-    .layout{width:100%;max-width:1660px;margin:0;padding:42px clamp(28px,4vw,66px) 70px;grid-template-columns:minmax(650px,1fr) 330px;gap:28px}
+    .sidebar-intro{min-height:270px;max-height:46vh;align-self:center;display:flex;flex-direction:column;gap:13px;margin:28px 0;padding:17px 13px;overflow:hidden;writing-mode:vertical-rl;transform:rotate(180deg);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:13px;background:rgba(255,255,255,.07);box-shadow:0 12px 28px rgba(7,31,46,.14)}
+    .sidebar-intro .eyebrow{margin:0;color:#a9d3e8;font-size:.65rem;letter-spacing:.13em}.sidebar-intro h1{margin:0;color:#fff;font-size:1.38rem;line-height:1.08;letter-spacing:-.025em}.sidebar-intro p:last-child{margin:0;color:rgba(255,255,255,.7);font-size:.67rem;line-height:1.45}
+    .mobile-intro{display:none}
+    .layout{width:100%;max-width:1660px;margin:0;padding:24px clamp(28px,4vw,66px) 70px;grid-template-columns:minmax(650px,1fr) 330px;gap:28px}
     .intro{margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid #d5e2e9}.intro>p:last-child{max-width:850px}.eyebrow{letter-spacing:.11em}
     .card{border-radius:14px;box-shadow:0 12px 35px rgba(28,65,88,.07)}.form-card{padding:34px 38px}
     .steps{margin-bottom:30px;padding:12px 15px;border:1px solid #dfE8ed;border-radius:10px;background:#f7fafb}.step b{border-radius:8px}
@@ -114,7 +117,7 @@
     .side{top:30px;gap:18px}.profile,.legend{padding:22px}.notice{border-radius:8px}
 
     @media(max-width:1250px){
-      body{padding-left:0}.topbar{position:sticky;inset:auto;top:0;width:auto;height:auto;min-height:76px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 22px;background:#153c56}.brand{padding:0;border:0}.top-actions{min-height:auto;flex:0 0 auto;flex-direction:row;align-items:center;padding:0}.nav-link,.signout{justify-content:center;min-height:43px}.signout{margin:0}.layout{grid-template-columns:minmax(0,1fr) 310px;padding:32px 28px 55px}}
+      body{padding-left:0}.topbar{position:sticky;inset:auto;top:0;width:auto;height:auto;min-height:76px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:12px 22px;background:#153c56}.brand{padding:0;border:0}.top-actions{min-height:auto;flex:0 0 auto;flex-direction:row;align-items:center;padding:0}.nav-link,.signout{justify-content:center;min-height:43px}.signout{margin:0}.sidebar-intro{display:none}.mobile-intro{display:block}.layout{grid-template-columns:minmax(0,1fr) 310px;padding:32px 28px 55px}}
     @media(max-width:1080px){.layout{grid-template-columns:1fr;max-width:940px}.side{position:static;grid-template-columns:1fr 1fr}.steps span{display:inline}.form-card{padding:30px 34px}}
     @media(max-width:720px){html{font-size:16px}.topbar{padding:10px 13px}.brand small,.top-actions .nav-link:first-child{display:none}.layout{padding:22px 12px 42px}.form-card{padding:18px}.steps span{display:none}.field-grid,.status-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.submit-row{align-items:stretch;flex-direction:column}.primary{width:100%}.section{padding:21px 0}.segmented,#activityMode,#activityMode[data-options="2"]{grid-template-columns:1fr}.segment{min-height:44px}.agenda-date-nav{grid-template-columns:30px minmax(0,1fr) 30px;gap:5px;padding:8px}.agenda-date-tabs{gap:5px}.agenda-date-tab{padding-inline:4px}.agenda-option{grid-template-columns:18px 1fr}.agenda-school{grid-column:2;white-space:normal}.agenda-shift{grid-column:2}}
 
@@ -127,14 +130,19 @@
     <nav class="top-actions" aria-label="Navegação principal">
       <a class="nav-link" href="index.html">Início</a>
       <a class="nav-link" href="kanban.html">Planejamento</a>
+      <div class="sidebar-intro" aria-label="Identificação da página">
+        <p class="eyebrow">Controle de campo · URE Sorocaba</p>
+        <h1>Registrar visita escolar</h1>
+        <p>Confirme uma visita planejada nas suas escolas ou registre uma atividade realizada em qualquer escola da rede.</p>
+      </div>
       <button class="signout" id="signoutButton" type="button">Sair</button>
     </nav>
   </header>
 
   <main class="layout" id="app" hidden>
     <div>
-      <div class="intro">
-        <p class="eyebrow">Controle de campo · URE</p>
+      <div class="intro mobile-intro">
+        <p class="eyebrow">Controle de campo · URE Sorocaba</p>
         <h1>Registrar visita escolar</h1>
         <p>Confirme uma visita planejada nas suas escolas ou registre uma atividade realizada em qualquer escola da rede.</p>
       </div>
