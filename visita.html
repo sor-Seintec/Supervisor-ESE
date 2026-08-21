@@ -343,7 +343,17 @@
       }catch(error){console.error(error);showToast('Não foi possível salvar o registro. Verifique sua conexão e tente novamente.','error')}
       finally{button.disabled=false;button.textContent='Confirmar registro'}
     }
-    function resetForm(){state.selectedActions.clear();$('#visitForm').reset();setSource('planned');setActivity('none');setStatus('completed');renderAgenda();renderActions();$('#formPanel').hidden=false;$('#successPanel').hidden=true;window.scrollTo({top:0,behavior:'smooth'})}
+    async function resetForm(){
+      const button=$('#newRecordButton'),label=button.querySelector('span');
+      button.disabled=true;label.textContent='Atualizando…';
+      try{
+        state.selectedActions.clear();state.selectedAgendaDate='';state.agendaDateOffset=0;$('#visitForm').reset();
+        await loadData();
+        setSource('planned');setActivity('none');setStatus('completed');renderAgenda();renderActions();
+        $('#formPanel').hidden=false;$('#successPanel').hidden=true;window.scrollTo({top:0,behavior:'smooth'});
+      }catch(error){console.error('Falha ao atualizar os dados após o registro:',error);showToast('O registro foi salvo, mas não foi possível atualizar a lista. Tente novamente.','error')}
+      finally{button.disabled=false;label.textContent='Voltar'}
+    }
 
     document.querySelectorAll('[data-source]').forEach(button=>button.addEventListener('click',()=>setSource(button.dataset.source)));
     document.querySelectorAll('[data-activity]').forEach(button=>button.addEventListener('click',()=>setActivity(button.dataset.activity)));
