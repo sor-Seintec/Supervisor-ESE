@@ -91,7 +91,7 @@
     .legend{padding:20px}.legend h2{margin:0 0 13px;font-size:1rem}.legend-row{display:flex;align-items:center;gap:10px;margin-top:9px;color:#496173;font-size:.82rem}.legend-row b{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:var(--color);color:#fff;font-size:.75rem}
     .notice{margin-top:15px;padding:12px 14px;border-radius:12px;background:#fff3cd;color:#725a12;font-size:.82rem;font-weight:650}
     .toast{position:fixed;z-index:100;right:22px;bottom:22px;width:min(390px,calc(100vw - 32px));padding:15px 17px;border-radius:13px;background:var(--navy);color:#fff;box-shadow:0 15px 40px rgba(15,44,63,.25);font-weight:700}.toast.error{background:#9b2c2c}.toast.success{background:#16734f}
-    .success-panel{padding:32px;text-align:center}.success-icon{width:62px;height:62px;display:grid;place-items:center;margin:0 auto 15px;border-radius:20px;background:#dcf6eb;color:#117453;font-size:1.7rem;font-weight:900}.success-panel h2{margin:0;font-size:1.45rem}.success-panel p{margin:8px auto 20px;max-width:520px;color:var(--muted)}.success-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+    .success-panel{padding:32px;text-align:center}.success-icon{width:62px;height:62px;display:grid;place-items:center;margin:0 auto 15px;border-radius:20px;background:#dcf6eb;color:#117453;font-size:1.7rem;font-weight:900}.success-panel h2{margin:0;font-size:1.45rem}.success-panel p{margin:8px auto 20px;max-width:520px;color:var(--muted)}.success-actions{width:100%;display:flex;align-items:center;justify-content:center}.success-back{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin:0 auto}.success-back svg{width:17px;height:17px}
     @media(max-width:950px){.layout{grid-template-columns:1fr}.side{position:static;grid-template-columns:1fr 1fr}.steps span{display:none}}
     @media(max-width:680px){html{font-size:17px}.topbar{padding:10px 14px}.brand small,.top-actions .nav-link:first-child{display:none}.layout{padding:20px 12px 40px}.form-card{padding:18px}.field-grid,.status-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.submit-row{align-items:stretch;flex-direction:column}.primary{width:100%}.segment{font-size:.86rem}.section{padding:20px 0}}
 
@@ -204,7 +204,12 @@
 
       <section class="card success-panel" id="successPanel" hidden>
         <div class="success-icon">✓</div><h2>Registro salvo com segurança</h2><p id="successText"></p>
-        <div class="success-actions"><a class="nav-link" href="kanban.html">Ver planejamento</a><button class="primary" type="button" id="newRecordButton">Novo registro</button></div>
+        <div class="success-actions">
+          <button class="primary success-back" type="button" id="newRecordButton">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>
+            <span>Voltar</span>
+          </button>
+        </div>
       </section>
     </div>
 
