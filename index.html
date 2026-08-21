@@ -5,23 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Planejamento e registro de visitas escolares do Supervisor-ESE.">
   <title>Supervisor-ESE | Acesso seguro</title>
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('portal-ure-paleta');
+      document.documentElement.dataset.theme = ['blue','yellow','green','rose','lavender','peach'].includes(savedTheme) ? savedTheme : 'blue';
+    } catch (_) { document.documentElement.dataset.theme = 'blue'; }
+  </script>
   <style>
     :root {
       color-scheme: light;
-      --navy: #12314a;
-      --blue: #4e88aa;
-      --blue-dark: #336b8d;
-      --blue-soft: #dcecf5;
+      --theme-dark: #477c9e;
+      --theme-medium: #d5eaf5;
+      --theme-light: #eef4f8;
+      --navy: color-mix(in srgb, var(--theme-dark) 55%, #102536);
+      --blue: color-mix(in srgb, var(--theme-dark) 82%, #fff);
+      --blue-dark: var(--theme-dark);
+      --blue-soft: var(--theme-medium);
       --surface: #ffffff;
-      --background: #eef4f7;
-      --line: #cad9e2;
-      --muted: #506779;
+      --background: var(--theme-light);
+      --line: color-mix(in srgb, var(--theme-dark) 22%, #fff);
+      --muted: color-mix(in srgb, var(--theme-dark) 65%, #596873);
       --success: #16794d;
       --success-soft: #e4f4ec;
       --danger: #ad2e36;
       --danger-soft: #fbeaec;
       --shadow: 0 18px 45px rgba(18, 49, 74, 0.12);
     }
+
+    :root[data-theme="yellow"] { --theme-dark:#99752e; --theme-medium:#f5e4a9; --theme-light:#fff9e8; }
+    :root[data-theme="green"] { --theme-dark:#507c68; --theme-medium:#d8ebdd; --theme-light:#f2f7f3; }
+    :root[data-theme="rose"] { --theme-dark:#9b6674; --theme-medium:#f0d9df; --theme-light:#faf2f4; }
+    :root[data-theme="lavender"] { --theme-dark:#706d9b; --theme-medium:#deddf1; --theme-light:#f4f3fa; }
+    :root[data-theme="peach"] { --theme-dark:#17191b; --theme-medium:#aeb3b7; --theme-light:#fafaf8; }
 
     * { box-sizing: border-box; }
 
@@ -31,8 +46,8 @@
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--navy);
       background:
-        radial-gradient(circle at 12% 10%, rgba(116, 178, 210, 0.28), transparent 34rem),
-        linear-gradient(145deg, #f8fbfd 0%, var(--background) 100%);
+        radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--theme-medium) 58%, transparent), transparent 34rem),
+        linear-gradient(145deg, color-mix(in srgb,var(--theme-light) 34%,#fff) 0%, var(--background) 100%);
     }
 
     button, input { font: inherit; }
@@ -55,8 +70,8 @@
       justify-content: space-between;
       color: white;
       background:
-        linear-gradient(155deg, rgba(18, 49, 74, 0.96), rgba(51, 107, 141, 0.92)),
-        #12314a;
+        radial-gradient(ellipse at 18% 12%, rgba(255,255,255,.08), transparent 32%),
+        linear-gradient(155deg, color-mix(in srgb,var(--theme-dark) 58%,#102536), var(--theme-dark));
     }
 
     .brand {
@@ -152,7 +167,91 @@
       box-shadow: 0 0 0 4px rgba(142, 230, 186, 0.14);
     }
 
+    .brand-footer { display: grid; gap: 13px; }
+
+    .account-footer {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr) 36px;
+      align-items: center;
+      gap: 10px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.18);
+    }
+
+    .account-avatar {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: color-mix(in srgb,var(--theme-dark) 72%,#fff);
+      border: 1px solid rgba(255,255,255,.2);
+      font-size: .76rem;
+      font-weight: 850;
+    }
+
+    .account-copy { min-width: 0; }
+    .account-copy strong,.account-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-copy strong { font-size: .83rem; }
+    .account-copy span { margin-top: 2px; color: rgba(255,255,255,.7); font-size: .72rem; }
+
+    .account-logout {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 10px;
+      color: rgba(255,255,255,.8);
+      background: transparent;
+      cursor: pointer;
+      transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .account-logout:hover { color:#fff; background:rgba(173,46,54,.82); transform:translateY(-1px); }
+    .account-logout svg { width:19px; height:19px; }
+
+    .theme-control { position:absolute; z-index:30; top:24px; right:28px; }
+    .theme-button { display:flex; align-items:center; gap:7px; padding:8px 10px; border:0; border-radius:10px; color:var(--blue-dark); background:transparent; cursor:pointer; font-size:.82rem; font-weight:800; }
+    .theme-button:hover { background:rgba(255,255,255,.7); }
+    .theme-button svg { width:17px; height:17px; }
+    .theme-picker { position:absolute; z-index:40; top:calc(100% + 8px); right:0; width:min(370px,calc(100vw - 32px)); padding:16px; border:1px solid var(--line); border-radius:17px; background:rgba(255,255,255,.98); box-shadow:0 22px 55px rgba(31,58,76,.18); color:#243b4b; }
+    .theme-picker[hidden] { display:none; }
+    .theme-picker-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:0 2px 13px; }
+    .theme-picker-head strong,.theme-picker-head span { display:block; }
+    .theme-picker-head strong { font-size:15px; font-weight:800; }
+    .theme-picker-head span { margin-top:3px; color:#5f717e; font-size:12px; font-weight:600; }
+    .theme-close { width:27px; height:27px; display:grid; place-items:center; padding:0; border:0; border-radius:8px; background:#f0f4f6; color:#647986; cursor:pointer; font-size:20px; line-height:1; }
+    .theme-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .theme-option { min-width:0; padding:11px; border:1px solid #e2e9ed; border-radius:12px; background:#fff; color:#2d4555; text-align:left; cursor:pointer; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+    .theme-option:hover { border-color:#bacbd5; transform:translateY(-1px); box-shadow:0 7px 18px rgba(42,70,88,.08); }
+    .theme-option.is-selected { border-color:var(--theme-dark); box-shadow:inset 0 0 0 1px var(--theme-dark); }
+    .theme-swatches { display:flex; margin-bottom:8px; }
+    .theme-swatches i { width:27px; height:20px; margin-left:-4px; border:2px solid #fff; border-radius:7px; background:var(--swatch); box-shadow:0 1px 4px rgba(25,48,62,.12); }
+    .theme-swatches i:first-child { margin-left:0; }
+    .theme-option strong,.theme-option small { display:block; }
+    .theme-option strong { font-size:13px; font-weight:800; }
+    .theme-option small { margin-top:3px; color:#687b87; font-size:11px; font-weight:600; }
+
+    :root[data-theme="peach"] body {
+      background:
+        radial-gradient(ellipse at 18% 8%,rgba(28,31,34,.09),transparent 30%),
+        radial-gradient(ellipse at 82% 72%,rgba(92,98,103,.10),transparent 34%),
+        radial-gradient(ellipse at 48% 44%,rgba(255,255,255,.92),transparent 38%),
+        #f7f7f5;
+    }
+
+    :root[data-theme="peach"] .brand-panel {
+      background:
+        radial-gradient(ellipse at 76% 20%,rgba(255,255,255,.15),transparent 29%),
+        radial-gradient(ellipse at 22% 88%,rgba(255,255,255,.08),transparent 34%),
+        linear-gradient(125deg,#151719 0%,#555a5e 100%);
+    }
+
     .content-panel {
+      position: relative;
       padding: clamp(24px, 6vw, 80px);
       display: grid;
       place-items: center;
@@ -201,7 +300,7 @@
       font-size: 1rem;
     }
 
-    input:hover { border-color: #91afc1; }
+    input:hover { border-color: color-mix(in srgb,var(--theme-dark) 55%,#fff); }
     input:focus { border-color: var(--blue); }
 
     .primary, .secondary {
@@ -224,7 +323,7 @@
 
     .primary:hover:not(:disabled) {
       transform: translateY(-1px);
-      background: #285c7c;
+      background: color-mix(in srgb,var(--theme-dark) 82%,#102536);
     }
 
     .primary:disabled { opacity: 0.62; cursor: wait; }
@@ -338,7 +437,7 @@
       padding: 16px;
       border: 1px solid var(--line);
       border-radius: 16px;
-      background: linear-gradient(145deg, #ffffff, #f1f7fa);
+      background: linear-gradient(145deg, #ffffff, color-mix(in srgb,var(--theme-light) 72%,#fff));
       box-shadow: 0 8px 20px rgba(18, 49, 74, 0.05);
       overflow: hidden;
     }
@@ -371,7 +470,7 @@
       padding: 13px 14px;
       border: 1px solid var(--line);
       border-radius: 13px;
-      background: #f8fbfd;
+      background: color-mix(in srgb,var(--theme-light) 52%,#fff);
     }
 
     .detail dt { margin-bottom: 5px; color: var(--muted); font-size: .78rem; font-weight: 750; }
@@ -382,7 +481,7 @@
       padding: 17px;
       border: 1px solid var(--line);
       border-radius: 16px;
-      background: #f8fbfd;
+      background: color-mix(in srgb,var(--theme-light) 52%,#fff);
     }
 
     .upcoming-head {
@@ -445,7 +544,7 @@
       transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
     }
 
-    .app-link:hover { transform: translateY(-2px); background: #285c7c; box-shadow: 0 13px 26px rgba(51, 107, 141, 0.26); }
+    .app-link:hover { transform: translateY(-2px); background: color-mix(in srgb,var(--theme-dark) 82%,#102536); box-shadow: 0 13px 26px rgba(51, 107, 141, 0.26); }
 
     .app-link.outline {
       color: var(--blue-dark);
@@ -512,8 +611,8 @@
       height: 52px;
       border-radius: 50%;
       color: var(--navy);
-      background: #eaf2f7;
-      border: 1px solid #dae6ed;
+      background: color-mix(in srgb,var(--theme-medium) 52%,#fff);
+      border: 1px solid var(--line);
     }
 
     .profile-mini h2 {
@@ -675,7 +774,7 @@
 
     .dashboard .data-metric span {
       margin-top: 4px;
-      color: #273d4d;
+      color: var(--navy);
       font-size: .82rem;
       font-weight: 650;
     }
@@ -693,7 +792,7 @@
 
     .dashboard-actions {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 9px;
       margin-top: auto;
     }
@@ -728,8 +827,6 @@
       box-shadow: 0 13px 27px rgba(51, 107, 141, 0.23);
     }
 
-    .dashboard-action.logout:hover { background: #a83b43; }
-
     .agenda-panel {
       min-width: 0;
       min-height: 590px;
@@ -742,7 +839,7 @@
 
     .agenda-header {
       padding: 19px 24px 16px;
-      border-bottom: 1px solid #e1e9ee;
+      border-bottom: 1px solid var(--line);
     }
 
     .agenda-header h3 { margin: 0; font-size: 1.3rem; letter-spacing: -.025em; }
@@ -777,7 +874,7 @@
       top: 39px;
       bottom: -2px;
       width: 2px;
-      background: #dfe8ed;
+      background: color-mix(in srgb,var(--theme-dark) 16%,#fff);
     }
 
     .timeline-row.last-in-day::before { display: none; }
@@ -790,8 +887,8 @@
       display: grid;
       place-items: center;
       color: white;
-      background: #4389c4;
-      border: 4px solid #eaf3fa;
+      background: var(--theme-dark);
+      border: 4px solid color-mix(in srgb,var(--theme-medium) 60%,#fff);
       border-radius: 50%;
     }
 
@@ -812,7 +909,7 @@
       position: absolute;
       inset: 0 0 auto;
       height: 6px;
-      background: #4389c4;
+      background: var(--theme-dark);
     }
 
     .visit-card h4 {
@@ -831,7 +928,7 @@
       padding: 4px 9px;
       border-radius: 999px;
       color: #304554;
-      background: #e9eef2;
+      background: color-mix(in srgb,var(--theme-medium) 46%,#fff);
       font-size: .7rem;
       font-weight: 750;
     }
@@ -856,7 +953,7 @@
       color: var(--navy);
       text-decoration: none;
       border-radius: 11px;
-      background: #edf2f5;
+      background: color-mix(in srgb,var(--theme-medium) 44%,#fff);
       font-size: .84rem;
       font-weight: 800;
       transition: background 160ms ease, color 160ms ease;
@@ -894,6 +991,7 @@
       .school-metric:hover .school-popover,
       .school-metric:focus-visible .school-popover,
       .school-metric:focus-within .school-popover { transform: translateY(0); }
+      .theme-control { top:14px; right:16px; }
     }
 
     @media (max-width: 520px) {
@@ -904,9 +1002,11 @@
       .upcoming-item { grid-template-columns: 34px minmax(0, 1fr); }
       .upcoming-date { grid-column: 2; }
       .dashboard .data-summary { grid-template-columns: 1fr; }
-      .dashboard-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .dashboard-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .agenda-header, .agenda-timeline { padding-left: 16px; padding-right: 16px; }
       .agenda-all { margin-left: 71px; margin-right: 16px; }
+      .theme-button span { display:none; }
+      .theme-options { grid-template-columns:1fr; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -936,10 +1036,33 @@
         <p>Planeje o calendário, registre as atividades realizadas</p>
       </div>
 
-      <span class="environment">R ver.01</span>
+      <div class="brand-footer">
+        <span class="environment">R ver.01</span>
+        <div class="account-footer" id="accountFooter" hidden>
+          <div class="account-avatar" id="accountAvatar" aria-hidden="true">--</div>
+          <div class="account-copy"><strong id="accountName">Usuário</strong><span id="accountRole">Supervisor</span></div>
+          <button class="account-logout" id="logoutButton" type="button" aria-label="Sair do portal" title="Sair">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5m5 5H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>
+          </button>
+        </div>
+      </div>
     </section>
 
     <section class="content-panel">
+      <div class="theme-control">
+        <button type="button" class="theme-button" id="themePickerButton" aria-haspopup="true" aria-expanded="false"><span>Personalizar</span><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M14 5v4M4 17h2M10 17h10M6 15v4M4 12h4M12 12h8M8 10v4"/></svg></button>
+        <div class="theme-picker" id="themePicker" role="dialog" aria-label="Escolher paleta de cores" hidden>
+          <div class="theme-picker-head"><div><strong>Paleta do portal</strong><span>Escolha uma combinação de três cores</span></div><button type="button" class="theme-close" id="themePickerClose" aria-label="Fechar paletas">×</button></div>
+          <div class="theme-options">
+            <button type="button" class="theme-option" data-theme-choice="blue" aria-label="Usar paleta Azul sereno"><span class="theme-swatches"><i style="--swatch:#477c9e"></i><i style="--swatch:#d5eaf5"></i><i style="--swatch:#eef4f8"></i></span><strong>Azul sereno</strong><small>Padrão</small></button>
+            <button type="button" class="theme-option" data-theme-choice="yellow" aria-label="Usar paleta Amarelo solar"><span class="theme-swatches"><i style="--swatch:#99752e"></i><i style="--swatch:#f5e4a9"></i><i style="--swatch:#fff9e8"></i></span><strong>Amarelo solar</strong><small>Leve e acolhedor</small></button>
+            <button type="button" class="theme-option" data-theme-choice="green" aria-label="Usar paleta Verde sálvia"><span class="theme-swatches"><i style="--swatch:#507c68"></i><i style="--swatch:#d8ebdd"></i><i style="--swatch:#f2f7f3"></i></span><strong>Verde sálvia</strong><small>Calmo e natural</small></button>
+            <button type="button" class="theme-option" data-theme-choice="rose" aria-label="Usar paleta Rosa suave"><span class="theme-swatches"><i style="--swatch:#9b6674"></i><i style="--swatch:#f0d9df"></i><i style="--swatch:#faf2f4"></i></span><strong>Rosa suave</strong><small>Delicado e claro</small></button>
+            <button type="button" class="theme-option" data-theme-choice="lavender" aria-label="Usar paleta Lavanda"><span class="theme-swatches"><i style="--swatch:#706d9b"></i><i style="--swatch:#deddf1"></i><i style="--swatch:#f4f3fa"></i></span><strong>Lavanda</strong><small>Sereno e elegante</small></button>
+            <button type="button" class="theme-option" data-theme-choice="peach" aria-label="Usar paleta Grafite aquarelado"><span class="theme-swatches"><i style="--swatch:#17191b"></i><i style="--swatch:#aeb3b7"></i><i style="--swatch:#fafaf8"></i></span><strong>Grafite aquarelado</strong><small>Preto, branco e cinza</small></button>
+          </div>
+        </div>
+      </div>
       <form class="card" id="loginView" novalidate>
         <p class="eyebrow" style="color: var(--blue-dark); opacity: 1;">Acesso restrito</p>
         <h2>Entrar no Supervisor-ESE</h2>
@@ -1005,10 +1128,6 @@
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3"/><rect x="9" y="2" width="6" height="5" rx="1"/><path d="m8 13 2 2 4-4m-6 8h8"/></svg>
               <span>Planejamento</span>
             </a>
-            <button class="dashboard-action logout" id="logoutButton" type="button">
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5m5 5H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>
-              <span>Sair</span>
-            </button>
           </nav>
         </aside>
 
@@ -1065,8 +1184,49 @@
     const loginButton = document.getElementById('loginButton');
     const loginMessage = document.getElementById('loginMessage');
     const profileMessage = document.getElementById('profileMessage');
+    const accountFooter = document.getElementById('accountFooter');
+    const themePickerButton = document.getElementById('themePickerButton');
+    const themePicker = document.getElementById('themePicker');
+    const themeChoices = [...document.querySelectorAll('[data-theme-choice]')];
+    const themeKey = 'portal-ure-paleta';
+    const allowedThemes = new Set(['blue','yellow','green','rose','lavender','peach']);
     let sessionNotice = sessionStorage.getItem('supervisorESELoginNotice') || '';
     sessionStorage.removeItem('supervisorESELoginNotice');
+
+    function applyTheme(theme, persist = true) {
+      const selectedTheme = allowedThemes.has(theme) ? theme : 'blue';
+      document.documentElement.dataset.theme = selectedTheme;
+      themeChoices.forEach((choice) => {
+        const selected = choice.dataset.themeChoice === selectedTheme;
+        choice.classList.toggle('is-selected', selected);
+        choice.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+      if (persist) localStorage.setItem(themeKey, selectedTheme);
+    }
+
+    function setThemePicker(open) {
+      themePicker.hidden = !open;
+      themePickerButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) themePicker.querySelector('.theme-option')?.focus();
+    }
+
+    applyTheme(document.documentElement.dataset.theme || 'blue', false);
+    themePickerButton.addEventListener('click', () => setThemePicker(themePicker.hidden));
+    document.getElementById('themePickerClose').addEventListener('click', () => setThemePicker(false));
+    themeChoices.forEach((choice) => choice.addEventListener('click', () => {
+      applyTheme(choice.dataset.themeChoice);
+      setThemePicker(false);
+      themePickerButton.focus();
+    }));
+    document.addEventListener('click', (event) => {
+      if (!themePicker.hidden && !event.target.closest('.theme-control')) setThemePicker(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !themePicker.hidden) {
+        setThemePicker(false);
+        themePickerButton.focus();
+      }
+    });
 
     const authMessages = {
       'auth/invalid-credential': 'Usuário ou senha inválidos.',
@@ -1085,6 +1245,7 @@
     function showLogin() {
       loginView.hidden = false;
       profileView.hidden = true;
+      accountFooter.hidden = true;
       if (sessionNotice) {
         setLoginMessage(sessionNotice, 'error');
         sessionNotice = '';
@@ -1318,6 +1479,10 @@
         document.getElementById('avatar').textContent = initials(displayName);
         document.getElementById('profileTitle').textContent = displayName;
         document.getElementById('profileEmail').textContent = `${roleLabel(profile.role)} · ${accessLoginForProfile(profile, user)}`;
+        document.getElementById('accountAvatar').textContent = initials(displayName);
+        document.getElementById('accountName').textContent = displayName;
+        document.getElementById('accountRole').textContent = roleLabel(profile.role);
+        accountFooter.hidden = false;
         profileMessage.textContent = '';
         profileMessage.hidden = true;
         await validateAccessScope(user, profile);
