@@ -981,7 +981,9 @@
             } catch (error) {
                 console.error('Falha no salvamento automático:', error);
                 state.syncError = true;
-                showToast('Não foi possível salvar automaticamente. Verifique sua conexão.');
+                showToast(error?.code === 'permission-denied'
+                    ? 'Seu perfil não recebeu permissão para concluir esta alteração. Atualize as regras do Firestore.'
+                    : 'Não foi possível salvar automaticamente. Verifique sua conexão.');
                 return false;
             } finally {
                 state.saving = false;
