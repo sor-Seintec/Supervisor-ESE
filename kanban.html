@@ -61,6 +61,13 @@
             color: var(--text-dark);
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            min-width: 0;
+        }
+
         .btn-back {
             padding: 8px 16px;
             background: white;
@@ -242,6 +249,50 @@
             font-size: 13px;
             color: var(--text-dark);
             text-align: center;
+        }
+
+        .status-legend {
+            flex: 0 0 auto;
+            margin: 0 12px 12px;
+            padding: 13px;
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 7px 18px rgba(25, 65, 88, .06);
+        }
+
+        .status-legend h2 {
+            margin: 0 0 9px;
+            color: var(--text-dark);
+            font-size: 12px;
+        }
+
+        .status-legend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px 9px;
+        }
+
+        .status-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 650;
+        }
+
+        .status-legend-code {
+            width: 21px;
+            height: 21px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 7px;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 850;
         }
 
         .schools-container {
@@ -664,8 +715,9 @@
         body { padding:0; background:var(--bg); font-size:15px; }
         .header { min-height:76px; margin:0; padding:14px 24px; background:#153c56; border-bottom:1px solid rgba(255,255,255,.12); }
         .header h1 { color:#fff; font-size:24px; letter-spacing:-.02em; }
-        .header .btn-back { min-height:42px; display:inline-flex; align-items:center; padding:0 15px; border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.1); color:#fff; font-size:14px; }
-        .header .btn-back:first-child { background:#fff; color:#153c56; }
+        .header .btn-back { min-height:42px; display:inline-flex; align-items:center; gap:7px; padding:0 15px; border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.1); color:#fff; font-size:14px; }
+        .header .header-register { margin-left:auto; background:#fff; color:#153c56; border-color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+        .header .header-back svg { width:16px; height:16px; }
         .toolbar { margin:18px 24px 16px; padding:16px 18px; border-radius:16px; box-shadow:0 8px 24px rgba(25,65,88,.07); }
         .form-group label { font-size:12px; color:#486273; }
         .form-group select { min-height:43px; font-size:15px; font-weight:650; }
@@ -692,7 +744,7 @@
             body { height:auto; min-height:100vh; overflow:auto; }
             .header { align-items:flex-start; padding:13px 15px; }
             .header h1 { font-size:20px; }
-            .header>div { flex-wrap:wrap; justify-content:flex-end; }
+            .header-left { flex-wrap:wrap; gap:9px 14px; }
             .toolbar { margin:12px; }
             .main-layout { width:1120px; min-height:650px; margin:0 12px 20px; }
             .sidebar { width:280px; }
@@ -703,11 +755,14 @@
 <body>
 
     <div class="header">
-        <h1>🗓️ Planejamento de Visitas (Kanban)</h1>
-        <div style="display:flex;gap:8px;align-items:center">
-            <a href="visita.html" class="btn-back">Registrar visita</a>
-            <a href="index.html" class="btn-back" id="linkVoltar">⬅ Voltar ao Portal</a>
+        <div class="header-left">
+            <h1>🗓️ Planejamento de Visitas (Kanban)</h1>
+            <a href="index.html" class="btn-back header-back" id="linkVoltar">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>
+                Voltar ao Portal
+            </a>
         </div>
+        <a href="visita.html" class="btn-back header-register">Registrar visita</a>
     </div>
 
     <div class="toolbar">
@@ -773,6 +828,16 @@
             <div class="schools-container" id="schoolsContainer">
                 <div class="empty-schools">Selecione um supervisor.</div>
             </div>
+            <section class="status-legend" aria-labelledby="statusLegendTitle">
+                <h2 id="statusLegendTitle">Padrão de status</h2>
+                <div class="status-legend-grid">
+                    <div class="status-legend-item"><span class="status-legend-code st-planejada">P</span><span>Planejada</span></div>
+                    <div class="status-legend-item"><span class="status-legend-code st-realizada">V</span><span>Visitada</span></div>
+                    <div class="status-legend-item"><span class="status-legend-code st-justificada">J</span><span>Justificada</span></div>
+                    <div class="status-legend-item"><span class="status-legend-code st-adiada">A</span><span>Adiada</span></div>
+                    <div class="status-legend-item"><span class="status-legend-code st-cancelada">C</span><span>Cancelada</span></div>
+                </div>
+            </section>
         </div>
 
         <div class="calendar-container">
