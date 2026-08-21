@@ -590,7 +590,8 @@
       position: absolute;
       z-index: 20;
       top: 50%;
-      left: calc(100% + 13px);
+      right: calc(100% + 13px);
+      left: auto;
       width: min(340px, 48vw);
       max-height: 290px;
       padding: 15px;
@@ -603,7 +604,7 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transform: translate(8px, -50%);
+      transform: translate(-8px, -50%);
       transition: opacity 150ms ease, visibility 150ms ease, transform 150ms ease;
     }
 
@@ -611,12 +612,13 @@
       content: '';
       position: absolute;
       top: 50%;
-      left: -7px;
+      right: -7px;
+      left: auto;
       width: 12px;
       height: 12px;
       background: white;
-      border-left: 1px solid #bcd8c8;
-      border-bottom: 1px solid #bcd8c8;
+      border-top: 1px solid #bcd8c8;
+      border-right: 1px solid #bcd8c8;
       transform: translateY(-50%) rotate(45deg);
     }
 
@@ -876,11 +878,19 @@
       .brand-copy h1 { white-space: normal; }
       .school-popover {
         top: calc(100% + 9px);
+        right: auto;
         left: 0;
         width: 100%;
         transform: translateY(8px);
       }
-      .school-popover::before { top: -7px; left: 30px; transform: rotate(135deg); }
+      .school-popover::before {
+        top: -7px;
+        right: auto;
+        left: 30px;
+        border-top: 1px solid #bcd8c8;
+        border-right: 1px solid #bcd8c8;
+        transform: rotate(-45deg);
+      }
       .school-metric:hover .school-popover,
       .school-metric:focus-visible .school-popover,
       .school-metric:focus-within .school-popover { transform: translateY(0); }
