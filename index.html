@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Ambiente seguro de homologação do Supervisor-ESE.">
+  <meta name="description" content="Planejamento e registro de visitas escolares do Supervisor-ESE.">
   <title>Supervisor-ESE | Acesso seguro</title>
   <style>
     :root {
@@ -92,11 +92,33 @@
 
     .brand-copy h1 {
       margin: 0;
-      max-width: 12ch;
+      max-width: 14ch;
       font-size: clamp(2.4rem, 5vw, 4.8rem);
       line-height: 0.98;
       letter-spacing: -0.055em;
     }
+
+    .brand-heading {
+      display: flex;
+      align-items: flex-start;
+      gap: clamp(14px, 2vw, 22px);
+    }
+
+    .brand-title-icon {
+      width: clamp(48px, 5vw, 66px);
+      height: clamp(48px, 5vw, 66px);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      margin-top: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 18px;
+      color: white;
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 16px 34px rgba(5, 29, 45, 0.18);
+    }
+
+    .brand-title-icon svg { width: 55%; height: 55%; }
 
     .brand-copy p {
       margin: 24px 0 0;
@@ -136,7 +158,7 @@
     }
 
     .card {
-      width: min(100%, 560px);
+      width: min(100%, 640px);
       padding: clamp(26px, 5vw, 44px);
       background: rgba(255, 255, 255, 0.94);
       border: 1px solid rgba(202, 217, 226, 0.9);
@@ -297,26 +319,36 @@
 
     .details {
       display: grid;
-      gap: 1px;
-      overflow: hidden;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
       margin: 0 0 24px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: var(--line);
     }
 
     .data-summary {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
       margin: 0 0 22px;
     }
 
     .data-metric {
-      padding: 14px;
+      position: relative;
+      min-height: 94px;
+      padding: 16px;
       border: 1px solid var(--line);
-      border-radius: 13px;
-      background: #f8fbfd;
+      border-radius: 16px;
+      background: linear-gradient(145deg, #ffffff, #f1f7fa);
+      box-shadow: 0 8px 20px rgba(18, 49, 74, 0.05);
+      overflow: hidden;
+    }
+
+    .data-metric::after {
+      content: attr(data-icon);
+      position: absolute;
+      top: 12px;
+      right: 13px;
+      font-size: 1.05rem;
+      opacity: 0.55;
     }
 
     .data-metric strong {
@@ -335,17 +367,66 @@
     }
 
     .detail {
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #f8fbfd;
+    }
+
+    .detail dt { margin-bottom: 5px; color: var(--muted); font-size: .78rem; font-weight: 750; }
+    .detail dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+
+    .upcoming {
+      margin: 0 0 22px;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #f8fbfd;
+    }
+
+    .upcoming-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 11px;
+    }
+
+    .upcoming-head h3 { margin: 0; font-size: 1rem; letter-spacing: -.01em; }
+    .upcoming-head span { color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .upcoming-list { display: grid; gap: 8px; }
+
+    .upcoming-item {
       display: grid;
-      grid-template-columns: 145px 1fr;
-      gap: 14px;
-      padding: 14px 16px;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 11px;
+      border: 1px solid #dbe7ed;
+      border-radius: 12px;
       background: white;
     }
 
-    .detail dt { color: var(--muted); font-weight: 700; }
-    .detail dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+    .upcoming-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      color: var(--blue-dark);
+      background: var(--blue-soft);
+      font-size: 1rem;
+    }
 
-    .actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+    .upcoming-name { min-width: 0; font-size: .88rem; font-weight: 800; overflow-wrap: anywhere; }
+    .upcoming-date { color: var(--blue-dark); font-size: .76rem; font-weight: 800; white-space: nowrap; }
+    .upcoming-empty { margin: 0; padding: 7px 2px; color: var(--muted); font-size: .86rem; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+    }
 
     .app-link {
       min-height: 52px;
@@ -360,9 +441,10 @@
       background: var(--blue-dark);
       box-shadow: 0 10px 22px rgba(51, 107, 141, 0.2);
       font-weight: 800;
+      transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
     }
 
-    .app-link:hover { background: #285c7c; }
+    .app-link:hover { transform: translateY(-2px); background: #285c7c; box-shadow: 0 13px 26px rgba(51, 107, 141, 0.26); }
 
     .app-link.outline {
       color: var(--blue-dark);
@@ -371,6 +453,16 @@
     }
 
     .app-link.outline:hover { background: var(--blue-soft); }
+
+    .actions .secondary {
+      min-width: 76px;
+      color: #8f3036;
+      border-color: #e4c9cc;
+      background: white;
+    }
+
+    .actions .secondary:hover { color: white; background: #a83b43; border-color: #a83b43; }
+    .action-icon { margin-right: 8px; font-size: 1rem; }
 
     .note {
       margin: 22px 0 0;
@@ -391,7 +483,10 @@
     @media (max-width: 520px) {
       .brand-panel { padding: 28px 22px; }
       .card { padding: 25px 20px; border-radius: 20px; }
-      .detail { grid-template-columns: 1fr; gap: 4px; }
+      .data-summary, .details { grid-template-columns: 1fr; }
+      .actions { grid-template-columns: 1fr; }
+      .upcoming-item { grid-template-columns: 34px minmax(0, 1fr); }
+      .upcoming-date { grid-column: 2; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -409,11 +504,19 @@
 
       <div class="brand-copy">
         <p class="eyebrow">Gestão Sorocaba</p>
-        <h1 id="portal-title">Visitas com acesso seguro.</h1>
-        <p>Planeje o calendário, registre as atividades realizadas nas escolas e acompanhe cada resultado no novo Firebase.</p>
+        <div class="brand-heading">
+          <span class="brand-title-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18M5 21V9l7-4 7 4v12M9 21v-5h6v5M8 11h.01M12 11h.01M16 11h.01"/>
+              <path d="M12 5V2m0 0 3 1.5M12 2v3"/>
+            </svg>
+          </span>
+          <h1 id="portal-title">Visitas às escolas</h1>
+        </div>
+        <p>Planeje o calendário, registre as atividades realizadas nas escolas.</p>
       </div>
 
-      <span class="environment">Ambiente de homologação</span>
+      <span class="environment">R ver.01</span>
     </section>
 
     <section class="content-panel">
@@ -446,38 +549,33 @@
           </div>
         </div>
 
-        <div class="status">
-          <span class="status-icon" aria-hidden="true">✓</span>
-          <span>Firebase Authentication e Firestore conectados corretamente.</span>
-        </div>
-
-        <div class="status security" id="accessTest" hidden>
-          <span class="status-icon" id="accessTestIcon" aria-hidden="true">✓</span>
-          <span id="accessTestText">Validando isolamento de acesso…</span>
-        </div>
-
         <section class="data-summary" id="dataSummary" hidden aria-label="Dados liberados para o perfil">
-          <div class="data-metric"><strong id="schoolCount">—</strong><span>Escolas</span></div>
-          <div class="data-metric"><strong id="visitCount">—</strong><span>Visitas</span></div>
-          <div class="data-metric"><strong id="agendaCount">—</strong><span>Agendamentos</span></div>
-          <div class="data-metric"><strong id="actionCount">—</strong><span>Ações disponíveis</span></div>
+          <div class="data-metric" data-icon="🏫"><strong id="schoolCount">—</strong><span>Escolas vinculadas</span></div>
+          <div class="data-metric" data-icon="✓"><strong id="visitCount">—</strong><span>Visitas realizadas</span></div>
+          <div class="data-metric" data-icon="▦"><strong id="agendaCount">—</strong><span>Visitas agendadas</span></div>
+        </section>
+
+        <section class="upcoming" id="upcomingVisits" hidden aria-labelledby="upcomingTitle">
+          <div class="upcoming-head">
+            <h3 id="upcomingTitle">Próximas visitas</h3>
+            <span>Hoje e amanhã</span>
+          </div>
+          <div class="upcoming-list" id="upcomingVisitsList"></div>
         </section>
 
         <dl class="details">
           <div class="detail"><dt>Nome</dt><dd id="profileName">—</dd></div>
           <div class="detail"><dt>Perfil</dt><dd id="profileRole">—</dd></div>
           <div class="detail"><dt>Situação</dt><dd id="profileStatus">—</dd></div>
-          <div class="detail" id="supervisorIdRow" hidden><dt>Supervisor ID</dt><dd id="profileSupervisorId">—</dd></div>
-          <div class="detail"><dt>UID</dt><dd id="profileUid">—</dd></div>
         </dl>
 
         <div class="actions">
-          <a class="app-link outline" href="visita.html">Registrar visita</a>
-          <a class="app-link" href="kanban.html">Abrir planejamento</a>
-          <button class="secondary" id="logoutButton" type="button">Sair</button>
+          <a class="app-link" href="visita.html"><span class="action-icon" aria-hidden="true">✓</span>Registrar visita</a>
+          <a class="app-link outline" href="kanban.html"><span class="action-icon" aria-hidden="true">▦</span>Abrir planejamento</a>
+          <button class="secondary" id="logoutButton" type="button"><span class="action-icon" aria-hidden="true">↪</span>Sair</button>
         </div>
 
-        <p class="message info" id="profileMessage" aria-live="polite"></p>
+        <p class="message info" id="profileMessage" aria-live="polite" hidden></p>
       </section>
     </section>
   </main>
@@ -572,62 +670,77 @@
       return `${profile.role === 'admin' ? 'adm' : 'sup'}${match[1]}`;
     }
 
-    function setAccessTest(text, type = 'security', icon = '✓') {
-      const box = document.getElementById('accessTest');
-      box.hidden = false;
-      box.className = `status ${type}`;
-      document.getElementById('accessTestIcon').textContent = icon;
-      document.getElementById('accessTestText').textContent = text;
-    }
-
     async function validateAccessScope(user, profile) {
-      if (profile.role === 'admin') {
-        try {
-          const listSnapshot = await getDocs(collection(db, 'supervisors'));
-          setAccessTest(`Acesso administrativo confirmado: ${listSnapshot.size} supervisor(es) disponível(is).`);
-        } catch (error) {
-          console.error('Falha no teste administrativo:', error);
-          setAccessTest('O perfil administrativo não conseguiu listar os supervisores.', 'danger', '!');
-        }
-        return;
-      }
+      if (profile.role === 'admin') return;
 
       if (profile.role !== 'supervisor' || !profile.supervisorId) {
-        setAccessTest('Este perfil ainda não possui um supervisor vinculado.', 'danger', '!');
-        return;
+        throw new Error('Perfil sem supervisor vinculado.');
       }
 
-      document.getElementById('supervisorIdRow').hidden = false;
-      document.getElementById('profileSupervisorId').textContent = profile.supervisorId;
-
-      try {
-        const ownProfile = await getDoc(doc(db, 'supervisors', profile.supervisorId));
-        if (!ownProfile.exists()) {
-          setAccessTest('O cadastro profissional vinculado não foi encontrado.', 'danger', '!');
-          return;
-        }
-
-        if (ownProfile.data().authUid !== user.uid) {
-          setAccessTest('O UID do cadastro profissional não corresponde à conta autenticada.', 'danger', '!');
-          return;
-        }
-      } catch (error) {
-        console.error('Falha ao abrir o cadastro profissional:', error);
-        setAccessTest('O supervisor não conseguiu abrir seu próprio cadastro.', 'danger', '!');
-        return;
+      const ownProfile = await getDoc(doc(db, 'supervisors', profile.supervisorId));
+      if (!ownProfile.exists() || ownProfile.data().authUid !== user.uid) {
+        throw new Error('Cadastro profissional incompatível com a conta autenticada.');
       }
+    }
 
-      try {
-        await getDocs(collection(db, 'supervisors'));
-        setAccessTest('Atenção: esta conta conseguiu listar outros supervisores.', 'danger', '!');
-      } catch (error) {
-        if (error?.code === 'permission-denied') {
-          setAccessTest('Isolamento confirmado: cadastro próprio liberado e lista de outros supervisores bloqueada.');
-        } else {
-          console.error('Falha no teste de isolamento:', error);
-          setAccessTest('Não foi possível concluir o teste de isolamento.', 'danger', '!');
-        }
+    function dateKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function renderUpcomingVisits(agendaSnapshot) {
+      const section = document.getElementById('upcomingVisits');
+      const list = document.getElementById('upcomingVisitsList');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const todayKey = dateKey(today);
+      const tomorrowKey = dateKey(tomorrow);
+
+      const visits = agendaSnapshot.docs
+        .map((snapshot) => {
+          const data = snapshot.data();
+          return { ...data, date: data.scheduledDate?.toDate?.() };
+        })
+        .filter((item) => {
+          if (!(item.date instanceof Date)) return false;
+          const itemKey = dateKey(item.date);
+          const isUpcomingDate = itemKey === todayKey || itemKey === tomorrowKey;
+          const isScheduled = !item.status || ['scheduled', 'planned', 'P'].includes(item.status);
+          return isUpcomingDate && isScheduled;
+        })
+        .sort((a, b) => a.date - b.date || String(a.schoolName).localeCompare(String(b.schoolName), 'pt-BR'));
+
+      list.replaceChildren();
+      if (!visits.length) {
+        const empty = document.createElement('p');
+        empty.className = 'upcoming-empty';
+        empty.textContent = 'Nenhuma visita agendada para hoje ou amanhã.';
+        list.appendChild(empty);
+      } else {
+        visits.forEach((visit) => {
+          const item = document.createElement('div');
+          item.className = 'upcoming-item';
+
+          const icon = document.createElement('span');
+          icon.className = 'upcoming-icon';
+          icon.setAttribute('aria-hidden', 'true');
+          icon.textContent = '🏫';
+
+          const name = document.createElement('span');
+          name.className = 'upcoming-name';
+          name.textContent = visit.schoolName || 'Escola não informada';
+
+          const date = document.createElement('span');
+          date.className = 'upcoming-date';
+          const dayLabel = dateKey(visit.date) === todayKey ? 'Hoje' : 'Amanhã';
+          date.textContent = `${dayLabel} · ${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(visit.date)}`;
+
+          item.append(icon, name, date);
+          list.appendChild(item);
+        });
       }
+      section.hidden = false;
     }
 
     async function loadDataSummary(profile) {
@@ -638,18 +751,17 @@
         : query(collection(db, collectionName), where('supervisorId', '==', supervisorId));
 
       try {
-        const [schoolsSnapshot, visitsSnapshot, agendaSnapshot, actionsSnapshot] = await Promise.all([
+        const [schoolsSnapshot, visitsSnapshot, agendaSnapshot] = await Promise.all([
           getDocs(scopedCollection('schools')),
           getDocs(scopedCollection('visits')),
-          getDocs(scopedCollection('agenda')),
-          getDocs(collection(db, 'actions'))
+          getDocs(scopedCollection('agenda'))
         ]);
 
         document.getElementById('schoolCount').textContent = schoolsSnapshot.size;
         document.getElementById('visitCount').textContent = visitsSnapshot.size;
         document.getElementById('agendaCount').textContent = agendaSnapshot.size;
-        document.getElementById('actionCount').textContent = actionsSnapshot.size;
         document.getElementById('dataSummary').hidden = false;
+        renderUpcomingVisits(agendaSnapshot);
       } catch (error) {
         console.error('Falha ao carregar o resumo de dados:', error);
         document.getElementById('dataSummary').hidden = true;
@@ -685,10 +797,8 @@
         document.getElementById('profileName').textContent = displayName;
         document.getElementById('profileRole').textContent = roleLabel(profile.role);
         document.getElementById('profileStatus').textContent = 'Ativo';
-        document.getElementById('profileUid').textContent = user.uid;
-        profileMessage.textContent = profile.mustChangePassword === true
-          ? 'Este perfil está marcado para trocar a senha no primeiro acesso.'
-          : 'Teste concluído: conta e perfil reconhecidos.';
+        profileMessage.textContent = '';
+        profileMessage.hidden = true;
         await validateAccessScope(user, profile);
         await loadDataSummary(profile);
       } catch (error) {
