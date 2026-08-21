@@ -739,6 +739,31 @@
         .k-card-school { font-size:14px; font-weight:750; line-height:1.35; }
         .k-card-turno,.turno-select-inline { font-size:12px; }
         .badge-status { width:26px; height:26px; font-size:12px; }
+        .badge-status.is-correctable { border:0; cursor:pointer; font-family:inherit; transition:transform .18s ease,box-shadow .18s ease; }
+        .badge-status.is-correctable:hover,.badge-status.is-correctable:focus-visible { transform:scale(1.13); box-shadow:0 0 0 4px rgba(255,255,255,.85),0 4px 12px rgba(15,23,42,.24); outline:0; }
+        .correction-pending { position:absolute; right:39px; bottom:10px; min-width:23px; height:23px; display:grid; place-items:center; padding:0 6px; border:1px solid #f2b84b; border-radius:999px; background:#fff4d6; color:#9a5a00; font-size:13px; font-weight:900; box-shadow:0 2px 7px rgba(138,86,0,.18); }
+        .correction-modal[hidden] { display:none; }
+        .correction-modal { position:fixed; inset:0; z-index:10020; display:grid; place-items:center; padding:22px; background:rgba(12,35,51,.56); backdrop-filter:blur(5px); }
+        .correction-dialog { width:min(570px,100%); overflow:hidden; border:1px solid #c9d9e2; border-radius:18px; background:#fff; box-shadow:0 28px 70px rgba(12,35,51,.28); }
+        .correction-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:22px 24px 17px; border-bottom:1px solid #dce6eb; }
+        .correction-head small { display:block; margin-bottom:5px; color:#4c7b98; font-size:10px; font-weight:850; letter-spacing:.12em; text-transform:uppercase; }
+        .correction-head h2 { margin:0; color:#153c56; font-size:22px; }
+        .correction-close { width:34px; height:34px; display:grid; place-items:center; border:0; border-radius:10px; background:#edf3f6; color:#456275; cursor:pointer; font-size:20px; }
+        .correction-body { display:grid; gap:15px; padding:20px 24px; }
+        .correction-summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; border:1px solid #d8e4ea; border-radius:12px; background:#f5f9fb; }
+        .correction-summary span { display:block; color:#667c8a; font-size:11px; font-weight:700; }
+        .correction-summary strong { display:block; margin-top:3px; color:#18394f; font-size:13px; }
+        .correction-body label { color:#3f5c6e; font-size:12px; font-weight:800; }
+        .correction-body select,.correction-body textarea { width:100%; margin-top:6px; border:1px solid #c7d8e2; border-radius:11px; background:#fbfcfd; color:#17374d; font:600 14px/1.45 Inter,sans-serif; outline:0; }
+        .correction-body select { min-height:44px; padding:0 12px; }
+        .correction-body textarea { min-height:104px; padding:11px 12px; resize:vertical; }
+        .correction-body :is(select,textarea):focus { border-color:#4f8caf; box-shadow:0 0 0 3px rgba(79,140,175,.14); background:#fff; }
+        .correction-note { margin:0; padding:11px 13px; border-radius:10px; background:#fff4d6; color:#795000; font-size:12px; font-weight:650; line-height:1.5; }
+        .correction-actions { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px 21px; border-top:1px solid #e1e8ec; }
+        .correction-actions button { min-height:42px; padding:0 16px; border-radius:10px; cursor:pointer; font:750 13px/1 Inter,sans-serif; }
+        .correction-cancel { border:1px solid #cad9e1; background:#fff; color:#38576a; }
+        .correction-submit { border:0; background:#153c56; color:#fff; box-shadow:0 7px 16px rgba(21,60,86,.18); }
+        .correction-submit:disabled { cursor:wait; opacity:.6; }
 
         @media (max-width:900px) {
             body { height:auto; min-height:100vh; overflow:auto; }
@@ -854,6 +879,42 @@
         </div>
     </div>
 
+    <div class="correction-modal" id="correctionModal" hidden>
+        <section class="correction-dialog" role="dialog" aria-modal="true" aria-labelledby="correctionTitle">
+            <header class="correction-head">
+                <div><small>REVISÃO DO REGISTRO</small><h2 id="correctionTitle">Solicitar correção de status</h2></div>
+                <button class="correction-close" id="correctionClose" type="button" aria-label="Fechar">×</button>
+            </header>
+            <form id="correctionForm">
+                <div class="correction-body">
+                    <div class="correction-summary">
+                        <div><span>Escola</span><strong id="correctionSchool">—</strong></div>
+                        <div><span>Data da visita</span><strong id="correctionDate">—</strong></div>
+                        <div><span>Status registrado</span><strong id="correctionCurrentStatus">—</strong></div>
+                        <div><span>Supervisor</span><strong id="correctionSupervisor">—</strong></div>
+                    </div>
+                    <label>Novo status solicitado
+                        <select id="correctionRequestedStatus" required>
+                            <option value="">Selecione o status correto</option>
+                            <option value="completed">V · Visitada</option>
+                            <option value="justified">J · Justificada</option>
+                            <option value="postponed">A · Adiada</option>
+                            <option value="cancelled">C · Cancelada</option>
+                        </select>
+                    </label>
+                    <label>Motivo da correção
+                        <textarea id="correctionReason" minlength="15" maxlength="800" required placeholder="Explique o que foi registrado incorretamente e por que o status deve ser alterado."></textarea>
+                    </label>
+                    <p class="correction-note" id="correctionNote">O status atual continuará valendo até a análise do Gestor-ESE.</p>
+                </div>
+                <footer class="correction-actions">
+                    <button class="correction-cancel" id="correctionCancel" type="button">Cancelar</button>
+                    <button class="correction-submit" id="correctionSubmit" type="submit">Enviar para análise</button>
+                </footer>
+            </form>
+        </section>
+    </div>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js';
         import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js';
@@ -890,6 +951,9 @@
             schools: new Map(),
             agendaCloud: [],
             visits: [],
+            correctionRequests: [],
+            correctionVisit: null,
+            correctionAgenda: null,
             agendaDraft: {},
             currentWeek: 0,
             dragging: null,
@@ -1005,6 +1069,13 @@
             if (!timestamp?.toDate) return '';
             return dateKey(timestamp.toDate());
         }
+
+        const correctionStatusLabels = {
+            completed: 'Visitada',
+            justified: 'Justificada',
+            postponed: 'Adiada',
+            cancelled: 'Cancelada'
+        };
 
         function hashColor(value) {
             let hash = 0;
@@ -1172,14 +1243,19 @@
             const supervisorId = currentSupervisorId();
             if (!supervisorId) return;
 
-            const [agendaSnapshot, visitsSnapshot] = await Promise.all([
+            const [agendaSnapshot, visitsSnapshot, correctionSnapshot] = await Promise.all([
                 getDocs(query(collection(db, 'agenda'), where('supervisorId', '==', supervisorId))),
-                getDocs(query(collection(db, 'visits'), where('supervisorId', '==', supervisorId)))
+                getDocs(query(collection(db, 'visits'), where('supervisorId', '==', supervisorId))),
+                getDocs(query(collection(db, 'visitCorrectionRequests'), where('supervisorId', '==', supervisorId))).catch((error) => {
+                    if (error?.code === 'permission-denied') return { docs: [] };
+                    throw error;
+                })
             ]);
 
             state.agendaCloud = agendaSnapshot.docs
                 .map((item) => ({ id: item.id, ...item.data() }));
             state.visits = visitsSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+            state.correctionRequests = correctionSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
             renderCalendar();
         }
 
@@ -1221,12 +1297,106 @@
             return [...cloud, ...drafts];
         }
 
+        function visitForCard(date, item) {
+            return state.visits.find((visit) => item.agendaId && visit.agendaId === item.agendaId)
+                || state.visits.find((visit) =>
+                    timestampDateKey(visit.visitDate) === date
+                    && visit.supervisorId === item.supervisorId
+                    && visit.schoolId === item.schoolId
+                )
+                || null;
+        }
+
+        function pendingCorrectionForVisit(visitId) {
+            return state.correctionRequests.find((request) => request.visitId === visitId && request.reviewStatus === 'pending') || null;
+        }
+
         function visitStatus(date, item) {
-            return state.visits.find((visit) =>
-                timestampDateKey(visit.visitDate) === date
-                && visit.supervisorId === item.supervisorId
-                && visit.schoolId === item.schoolId
-            )?.statusCode || item.agendaStatusCode || '';
+            return visitForCard(date, item)?.statusCode || item.agendaStatusCode || '';
+        }
+
+        function closeCorrectionModal() {
+            document.getElementById('correctionModal').hidden = true;
+            document.body.style.overflow = '';
+            state.correctionVisit = null;
+            state.correctionAgenda = null;
+        }
+
+        function openCorrectionModal(visit, item, date) {
+            if (!visit) return;
+            const pendingRequest = pendingCorrectionForVisit(visit.id);
+            const requestedStatus = document.getElementById('correctionRequestedStatus');
+            const reason = document.getElementById('correctionReason');
+            const submit = document.getElementById('correctionSubmit');
+            state.correctionVisit = visit;
+            state.correctionAgenda = item;
+            document.getElementById('correctionSchool').textContent = visit.schoolName || item.schoolName;
+            document.getElementById('correctionDate').textContent = new Intl.DateTimeFormat('pt-BR').format(new Date(`${date}T12:00:00`));
+            document.getElementById('correctionCurrentStatus').textContent = correctionStatusLabels[visit.statusCode] || visit.status || 'Não informado';
+            document.getElementById('correctionSupervisor').textContent = supervisorName(visit.supervisorId);
+            [...requestedStatus.options].forEach((option) => { option.disabled = option.value === visit.statusCode; });
+            requestedStatus.value = pendingRequest?.requestedStatusCode || '';
+            reason.value = pendingRequest?.reason || '';
+            requestedStatus.disabled = Boolean(pendingRequest);
+            reason.disabled = Boolean(pendingRequest);
+            submit.hidden = Boolean(pendingRequest);
+            document.getElementById('correctionNote').textContent = pendingRequest
+                ? `Correção já enviada: ${correctionStatusLabels[pendingRequest.previousStatusCode] || pendingRequest.previousStatusCode} → ${correctionStatusLabels[pendingRequest.requestedStatusCode] || pendingRequest.requestedStatusCode}. Aguarde a análise do Gestor-ESE.`
+                : 'O status atual continuará valendo até a análise do Gestor-ESE.';
+            document.getElementById('correctionModal').hidden = false;
+            document.body.style.overflow = 'hidden';
+            (pendingRequest ? document.getElementById('correctionClose') : requestedStatus).focus();
+        }
+
+        async function submitCorrectionRequest(event) {
+            event.preventDefault();
+            const visit = state.correctionVisit;
+            if (!visit) return;
+            const requestedStatusCode = document.getElementById('correctionRequestedStatus').value;
+            const reason = document.getElementById('correctionReason').value.trim();
+            if (!requestedStatusCode) return showToast('Selecione o status correto.');
+            if (requestedStatusCode === visit.statusCode) return showToast('Escolha um status diferente do registro atual.');
+            if (reason.length < 15) return showToast('Explique o motivo da correção com pelo menos 15 caracteres.');
+            if (pendingCorrectionForVisit(visit.id)) return showToast('Este registro já possui uma correção aguardando análise.');
+            const submit = document.getElementById('correctionSubmit');
+            submit.disabled = true;
+            submit.textContent = 'Enviando…';
+            try {
+                const reference = doc(collection(db, 'visitCorrectionRequests'));
+                const batch = writeBatch(db);
+                batch.set(reference, {
+                    visitId: visit.id,
+                    agendaId: visit.agendaId || state.correctionAgenda?.agendaId || null,
+                    supervisorId: visit.supervisorId,
+                    supervisorName: supervisorName(visit.supervisorId),
+                    schoolId: visit.schoolId,
+                    schoolName: visit.schoolName || state.correctionAgenda?.schoolName || '',
+                    visitDate: visit.visitDate,
+                    previousStatusCode: visit.statusCode,
+                    previousStatusLabel: correctionStatusLabels[visit.statusCode] || visit.status || '',
+                    requestedStatusCode,
+                    requestedStatusLabel: correctionStatusLabels[requestedStatusCode],
+                    reason,
+                    reviewStatus: 'pending',
+                    createdByUid: state.user.uid,
+                    requestedByEmail: state.user.email,
+                    requestedAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    schemaVersion: 1
+                });
+                await batch.commit();
+                await loadCloudData();
+                closeCorrectionModal();
+                showToast('Solicitação enviada para análise do Gestor-ESE.', 'success');
+            } catch (error) {
+                console.error('Falha ao solicitar correção:', error);
+                showToast(error?.code === 'permission-denied'
+                    ? 'Publique as novas regras do Firestore para liberar a solicitação.'
+                    : 'Não foi possível enviar a solicitação de correção.');
+            } finally {
+                submit.disabled = false;
+                submit.textContent = 'Enviar para análise';
+            }
         }
 
         async function createAgendaAutomatically(date, item) {
@@ -1293,7 +1463,8 @@
         function appendCalendarCard(container, date, item) {
             const card = document.createElement('div');
             card.className = `k-card ${hashColor(item.supervisorId)}`;
-            const statusCode = visitStatus(date, item);
+            const visit = visitForCard(date, item);
+            const statusCode = visit?.statusCode || item.agendaStatusCode || '';
             const editableCloudCard = item.fromCloud && statusCode === 'scheduled';
             card.innerHTML = cardHtml(item, statusCode);
             const shiftSelect = card.querySelector('.turno-select-inline');
@@ -1366,6 +1537,35 @@
                     if (draft) draft.shift = event.target.value;
                     markDirty();
                 });
+            }
+
+            if (visit && statusCode !== 'scheduled') {
+                const statusBadge = card.querySelector('.badge-status');
+                const pendingRequest = pendingCorrectionForVisit(visit.id);
+                if (statusBadge) {
+                    statusBadge.classList.add('is-correctable');
+                    statusBadge.tabIndex = 0;
+                    statusBadge.setAttribute('role', 'button');
+                    statusBadge.setAttribute('aria-label', pendingRequest ? 'Consultar correção pendente' : 'Solicitar correção do status');
+                    const openCorrection = (event) => {
+                        event.stopPropagation();
+                        openCorrectionModal(visit, item, date);
+                    };
+                    statusBadge.addEventListener('click', openCorrection);
+                    statusBadge.addEventListener('keydown', (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            openCorrection(event);
+                        }
+                    });
+                }
+                if (pendingRequest) {
+                    const pending = document.createElement('span');
+                    pending.className = 'correction-pending';
+                    pending.textContent = '↻';
+                    pending.setAttribute('aria-label', 'Correção aguardando análise');
+                    card.appendChild(pending);
+                }
             }
             container.appendChild(card);
         }
@@ -1454,6 +1654,16 @@
         window.limparFiltroSupervisor = () => {};
         window.carregarEscolasDisponiveis = changeSupervisor;
         window.marcarModificado = markDirty;
+
+        document.getElementById('correctionForm').addEventListener('submit', submitCorrectionRequest);
+        document.getElementById('correctionClose').addEventListener('click', closeCorrectionModal);
+        document.getElementById('correctionCancel').addEventListener('click', closeCorrectionModal);
+        document.getElementById('correctionModal').addEventListener('click', (event) => {
+            if (event.target.id === 'correctionModal') closeCorrectionModal();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !document.getElementById('correctionModal').hidden) closeCorrectionModal();
+        });
 
         const currentYear = new Date().getFullYear();
         [currentYear - 1, currentYear, currentYear + 1].forEach((year) => selectYear.add(new Option(year, year)));
