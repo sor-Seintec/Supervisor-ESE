@@ -49,7 +49,7 @@
     }
 
     .brand-panel {
-      padding: clamp(32px, 6vw, 80px);
+      padding: clamp(28px, 4vw, 64px);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -92,25 +92,26 @@
 
     .brand-copy h1 {
       margin: 0;
-      max-width: 14ch;
-      font-size: clamp(2.4rem, 5vw, 4.8rem);
+      max-width: none;
+      font-size: clamp(1.8rem, 2.35vw, 3.2rem);
       line-height: 0.98;
       letter-spacing: -0.055em;
+      white-space: nowrap;
     }
 
     .brand-heading {
       display: flex;
-      align-items: flex-start;
-      gap: clamp(14px, 2vw, 22px);
+      align-items: center;
+      gap: clamp(9px, 1.1vw, 17px);
     }
 
     .brand-title-icon {
-      width: clamp(48px, 5vw, 66px);
-      height: clamp(48px, 5vw, 66px);
+      width: clamp(34px, 3vw, 48px);
+      height: clamp(34px, 3vw, 48px);
       display: grid;
       place-items: center;
       flex: 0 0 auto;
-      margin-top: 3px;
+      margin-top: 0;
       border: 1px solid rgba(255, 255, 255, 0.24);
       border-radius: 18px;
       color: white;
@@ -558,6 +559,110 @@
       background: white;
     }
 
+    .school-metric {
+      z-index: 6;
+      overflow: visible !important;
+      cursor: help;
+      transition: color 170ms ease, background 170ms ease, border-color 170ms ease, box-shadow 170ms ease, transform 170ms ease;
+    }
+
+    .school-metric:hover,
+    .school-metric:focus-visible,
+    .school-metric:focus-within {
+      color: #12643f;
+      background: #e7f6ed;
+      border-color: #61bd88;
+      box-shadow: 0 12px 28px rgba(22, 121, 77, 0.18);
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    .school-metric:hover strong,
+    .school-metric:focus-visible strong,
+    .school-metric:focus-within strong,
+    .school-metric:hover .metric-icon,
+    .school-metric:focus-visible .metric-icon,
+    .school-metric:focus-within .metric-icon {
+      color: #16794d;
+    }
+
+    .school-popover {
+      position: absolute;
+      z-index: 20;
+      top: 50%;
+      left: calc(100% + 13px);
+      width: min(340px, 48vw);
+      max-height: 290px;
+      padding: 15px;
+      overflow-y: auto;
+      color: var(--navy);
+      background: white;
+      border: 1px solid #bcd8c8;
+      border-radius: 14px;
+      box-shadow: 0 18px 42px rgba(18, 49, 74, 0.2);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translate(8px, -50%);
+      transition: opacity 150ms ease, visibility 150ms ease, transform 150ms ease;
+    }
+
+    .school-popover::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -7px;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border-left: 1px solid #bcd8c8;
+      border-bottom: 1px solid #bcd8c8;
+      transform: translateY(-50%) rotate(45deg);
+    }
+
+    .school-metric:hover .school-popover,
+    .school-metric:focus-visible .school-popover,
+    .school-metric:focus-within .school-popover {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translate(0, -50%);
+    }
+
+    .school-popover-title {
+      display: block;
+      margin-bottom: 10px;
+      color: #12643f;
+      font-size: .76rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .school-popover-list { display: grid; gap: 7px; }
+
+    .school-popover-item {
+      display: grid;
+      grid-template-columns: 27px minmax(0, 1fr);
+      align-items: center;
+      gap: 9px;
+      padding: 8px;
+      border-radius: 9px;
+      background: #f3faf6;
+      font-size: .77rem;
+      font-weight: 750;
+      line-height: 1.3;
+    }
+
+    .school-popover-icon {
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      color: #16794d;
+    }
+
+    .school-popover-icon svg { width: 21px; height: 21px; }
+
     .dashboard .data-metric::after { content: none; }
     .metric-copy { min-width: 0; }
 
@@ -768,6 +873,17 @@
       .dashboard-side { display: grid; grid-template-columns: 1fr; }
       .dashboard .data-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .agenda-panel { min-height: 520px; }
+      .brand-copy h1 { white-space: normal; }
+      .school-popover {
+        top: calc(100% + 9px);
+        left: 0;
+        width: 100%;
+        transform: translateY(8px);
+      }
+      .school-popover::before { top: -7px; left: 30px; transform: rotate(135deg); }
+      .school-metric:hover .school-popover,
+      .school-metric:focus-visible .school-popover,
+      .school-metric:focus-within .school-popover { transform: translateY(0); }
     }
 
     @media (max-width: 520px) {
@@ -807,7 +923,7 @@
           </span>
           <h1 id="portal-title">Visitas às escolas</h1>
         </div>
-        <p>Planeje o calendário, registre as atividades realizadas nas escolas.</p>
+        <p>Planeje o calendário, registre as atividades realizadas</p>
       </div>
 
       <span class="environment">R ver.01</span>
@@ -846,11 +962,15 @@
           </div>
 
           <section class="data-summary" id="dataSummary" hidden aria-label="Resumo de visitas e escolas">
-            <div class="data-metric">
+            <div class="data-metric school-metric" id="schoolMetric" tabindex="0" aria-label="Escolas vinculadas. Passe o mouse ou pressione Tab para visualizar os nomes.">
               <div class="metric-copy"><strong id="schoolCount">—</strong><span>Escolas</span></div>
               <span class="metric-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V9l7-4 7 4v12M9 21v-5h6v5M8 11h.01M12 11h.01M16 11h.01"/><path d="M12 5V2m0 0 3 1.5M12 2v3"/></svg>
               </span>
+              <aside class="school-popover" role="tooltip">
+                <strong class="school-popover-title">Escolas vinculadas</strong>
+                <div class="school-popover-list" id="schoolPopoverList"></div>
+              </aside>
             </div>
             <div class="data-metric">
               <div class="metric-copy"><strong id="visitCount">—</strong><span>Visitas concluídas</span></div>
@@ -1088,6 +1208,41 @@
       section.hidden = false;
     }
 
+    function renderSchoolPopover(schoolsSnapshot) {
+      const list = document.getElementById('schoolPopoverList');
+      const schools = schoolsSnapshot.docs
+        .map((snapshot) => {
+          const data = snapshot.data();
+          return String(data.name || data.schoolName || data.displayName || snapshot.id).trim();
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+      list.replaceChildren();
+      if (!schools.length) {
+        const empty = document.createElement('span');
+        empty.className = 'school-popover-item';
+        empty.textContent = 'Nenhuma escola vinculada.';
+        list.appendChild(empty);
+        return;
+      }
+
+      schools.forEach((schoolName) => {
+        const item = document.createElement('div');
+        item.className = 'school-popover-item';
+
+        const icon = document.createElement('span');
+        icon.className = 'school-popover-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V9l7-4 7 4v12M9 21v-5h6v5M8 11h.01M12 11h.01M16 11h.01"/></svg>';
+
+        const name = document.createElement('span');
+        name.textContent = schoolName;
+        item.append(icon, name);
+        list.appendChild(item);
+      });
+    }
+
     async function loadDataSummary(profile) {
       const isAdmin = profile.role === 'admin';
       const supervisorId = profile.supervisorId;
@@ -1105,6 +1260,7 @@
         document.getElementById('schoolCount').textContent = schoolsSnapshot.size;
         document.getElementById('visitCount').textContent = visitsSnapshot.size;
         document.getElementById('agendaCount').textContent = agendaSnapshot.size;
+        renderSchoolPopover(schoolsSnapshot);
         document.getElementById('dataSummary').hidden = false;
         renderUpcomingVisits(agendaSnapshot);
       } catch (error) {
