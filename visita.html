@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Registro seguro de visitas escolares do Supervisor-ESE">
   <title>Registrar visita | Supervisor-ESE</title>
+  <link rel="stylesheet" href="tour/tour.css">
+  <script src="tour/tour.js" defer></script>
   <script>
     try {
       const savedTheme = localStorage.getItem('supervisor-ese-paleta') || localStorage.getItem('portal-ure-paleta');
@@ -160,7 +162,7 @@
   <header class="topbar">
     <a class="brand" href="index.html"><span class="brand-mark">↗</span><span>Supervisor-ESE<small>Gestão Sorocaba</small></span></a>
     <nav class="top-actions" aria-label="Navegação principal">
-      <a class="nav-link" href="index.html">Voltar ao Portal</a>
+      <a class="nav-link" href="index.html">Início</a>
       <a class="nav-link" href="kanban.html">Planejamento</a>
     </nav>
     <div class="sidebar-account" id="sidebarAccount" hidden>
@@ -185,7 +187,7 @@
         <form id="visitForm" novalidate>
           <section class="section">
             <div class="section-head"><span class="section-number">1</span><div><h2>Qual visita será registrada?</h2><p>Use o planejamento salvo ou faça um registro direto.</p></div></div>
-            <div class="segmented" role="group" aria-label="Origem da visita">
+            <div class="segmented" id="sourceMode" role="group" aria-label="Origem da visita">
               <button class="segment is-selected" type="button" data-source="planned">Do planejamento</button>
               <button class="segment" type="button" data-source="direct">Registro direto · todas as escolas</button>
             </div>
@@ -402,7 +404,7 @@
     document.querySelectorAll('[data-activity]').forEach(button=>button.addEventListener('click',()=>setActivity(button.dataset.activity)));
     document.querySelectorAll('[data-status]').forEach(button=>button.addEventListener('click',()=>setStatus(button.dataset.status)));
     $('#agendaSelect').addEventListener('change',event=>{selectAgenda(event.target.value);renderAgendaPicker()});$('#agendaPreviousDate').addEventListener('click',()=>moveAgendaDate(-1));$('#agendaNextDate').addEventListener('click',()=>moveAgendaDate(1));$('#actionSearch').addEventListener('input',renderActions);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);$('#signoutButton').addEventListener('click',async()=>{await signOut(auth);redirectLogin()});
-    onAuthStateChanged(auth,async user=>{if(!user){redirectLogin();return}try{const profileSnapshot=await getDoc(doc(db,'users',user.uid));if(!profileSnapshot.exists()||profileSnapshot.data().active!==true)throw new Error('Perfil sem acesso.');state.user=user;state.profile=profileSnapshot.data();await loadData();$('#loading').hidden=true;$('#app').hidden=false}catch(error){console.error(error);$('#loading').textContent=error?.code==='permission-denied'?'As regras do Firestore precisam ser atualizadas para liberar esta página.':'Não foi possível carregar esta página. Atualize e tente novamente.'}});
+    onAuthStateChanged(auth,async user=>{if(!user){redirectLogin();return}try{const profileSnapshot=await getDoc(doc(db,'users',user.uid));if(!profileSnapshot.exists()||profileSnapshot.data().active!==true)throw new Error('Perfil sem acesso.');document.body.dataset.tourUser=user.uid;state.user=user;state.profile=profileSnapshot.data();await loadData();$('#loading').hidden=true;$('#app').hidden=false}catch(error){console.error(error);$('#loading').textContent=error?.code==='permission-denied'?'As regras do Firestore precisam ser atualizadas para liberar esta página.':'Não foi possível carregar esta página. Atualize e tente novamente.'}});
   </script>
 </body>
 </html>

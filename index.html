@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Planejamento e registro de visitas escolares do Supervisor-ESE.">
   <title>Supervisor-ESE | Acesso seguro</title>
+  <link rel="stylesheet" href="tour/tour.css">
+  <script src="tour/tour.js" defer></script>
   <script>
     try {
       const savedTheme = localStorage.getItem('supervisor-ese-paleta') || localStorage.getItem('portal-ure-paleta');
@@ -1481,6 +1483,7 @@
         }
 
         const displayName = profile.displayName || user.email || 'Usuário';
+        document.body.dataset.tourUser = user.uid;
         loginView.hidden = true;
         profileView.hidden = true;
         document.getElementById('avatar').textContent = initials(displayName);
