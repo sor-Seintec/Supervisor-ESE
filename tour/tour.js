@@ -16,6 +16,7 @@
         <label>Novo status solicitado<select class="ese-correction-demo-status" disabled><option>Selecione o status correto</option></select></label>
         <label>Motivo da correção<textarea class="ese-correction-demo-reason" disabled placeholder="Explique o que foi registrado incorretamente e por que o status deve ser alterado."></textarea></label>
         <p class="ese-correction-demo-note">O status atual continuará valendo até a análise do Gestor-ESE.</p>
+        <div class="ese-correction-demo-pending"><span class="ese-demo-pending-icon">↻</span><span class="ese-demo-status-icon">V</span><strong>Aguardando aprovação do gestor</strong></div>
       </div>
       <footer class="ese-correction-demo-actions"><button type="button" disabled>Voltar</button><button type="button" disabled>Enviar para análise</button></footer>
     </section>`;
@@ -66,6 +67,7 @@
       {selector:'.ese-correction-demo-reason',condition:correctionTrigger,prepare:showCorrectionDemo,title:'Motivo obrigatório',text:'Explique claramente o erro e por que o status precisa ser alterado. No Tour, não é necessário preencher este campo.'},
       {selector:'.ese-correction-demo-note',condition:correctionTrigger,prepare:showCorrectionDemo,title:'Aguardar análise',text:'O status original continuará valendo nos indicadores até que o Gestor-ESE aprove a correção.'},
       {selector:'.ese-correction-demo-actions',condition:correctionTrigger,prepare:showCorrectionDemo,title:'Enviar para análise',text:'No uso real, este botão registra a solicitação para o gestor. Nesta demonstração os botões estão desativados e nada será enviado.'},
+      {selector:'.ese-correction-demo-pending',condition:correctionTrigger,prepare:showCorrectionDemo,title:'Aguardando aprovação do gestor',text:'Depois de enviar a solicitação, o ícone amarelo aparece ao lado da letra do status atual. Ele informa que a correção está aguardando aprovação ou rejeição pelo gestor.',tip:'Enquanto o ícone amarelo estiver visível, o status original continua valendo e não é necessário enviar outra solicitação.'},
       {selector:'.header-register',prepare:hideCorrectionDemo,title:'Registrar visita',text:'Depois da atividade na escola, use este botão para confirmar o resultado da visita.'}
     ]
   };
