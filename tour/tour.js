@@ -2,6 +2,9 @@
   'use strict';
   const VERSION='1';
   const page=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  let openedCorrectionForTour=false;
+  const correctionTrigger=()=>document.querySelector('.badge-status.is-correctable');
+  const openCorrectionForTour=()=>{const modal=document.querySelector('#correctionModal');if(modal?.hidden&&correctionTrigger()){correctionTrigger().click();openedCorrectionForTour=true}};
   const configs={
     'index.html':[
       {selector:'#loginView',title:'Acesso ao Supervisor-ESE',text:'Entre usando o identificador fornecido pela gestão e sua senha.'},
@@ -38,15 +41,21 @@
       {selector:'.sidebar',title:'Escolas disponíveis',text:'Estas são as escolas vinculadas ao responsável selecionado. Arraste um cartão para o dia desejado.'},
       {selector:'.calendar-container',title:'Calendário de visitas',text:'Distribua as escolas pelos dias. Um cartão planejado pode ser movido para outra data.'},
       {selector:'.status-legend',title:'Padrão de status',text:'Consulte as letras e cores usadas para identificar planejamento, visita, justificativa, adiamento e cancelamento.'},
-      {selector:'.header-register',title:'Registrar visita',text:'Depois da atividade na escola, use este botão para confirmar o resultado da visita.'}
+      {selector:'.badge-status.is-correctable',condition:correctionTrigger,title:'Status já registrado',text:'Quando uma visita já possui resultado, a letra colorida no cartão pode ser selecionada para solicitar uma correção.',tip:'Use a correção somente quando o status tiver sido informado incorretamente.'},
+      {selector:'.correction-summary',condition:correctionTrigger,prepare:openCorrectionForTour,title:'Conferência do registro',text:'Antes de pedir a alteração, confira a escola, a data, o status registrado e o supervisor responsável.'},
+      {selector:'#correctionRequestedStatus',condition:correctionTrigger,prepare:openCorrectionForTour,title:'Novo status solicitado',text:'Escolha qual deveria ser o resultado correto. O sistema não permite solicitar o mesmo status que já está registrado.'},
+      {selector:'#correctionReason',condition:correctionTrigger,prepare:openCorrectionForTour,title:'Motivo obrigatório',text:'Explique claramente o erro e por que o status precisa ser alterado. Essa informação ajudará o gestor a analisar a solicitação.'},
+      {selector:'#correctionNote',condition:correctionTrigger,prepare:openCorrectionForTour,title:'Aguardar análise',text:'O status original continuará valendo nos indicadores até que o Gestor-ESE aprove a correção.'},
+      {selector:'.correction-actions',condition:correctionTrigger,prepare:openCorrectionForTour,title:'Enviar para análise',text:'Enviar para análise registra a solicitação para o gestor. O Tour não envia nenhuma alteração.'},
+      {selector:'.header-register',prepare:()=>{if(openedCorrectionForTour){document.querySelector('#correctionClose')?.click();openedCorrectionForTour=false}},title:'Registrar visita',text:'Depois da atividade na escola, use este botão para confirmar o resultado da visita.'}
     ]
   };
   let steps=[],index=0,active=false,shades=[],focus,tooltip;
   const icon='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1.2.9-1.2 1.8M12 17h.01"/></svg>';
   const visible=el=>el&&!el.hidden&&el.getClientRects().length>0;
-  const currentSteps=()=> (configs[page]||configs['index.html']).map(item=>({...item,element:document.querySelector(item.selector)})).filter(item=>item.element&&(item.prepare||visible(item.element)));
+  const currentSteps=()=> (configs[page]||configs['index.html']).map(item=>({...item,element:document.querySelector(item.selector)})).filter(item=>item.element&&(!item.condition||item.condition())&&(item.prepare||visible(item.element)));
   const storageKey=()=>`supervisor-ese-tour:${document.body.dataset.tourUser||'usuario'}:v${VERSION}`;
-  function removeTour(){shades.forEach(el=>el.remove());shades=[];focus?.remove();tooltip?.remove();focus=tooltip=null;active=false;document.removeEventListener('keydown',onKey)}
+  function removeTour(){shades.forEach(el=>el.remove());shades=[];focus?.remove();tooltip?.remove();focus=tooltip=null;active=false;document.removeEventListener('keydown',onKey);if(openedCorrectionForTour){document.querySelector('#correctionClose')?.click();openedCorrectionForTour=false}}
   function close(completed=false){if(completed){try{localStorage.setItem(storageKey(),'completed')}catch(_){}}removeTour()}
   function onKey(event){if(event.key==='Escape')close();if(event.key==='ArrowRight'){event.preventDefault();next()}if(event.key==='ArrowLeft'){event.preventDefault();previous()}}
   function ensureLayer(){if(shades.length)return;shades=Array.from({length:4},()=>{const el=document.createElement('div');el.className='ese-tour-shade';document.body.appendChild(el);return el});focus=document.createElement('div');focus.className='ese-tour-focus';document.body.appendChild(focus);tooltip=document.createElement('section');tooltip.className='ese-tour-tooltip';tooltip.setAttribute('role','dialog');tooltip.setAttribute('aria-modal','true');document.body.appendChild(tooltip)}
