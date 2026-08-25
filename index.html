@@ -1083,7 +1083,7 @@
           <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha">
         </div>
 
-        <button class="primary" id="loginButton" type="submit">Entrar com segurança</button>
+        <button class="primary" id="loginButton" type="submit">Entrar no sistema</button>
         <p class="message" id="loginMessage" role="alert" aria-live="polite"></p>
         <p class="note">A recuperação de senha ficará sob responsabilidade do gestor e não será oferecida nesta tela.</p>
       </form>
@@ -1526,7 +1526,7 @@
         setLoginMessage(authMessages[error?.code] || 'Não foi possível entrar. Tente novamente.', 'error');
       } finally {
         loginButton.disabled = false;
-        loginButton.textContent = 'Entrar com segurança';
+        loginButton.textContent = 'Entrar no sistema';
       }
     });
 
