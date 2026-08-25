@@ -5,7 +5,7 @@
   const configs={
     'index.html':[
       {selector:'#loginView',title:'Acesso ao Supervisor-ESE',text:'Entre usando o identificador fornecido pela gestão e sua senha.'},
-      {selector:'#email',title:'Usuário de acesso',text:'Digite somente o usuário recebido, por exemplo supchanes. Não é necessário informar o endereço de e-mail completo.'},
+      {selector:'#email',title:'Usuário de acesso',text:'Digite somente o usuário recebido, por exemplo supteste. Não é necessário informar o endereço de e-mail completo.'},
       {selector:'#password',title:'Senha',text:'Informe sua senha com atenção. Por segurança, ela não é exibida na tela.'},
       {selector:'#loginButton',title:'Entrar no sistema',text:'Depois de preencher os dois campos, use este botão para validar seu acesso.'},
       {selector:'#profileView',title:'Seu painel de trabalho',text:'Este é o ponto de partida depois do login. Aqui você acompanha escolas, visitas e os próximos compromissos.'},
