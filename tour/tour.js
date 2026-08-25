@@ -28,7 +28,7 @@
       {selector:'#activityMode',prepare:()=>document.querySelector('[data-source="planned"]')?.click(),title:'Atividade da visita planejada',text:'Em uma visita planejada, você pode registrar um acompanhamento simples ou abrir a relação de ações cadastradas.'},
       {selector:'#catalogPanel',prepare:()=>document.querySelector('[data-activity="catalog"]')?.click(),title:'Ações cadastradas',text:'Marque todas as ações que realmente foram realizadas. É possível selecionar mais de uma opção e pesquisar pelo nome.'},
       {selector:'#notes',title:'Resumo da atividade',text:'Este campo é opcional e pode registrar observações, encaminhamentos e próximos passos importantes para a gestão.'},
-      {selector:'#statusGrid',title:'Resultado da visita',text:'Escolha o status correto. As letras e cores serão mantidas em todo o sistema.',tip:'Justificativa de meta, adiamento e cancelamento possuem finalidades diferentes.'},
+      {selector:'#statusGrid',title:'Resultado da visita',text:'Escolha o resultado correto: Realizada para visita concluída, Adiada quando será reagendada, Cancelada quando não aconteceu ou Justificar meta para explicar uma meta não atingida.',tip:'Atenção: use Justificar meta (J) somente quando precisar informar por que a meta de visitas não foi atingida. Não use esse status no lugar de Adiada ou Cancelada.'},
       {selector:'.legend',title:'Entenda os status',text:'A legenda lateral apresenta o padrão usado em todo o portal: P planejada, V visitada, J justificada, A adiada e C cancelada.'},
       {selector:'.submit-row',title:'Revise e confirme',text:'Confira os dados antes de salvar. O registro ficará associado automaticamente ao seu usuário.'}
     ],
