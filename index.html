@@ -1440,6 +1440,7 @@
     }
 
     function snapshotFromItems(items){return{size:items.length,docs:items.map(item=>({id:item.id,data:()=>item}))}}
+    function mergeChangedItems(current,snapshot){const map=new Map((current||[]).map(item=>[item.id,item]));snapshot.docs.forEach(item=>map.set(item.id,{id:item.id,...item.data()}));return[...map.values()].filter(item=>item.deleted!==true)}
     function applyDataSummary(profile,data){
       const isAdmin=profile.role==='admin',supervisorId=profile.supervisorId;
       const schoolDocs=(isAdmin?data.schools:data.schools.filter(item=>schoolHasSupervisor(item,supervisorId))).map(item=>({id:item.id,data:()=>item}));
@@ -1456,6 +1457,24 @@
       const cacheName='home-summary',fresh=!force&&getReadCache(currentUser.uid,cacheName);if(fresh){applyDataSummary(profile,fresh.data);return}
       const stale=getReadCache(currentUser.uid,cacheName,{allowExpired:true});
       try {
+        if(force&&stale?.sameDay&&stale.savedAt){
+          try{
+            const since=new Date(Math.max(0,stale.savedAt-60000)),changed=name=>getDocs(query(scopedCollection(name),where('updatedAt','>',since)));
+            const [schoolsDelta,visitsDelta,agendaDelta]=await Promise.all([
+              getDocs(query(collection(db,'schools'),where('updatedAt','>',since)),
+              changed('visits'),
+              changed('agenda')
+            ]);
+            const data={schools:mergeChangedItems(stale.data.schools,schoolsDelta),visits:mergeChangedItems(stale.data.visits,visitsDelta),agenda:mergeChangedItems(stale.data.agenda,agendaDelta)};
+            setReadCache(currentUser.uid,cacheName,data);
+            const visitCache=getReadCache(currentUser.uid,'visit-form-data',{allowExpired:true});
+            if(visitCache)setReadCache(currentUser.uid,'visit-form-data',{...visitCache.data,schools:mergeChangedItems(visitCache.data.schools,schoolsDelta),visits:mergeChangedItems(visitCache.data.visits,visitsDelta),agenda:mergeChangedItems(visitCache.data.agenda,agendaDelta)});
+            setReadCache(currentUser.uid,'kanban-schools',data.schools);
+            const supervisorIds=isAdmin?[...new Set([...data.agenda,...data.visits].map(item=>item.supervisorId).filter(Boolean))]:[supervisorId];
+            supervisorIds.forEach(id=>{const existing=getReadCache(currentUser.uid,`kanban-cloud-${id}`,{allowExpired:true});if(existing)setReadCache(currentUser.uid,`kanban-cloud-${id}`,{...existing.data,agenda:mergeChangedItems(existing.data.agenda,{docs:agendaDelta.docs.filter(item=>item.data().supervisorId===id)}),visits:mergeChangedItems(existing.data.visits,{docs:visitsDelta.docs.filter(item=>item.data().supervisorId===id)})})});
+            applyDataSummary(profile,data);return;
+          }catch(incrementalError){console.warn('Atualização incremental indisponível; realizando carga completa.',incrementalError)}
+        }
         const supervisorPromise=isAdmin?getDocs(collection(db,'supervisors')):getDoc(doc(db,'supervisors',supervisorId));
         const [allSchoolsSnapshot, visitsSnapshot, agendaSnapshot, actionsSnapshot, supervisorsResult, correctionsSnapshot] = await Promise.all([
           getDocs(collection(db, 'schools')),

@@ -344,6 +344,7 @@ export function getReadCache(userUid, name, { allowExpired = false } = {}) {
     return {
       data: decodeCache(parsed.data),
       savedAt: parsed.savedAt,
+      sameDay: isToday,
       fresh: isToday && parsed.expiresAt > Date.now()
     };
   } catch {

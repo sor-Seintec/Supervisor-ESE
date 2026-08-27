@@ -1200,10 +1200,16 @@
             `;
         }
 
+        function mergeChangedItems(current,snapshot){const map=new Map((current||[]).map(item=>[item.id,item]));snapshot.docs.forEach(item=>map.set(item.id,{id:item.id,...item.data()}));return[...map.values()].filter(item=>item.deleted!==true)}
+
         async function loadSupervisors() {
             state.supervisors.clear();
-            const cacheName='kanban-supervisors',cached=getReadCache(state.user.uid,cacheName);
+            const cacheName='kanban-supervisors',cached=getReadCache(state.user.uid,cacheName),stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
             if(cached){cached.data.forEach(item=>state.supervisors.set(item.id,item));}
+            else if(stale?.sameDay&&stale.savedAt&&state.profile.role==='admin'){
+                const delta=await getDocs(query(collection(db,'supervisors'),where('updatedAt','>',new Date(Math.max(0,stale.savedAt-60000)))));
+                const merged=mergeChangedItems(stale.data,delta);merged.forEach(item=>state.supervisors.set(item.id,item));setReadCache(state.user.uid,cacheName,merged);
+            }
             else if (state.profile.role === 'admin') {
                 const snapshot = await getDocs(collection(db, 'supervisors'));
                 snapshot.forEach((item) => state.supervisors.set(item.id, { id: item.id, ...item.data() }));
@@ -1235,8 +1241,9 @@
             schoolsContainer.innerHTML = '<div class="empty-schools">Carregando escolas…</div>';
             if (!supervisorId) return;
 
-            const cacheName='kanban-schools',cached=getReadCache(state.user.uid,cacheName);
+            const cacheName='kanban-schools',cached=getReadCache(state.user.uid,cacheName),stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
             let allSchools=cached?.data;
+            if(!allSchools&&stale?.sameDay&&stale.savedAt){const delta=await getDocs(query(collection(db,'schools'),where('updatedAt','>',new Date(Math.max(0,stale.savedAt-60000)))));allSchools=mergeChangedItems(stale.data,delta);setReadCache(state.user.uid,cacheName,allSchools)}
             if(!allSchools){const snapshot=await getDocs(collection(db,'schools'));allSchools=snapshot.docs.map(item=>({id:item.id,...item.data()}));setReadCache(state.user.uid,cacheName,allSchools)}
             allSchools.forEach((school) => {
                 if (school.active !== false && schoolHasSupervisor(school,supervisorId)) state.schools.set(school.id,school);
@@ -1292,8 +1299,16 @@
         async function loadCloudData({useCache=false}={}) {
             const supervisorId = currentSupervisorId();
             if (!supervisorId) return;
-            const cacheName=`kanban-cloud-${supervisorId}`,cached=useCache&&getReadCache(state.user.uid,cacheName);
+            const cacheName=`kanban-cloud-${supervisorId}`,cached=useCache&&getReadCache(state.user.uid,cacheName),stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
             if(cached){state.agendaCloud=cached.data.agenda;state.visits=cached.data.visits;state.correctionRequests=cached.data.corrections;renderCalendar();return}
+
+            if(!useCache&&stale?.sameDay&&stale.savedAt){
+                try{
+                    const since=new Date(Math.max(0,stale.savedAt-60000)),changed=name=>getDocs(query(collection(db,name),where('supervisorId','==',supervisorId),where('updatedAt','>',since)));
+                    const [agendaDelta,visitsDelta,correctionDelta]=await Promise.all([changed('agenda'),changed('visits'),changed('visitCorrectionRequests').catch(error=>error?.code==='permission-denied'?{docs:[]}:Promise.reject(error))]);
+                    state.agendaCloud=mergeChangedItems(stale.data.agenda,agendaDelta);state.visits=mergeChangedItems(stale.data.visits,visitsDelta);state.correctionRequests=mergeChangedItems(stale.data.corrections,correctionDelta);persistCloudState();return;
+                }catch(error){console.warn('Atualização incremental indisponível; realizando carga completa.',error)}
+            }
 
             const [agendaSnapshot, visitsSnapshot, correctionSnapshot] = await Promise.all([
                 getDocs(query(collection(db, 'agenda'), where('supervisorId', '==', supervisorId))),

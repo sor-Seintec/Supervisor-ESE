@@ -294,11 +294,24 @@
       state.actions=data.actions.filter(item=>item.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||a.name.localeCompare(b.name,'pt-BR'));
       renderSchools();renderAgenda();renderActions();renderProfile();applyQuerySelection();
     }
+    function mergeChangedItems(current,snapshot){const map=new Map((current||[]).map(item=>[item.id,item]));snapshot.docs.forEach(item=>map.set(item.id,{id:item.id,...item.data()}));return[...map.values()].filter(item=>item.deleted!==true)}
     async function loadData({force=false}={}){
       const cacheName='visit-form-data',fresh=!force&&getReadCache(state.user.uid,cacheName);
       if(fresh){applyLoadedData(fresh.data);return}
       const stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
       try{
+        if(force&&stale?.sameDay&&stale.savedAt){
+          try{
+            const since=new Date(Math.max(0,stale.savedAt-60000)),changed=name=>getDocs(query(scoped(name),where('updatedAt','>',since)));
+            const [schoolsDelta,agendaDelta,visitsDelta,actionsDelta]=await Promise.all([
+              getDocs(query(collection(db,'schools'),where('updatedAt','>',since)),
+              changed('agenda'),changed('visits'),
+              getDocs(query(collection(db,'actions'),where('updatedAt','>',since))
+            ]);
+            const data={schoolReadLimited:stale.data.schoolReadLimited,schools:mergeChangedItems(stale.data.schools,schoolsDelta),agenda:mergeChangedItems(stale.data.agenda,agendaDelta),visits:mergeChangedItems(stale.data.visits,visitsDelta),actions:mergeChangedItems(stale.data.actions,actionsDelta)};
+            setReadCache(state.user.uid,cacheName,data);applyLoadedData(data);return;
+          }catch(incrementalError){console.warn('Atualização incremental indisponível; realizando carga completa.',incrementalError)}
+        }
         state.schoolReadLimited=false;
         const schoolsPromise=(async()=>{try{return await getDocs(collection(db,'schools'))}catch(error){if(error?.code!=='permission-denied'||state.profile.role==='admin')throw error;state.schoolReadLimited=true;return getDocs(scoped('schools'))}})();
         const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot]=await Promise.all([schoolsPromise,getDocs(scoped('agenda')),getDocs(scoped('visits')),getDocs(collection(db,'actions'))]);
