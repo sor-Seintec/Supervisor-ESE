@@ -831,6 +831,7 @@
                 Voltar ao Portal
             </a>
             <a href="visita.html" class="btn-back header-register">Registrar visita</a>
+            <button type="button" class="btn-back" id="refreshButton">Atualizar</button>
         </div>
     </div>
 
@@ -1311,6 +1312,13 @@
             renderCalendar();
         }
 
+        function persistCloudState() {
+            const supervisorId=currentSupervisorId();
+            if(!supervisorId||!state.user)return;
+            setReadCache(state.user.uid,`kanban-cloud-${supervisorId}`,{agenda:state.agendaCloud,visits:state.visits,corrections:state.correctionRequests});
+            renderCalendar();
+        }
+
         function isDuplicate(date, schoolId, excludedAgendaId = '') {
             if ((state.agendaDraft[date] || []).some((item) => item.schoolId === schoolId)) return true;
             return state.agendaCloud.some((item) => item.id !== excludedAgendaId && timestampDateKey(item.scheduledDate) === date && item.schoolId === schoolId);
@@ -1416,7 +1424,7 @@
             try {
                 const reference = doc(collection(db, 'visitCorrectionRequests'));
                 const batch = writeBatch(db);
-                batch.set(reference, {
+                const localRequest = {
                     visitId: visit.id,
                     agendaId: visit.agendaId || state.correctionAgenda?.agendaId || null,
                     supervisorId: visit.supervisorId,
@@ -1432,12 +1440,13 @@
                     reviewStatus: 'pending',
                     createdByUid: state.user.uid,
                     requestedByEmail: state.user.email,
-                    requestedAt: serverTimestamp(),
-                    updatedAt: serverTimestamp(),
+                    requestedAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
                     schemaVersion: 1
-                });
+                };
+                batch.set(reference, {...localRequest,requestedAt:serverTimestamp(),updatedAt:serverTimestamp()});
                 await batch.commit();
-                await loadCloudData();
+                state.correctionRequests.push({id:reference.id,...localRequest});persistCloudState();
                 closeCorrectionModal();
                 showToast('Solicitação enviada para análise do Gestor-ESE.', 'success');
             } catch (error) {
@@ -1455,8 +1464,8 @@
             return runAutoSave(async () => {
                 const reference = doc(collection(db, 'agenda'));
                 const batch = writeBatch(db);
-                batch.set(reference, {
-                    recordedAt: serverTimestamp(),
+                const localAgenda = {
+                    recordedAt: Timestamp.now(),
                     scheduledDate: Timestamp.fromDate(new Date(`${date}T08:00:00`)),
                     supervisorId: item.supervisorId,
                     schoolId: item.schoolId,
@@ -1468,10 +1477,11 @@
                     createdByUid: state.user.uid,
                     status: 'scheduled',
                     schemaVersion: 1,
-                    updatedAt: serverTimestamp()
-                });
+                    updatedAt: Timestamp.now()
+                };
+                batch.set(reference, {...localAgenda,recordedAt:serverTimestamp(),updatedAt:serverTimestamp()});
                 await batch.commit();
-                await loadCloudData();
+                state.agendaCloud.push({id:reference.id,...localAgenda});persistCloudState();
             }, `${item.schoolName} adicionada e salva.`);
         }
 
@@ -1484,7 +1494,7 @@
                     updatedAt: serverTimestamp()
                 });
                 await batch.commit();
-                await loadCloudData();
+                const agenda=state.agendaCloud.find(entry=>entry.id===item.agendaId);if(agenda){agenda.scheduledDate=Timestamp.fromDate(new Date(`${targetDate}T08:00:00`));agenda.updatedAt=Timestamp.now()}persistCloudState();
             }, `${item.schoolName} movida para ${new Intl.DateTimeFormat('pt-BR').format(new Date(`${targetDate}T12:00:00`))}.`);
         }
 
@@ -1497,7 +1507,7 @@
                     updatedAt: serverTimestamp()
                 });
                 await batch.commit();
-                await loadCloudData();
+                const agenda=state.agendaCloud.find(entry=>entry.id===item.agendaId);if(agenda){agenda.shift=shift;agenda.updatedAt=Timestamp.now()}persistCloudState();
             }, `Turno de ${item.schoolName} atualizado.`);
         }
 
@@ -1508,7 +1518,7 @@
                 const batch = writeBatch(db);
                 batch.delete(doc(db, 'agenda', item.agendaId));
                 await batch.commit();
-                await loadCloudData();
+                state.agendaCloud=state.agendaCloud.filter(entry=>entry.id!==item.agendaId);persistCloudState();
             }, `Planejamento de ${item.schoolName} apagado.`);
         }
 
@@ -1684,7 +1694,7 @@
         async function changeSupervisor() {
             supervisorFilter.value = selectSupervisor.value;
             await loadSchools();
-            await loadCloudData();
+            await loadCloudData({useCache:true});
         }
 
         function changeWeek(delta) {
@@ -1720,6 +1730,42 @@
         const currentYear = new Date().getFullYear();
         [currentYear - 1, currentYear, currentYear + 1].forEach((year) => selectYear.add(new Option(year, year)));
 
+        document.getElementById('refreshButton').addEventListener('click',async()=>{
+            if(!state.user)return;
+            const button=document.getElementById('refreshButton');button.disabled=true;button.classList.add('is-syncing');
+            const backup={
+                supervisors:new Map(state.supervisors),
+                schools:new Map(state.schools),
+                agendaCloud:[...state.agendaCloud],
+                visits:[...state.visits],
+                correctionRequests:[...state.correctionRequests],
+                supervisorId:currentSupervisorId()
+            };
+            try{
+                expireReadCache(state.user.uid,'kanban-supervisors');
+                expireReadCache(state.user.uid,'kanban-schools');
+                expireReadCache(state.user.uid,`kanban-cloud-${currentSupervisorId()}`);
+                await loadSupervisors();await loadSchools();await loadCloudData();updateSyncBadge();
+                showToast('Planejamento atualizado pelo Firebase.','success');
+            }catch(error){
+                state.supervisors=backup.supervisors;
+                state.schools=backup.schools;
+                state.agendaCloud=backup.agendaCloud;
+                state.visits=backup.visits;
+                state.correctionRequests=backup.correctionRequests;
+                selectSupervisor.innerHTML='';
+                [...state.supervisors.values()]
+                    .filter(item=>item.active!==false)
+                    .sort((a,b)=>a.displayName.localeCompare(b.displayName,'pt-BR'))
+                    .forEach(item=>selectSupervisor.add(new Option(item.displayName,item.id)));
+                selectSupervisor.value=backup.supervisorId;
+                supervisorFilter.innerHTML='';
+                [...selectSupervisor.options].forEach(option=>supervisorFilter.add(new Option(option.text,option.value)));
+                renderAvailableSchools();renderCalendar();
+                showToast('Não foi possível consultar o Firebase. A cópia local foi mantida.','error');
+            }finally{button.disabled=false;button.classList.remove('is-syncing')}
+        });
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 redirectToLogin('Entre novamente para abrir o planejamento.');
@@ -1748,7 +1794,6 @@
                 redirectToLogin('Não foi possível carregar o planejamento.');
             }
         });
-        setInterval(()=>{if(state.user)syncVisitOutbox(db,state.user.uid)},15*60*1000);
     </script>
 </body>
 

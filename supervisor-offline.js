@@ -11,7 +11,27 @@ const DB_VERSION = 1;
 const STORE_NAME = 'visitOutbox';
 const FALLBACK_KEY = 'supervisor-ese-visit-outbox-v1';
 const CACHE_PREFIX = 'supervisor-ese-read-cache-v1';
-const DEFAULT_CACHE_TTL = 5 * 60 * 1000;
+const DEFAULT_CACHE_TTL = 24 * 60 * 60 * 1000;
+const CLOUD_SYNC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 10a6.5 6.5 0 0 0-12.4-2A5 5 0 0 0 6 18h4v-2H6a3 3 0 1 1 .6-5.94l1.24.25.27-1.24A4.5 4.5 0 0 1 16.7 10H14l3.5 3.5L21 10h-2.5ZM14 14v2h4a3 3 0 0 1-.6 5.94l-1.24-.25-.27 1.24A4.5 4.5 0 0 1 7.3 22H10l-3.5-3.5L3 22h2.5A6.5 6.5 0 0 0 17.9 20a5 5 0 0 0 .1-10h-4v2h4a3 3 0 0 1 0 6h-4Z"/></svg>';
+
+export function decorateCloudSyncButton(button = document.getElementById('refreshButton')) {
+  if (!button || button.dataset.cloudSyncReady === 'true') return button;
+  button.dataset.cloudSyncReady = 'true';
+  button.classList.add('cloud-sync-button');
+  button.innerHTML = `${CLOUD_SYNC_ICON}<span>Atualizar</span>`;
+  button.title = 'Buscar agora as alterações do Firebase';
+  button.setAttribute('aria-label', 'Atualizar dados pelo Firebase');
+  if (!document.getElementById('supervisor-cloud-sync-style')) {
+    const style = document.createElement('style');
+    style.id = 'supervisor-cloud-sync-style';
+    style.textContent = '.cloud-sync-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;white-space:nowrap}.cloud-sync-button svg{width:17px;height:17px;fill:currentColor;flex:none}.cloud-sync-button.is-syncing svg{animation:supervisorCloudSync 1s linear infinite}@keyframes supervisorCloudSync{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+  }
+  return button;
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => decorateCloudSyncButton(), { once: true });
+else queueMicrotask(() => decorateCloudSyncButton());
 const RETRYABLE_CODES = new Set([
   'aborted',
   'cancelled',
@@ -290,13 +310,24 @@ function cacheKey(userUid, name) {
   return `${CACHE_PREFIX}:${userUid}:${name}`;
 }
 
+function localDayKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function nextLocalDayStart() {
+  const tomorrow = new Date();
+  tomorrow.setHours(24, 0, 0, 0);
+  return tomorrow.getTime();
+}
+
 export function setReadCache(userUid, name, data, ttl = DEFAULT_CACHE_TTL) {
   if (!userUid) return;
   const savedAt = Date.now();
   try {
-    sessionStorage.setItem(cacheKey(userUid, name), JSON.stringify({
+    localStorage.setItem(cacheKey(userUid, name), JSON.stringify({
       savedAt,
-      expiresAt: savedAt + ttl,
+      savedDay: localDayKey(),
+      expiresAt: Math.min(savedAt + ttl, nextLocalDayStart()),
       data: encodeCache(data)
     }));
   } catch {
@@ -307,12 +338,13 @@ export function setReadCache(userUid, name, data, ttl = DEFAULT_CACHE_TTL) {
 export function getReadCache(userUid, name, { allowExpired = false } = {}) {
   if (!userUid) return null;
   try {
-    const parsed = JSON.parse(sessionStorage.getItem(cacheKey(userUid, name)) || 'null');
-    if (!parsed || (!allowExpired && parsed.expiresAt <= Date.now())) return null;
+    const parsed = JSON.parse(localStorage.getItem(cacheKey(userUid, name)) || 'null');
+    const isToday = parsed?.savedDay === localDayKey();
+    if (!parsed || (!allowExpired && (!isToday || parsed.expiresAt <= Date.now()))) return null;
     return {
       data: decodeCache(parsed.data),
       savedAt: parsed.savedAt,
-      fresh: parsed.expiresAt > Date.now()
+      fresh: isToday && parsed.expiresAt > Date.now()
     };
   } catch {
     return null;
@@ -323,8 +355,8 @@ export function expireReadCache(userUid, name) {
   if (!userUid) return;
   try {
     const key = cacheKey(userUid, name);
-    const parsed = JSON.parse(sessionStorage.getItem(key) || 'null');
-    if (parsed) sessionStorage.setItem(key, JSON.stringify({ ...parsed, expiresAt: 0 }));
+    const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+    if (parsed) localStorage.setItem(key, JSON.stringify({ ...parsed, expiresAt: 0 }));
   } catch {
     // Mantém o fluxo principal mesmo sem cache.
   }

@@ -165,6 +165,7 @@
     <nav class="top-actions" aria-label="Navegação principal">
       <a class="nav-link" href="index.html">Início</a>
       <a class="nav-link" href="kanban.html">Planejamento</a>
+      <button class="nav-link" id="refreshButton" type="button">Atualizar</button>
     </nav>
     <div class="sidebar-account" id="sidebarAccount" hidden>
       <div class="sidebar-account-avatar" id="sidebarAccountAvatar" aria-hidden="true">--</div>
@@ -372,7 +373,7 @@
       $('#formPanel').hidden=true;$('#successPanel').hidden=false;
       $('#successTitle').textContent=queued?'Registro protegido neste dispositivo':'Registro salvo com segurança';
       const detail=state.status==='justified'?`Justificativa para a meta · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`:`${labels[state.status]} · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`;
-      $('#successText').textContent=queued?`${detail} O envio ao Firebase está pendente e será tentado automaticamente.`:detail;
+      $('#successText').textContent=queued?`${detail} O envio ao Firebase está pendente; use “Sincronizar agora” quando houver conexão ou cota disponível.`:detail;
       window.scrollTo({top:0,behavior:'smooth'});
     }
     async function saveVisit(event){
@@ -422,21 +423,22 @@
         queuedLocally=true;
         const result=await synchronizePending({force:true,notify:false});
         const stillQueued=(await listVisitOutbox(state.user.uid)).some(item=>item.id===operationId);
+        state.visits.push({id:visitRef.id,...visit});
+        if(values.agendaId)state.agenda=state.agenda.filter(item=>item.id!==values.agendaId);
+        setReadCache(state.user.uid,'visit-form-data',{schoolReadLimited:state.schoolReadLimited,schools:[...state.schools.values()],agenda:state.agenda,visits:state.visits,actions:state.actions});
         showSaveResult(values,stillQueued);
-        if(!stillQueued){expireReadCache(state.user.uid,'visit-form-data')}
-        else if(result.failed)showToast('Sem conexão ou cota disponível. O registro foi protegido neste dispositivo.','error');
+        if(stillQueued&&result.failed)showToast('Sem conexão ou cota disponível. O registro foi protegido neste dispositivo.','error');
       }catch(error){console.error(error);showToast(queuedLocally?'O registro ficou protegido neste dispositivo e será reenviado.':(error.message||'Não foi possível guardar o registro neste dispositivo.'),'error')}
       finally{button.disabled=false;button.textContent='Confirmar registro'}
     }
     async function resetForm(){
       const button=$('#newRecordButton'),label=button.querySelector('span');
-      button.disabled=true;label.textContent='Atualizando…';
+      button.disabled=true;label.textContent='Voltando…';
       try{
         state.selectedActions.clear();state.selectedAgendaDate='';state.agendaDateOffset=0;$('#visitForm').reset();
-        expireReadCache(state.user.uid,'visit-form-data');await loadData({force:true});
         setSource('planned');setActivity('none');setStatus('completed');renderAgenda();renderActions();
         $('#formPanel').hidden=false;$('#successPanel').hidden=true;window.scrollTo({top:0,behavior:'smooth'});
-      }catch(error){console.error('Falha ao atualizar os dados após o registro:',error);showToast('O registro foi salvo, mas não foi possível atualizar a lista. Tente novamente.','error')}
+      }catch(error){console.error('Falha ao voltar ao formulário:',error);showToast('O registro foi salvo, mas não foi possível reabrir o formulário.','error')}
       finally{button.disabled=false;label.textContent='Voltar'}
     }
 
@@ -445,12 +447,11 @@
     document.querySelectorAll('[data-status]').forEach(button=>button.addEventListener('click',()=>setStatus(button.dataset.status)));
     $('#agendaSelect').addEventListener('change',event=>{selectAgenda(event.target.value);renderAgendaPicker()});$('#agendaPreviousDate').addEventListener('click',()=>moveAgendaDate(-1));$('#agendaNextDate').addEventListener('click',()=>moveAgendaDate(1));$('#actionSearch').addEventListener('input',renderActions);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);
     $('#syncNowButton').addEventListener('click',()=>synchronizePending({force:true}));
+    $('#refreshButton').addEventListener('click',async()=>{if(!state.user)return;const button=$('#refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(state.user.uid,'visit-form-data');await loadData({force:true});showToast('Dados atualizados pelo Firebase.','success')}finally{button.disabled=false;button.classList.remove('is-syncing')}});
     $('#exportPendingButton').addEventListener('click',async()=>exportPendingVisits(await listVisitOutbox(state.user.uid)));
     $('#signoutButton').addEventListener('click',async()=>{await refreshSyncPanel();if(state.outboxCount&&!confirm(`Há ${state.outboxCount} registro(s) aguardando envio. Eles continuarão guardados neste dispositivo. Deseja sair?`))return;await signOut(auth);redirectLogin()});
-    window.addEventListener('online',()=>synchronizePending({force:true,notify:false}));
     window.addEventListener('supervisor-outbox-change',refreshSyncPanel);
     window.addEventListener('beforeunload',event=>{if(!state.outboxCount)return;event.preventDefault();event.returnValue='' });
-    setInterval(()=>{if(state.outboxCount)synchronizePending({notify:false})},5*60*1000);
     onAuthStateChanged(auth,async user=>{if(!user){redirectLogin();return}try{const profileSnapshot=await getDoc(doc(db,'users',user.uid));if(!profileSnapshot.exists()||profileSnapshot.data().active!==true)throw new Error('Perfil sem acesso.');document.body.dataset.tourUser=user.uid;state.user=user;state.profile=profileSnapshot.data();await refreshSyncPanel();await synchronizePending({notify:false});await loadData();$('#loading').hidden=true;$('#app').hidden=false}catch(error){console.error(error);$('#loading').textContent=error?.code==='permission-denied'?'As regras do Firestore precisam ser atualizadas para liberar esta página.':'Não foi possível carregar esta página. Atualize e tente novamente.'}});
   </script>
 </body>
