@@ -974,6 +974,7 @@
             where,
             writeBatch
         } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+        import { expireReadCache, getReadCache, setReadCache, syncVisitOutbox } from './supervisor-offline.js';
 
         const firebaseConfig = {
             apiKey: 'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',
@@ -1200,7 +1201,9 @@
 
         async function loadSupervisors() {
             state.supervisors.clear();
-            if (state.profile.role === 'admin') {
+            const cacheName='kanban-supervisors',cached=getReadCache(state.user.uid,cacheName);
+            if(cached){cached.data.forEach(item=>state.supervisors.set(item.id,item));}
+            else if (state.profile.role === 'admin') {
                 const snapshot = await getDocs(collection(db, 'supervisors'));
                 snapshot.forEach((item) => state.supervisors.set(item.id, { id: item.id, ...item.data() }));
             } else {
@@ -1208,6 +1211,7 @@
                 if (!item.exists()) throw new Error('Cadastro profissional não encontrado.');
                 state.supervisors.set(item.id, { id: item.id, ...item.data() });
             }
+            if(!cached)setReadCache(state.user.uid,cacheName,[...state.supervisors.values()]);
 
             selectSupervisor.innerHTML = '';
             [...state.supervisors.values()]
@@ -1230,10 +1234,11 @@
             schoolsContainer.innerHTML = '<div class="empty-schools">Carregando escolas…</div>';
             if (!supervisorId) return;
 
-            const snapshot = await getDocs(collection(db, 'schools'));
-            snapshot.forEach((item) => {
-                const school = { id: item.id, ...item.data() };
-                if (school.active !== false && schoolHasSupervisor(school,supervisorId)) state.schools.set(item.id,school);
+            const cacheName='kanban-schools',cached=getReadCache(state.user.uid,cacheName);
+            let allSchools=cached?.data;
+            if(!allSchools){const snapshot=await getDocs(collection(db,'schools'));allSchools=snapshot.docs.map(item=>({id:item.id,...item.data()}));setReadCache(state.user.uid,cacheName,allSchools)}
+            allSchools.forEach((school) => {
+                if (school.active !== false && schoolHasSupervisor(school,supervisorId)) state.schools.set(school.id,school);
             });
             renderAvailableSchools();
         }
@@ -1283,9 +1288,11 @@
             });
         }
 
-        async function loadCloudData() {
+        async function loadCloudData({useCache=false}={}) {
             const supervisorId = currentSupervisorId();
             if (!supervisorId) return;
+            const cacheName=`kanban-cloud-${supervisorId}`,cached=useCache&&getReadCache(state.user.uid,cacheName);
+            if(cached){state.agendaCloud=cached.data.agenda;state.visits=cached.data.visits;state.correctionRequests=cached.data.corrections;renderCalendar();return}
 
             const [agendaSnapshot, visitsSnapshot, correctionSnapshot] = await Promise.all([
                 getDocs(query(collection(db, 'agenda'), where('supervisorId', '==', supervisorId))),
@@ -1300,6 +1307,7 @@
                 .map((item) => ({ id: item.id, ...item.data() }));
             state.visits = visitsSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
             state.correctionRequests = correctionSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+            setReadCache(state.user.uid,cacheName,{agenda:state.agendaCloud,visits:state.visits,corrections:state.correctionRequests});
             renderCalendar();
         }
 
@@ -1729,16 +1737,18 @@
                 document.body.dataset.tourUser = user.uid;
                 state.profile = profileSnapshot.data();
                 loadDrafts();
+                const outboxResult=await syncVisitOutbox(db,user.uid);if(outboxResult.synced)expireReadCache(user.uid,`kanban-cloud-${state.profile.supervisorId}`);
                 await loadSupervisors();
                 setCurrentWeek();
                 await loadSchools();
-                await loadCloudData();
+                await loadCloudData({useCache:true});
                 updateSyncBadge();
             } catch (error) {
                 console.error('Falha ao iniciar o Kanban:', error);
                 redirectToLogin('Não foi possível carregar o planejamento.');
             }
         });
+        setInterval(()=>{if(state.user)syncVisitOutbox(db,state.user.uid)},15*60*1000);
     </script>
 </body>
 

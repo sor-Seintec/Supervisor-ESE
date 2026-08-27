@@ -832,6 +832,7 @@
       background: var(--blue-dark);
       box-shadow: 0 13px 27px rgba(51, 107, 141, 0.23);
     }
+    .offline-sync{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--line);border-radius:13px;background:color-mix(in srgb,var(--theme-light) 74%,#fff);font-size:.72rem}.offline-sync strong{display:block;color:var(--navy);font-size:.78rem}.offline-sync span{color:var(--muted)}.offline-sync button{min-height:34px;padding:0 11px;border:0;border-radius:9px;background:var(--blue-dark);color:#fff;font-size:.7rem;font-weight:800;cursor:pointer}.offline-sync button:disabled{opacity:.5;cursor:default}
 
     .agenda-panel {
       min-width: 0;
@@ -1126,6 +1127,8 @@
             </div>
           </section>
 
+          <section class="offline-sync" id="offlineSync" aria-live="polite"><div><strong id="offlineSyncTitle">Sincronização em dia</strong><span id="offlineSyncText">Nenhum registro aguarda envio.</span></div><button type="button" id="offlineSyncButton" disabled>Sincronizar</button></section>
+
           <nav class="dashboard-actions" aria-label="Ações principais">
             <a class="dashboard-action" href="visita.html">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6m3-3h-6"/></svg>
@@ -1172,6 +1175,7 @@
       query,
       where
     } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+    import { expireReadCache, getReadCache, getVisitOutboxCount, setReadCache, syncVisitOutbox } from './supervisor-offline.js';
 
     const firebaseConfig = {
       apiKey: 'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',
@@ -1199,6 +1203,8 @@
     const themeKey = 'supervisor-ese-paleta';
     const allowedThemes = new Set(['blue','yellow','green','rose','lavender','peach']);
     let sessionNotice = sessionStorage.getItem('supervisorESELoginNotice') || '';
+    let currentUser = null;
+    let currentOutboxCount = 0;
     sessionStorage.removeItem('supervisorESELoginNotice');
 
     function applyTheme(theme, persist = true) {
@@ -1431,13 +1437,22 @@
       });
     }
 
-    async function loadDataSummary(profile) {
+    function snapshotFromItems(items){return{size:items.length,docs:items.map(item=>({id:item.id,data:()=>item}))}}
+    function applyDataSummary(profile,data){
+      const isAdmin=profile.role==='admin',supervisorId=profile.supervisorId;
+      const schoolDocs=(isAdmin?data.schools:data.schools.filter(item=>schoolHasSupervisor(item,supervisorId))).map(item=>({id:item.id,data:()=>item}));
+      const schoolsSnapshot={docs:schoolDocs,size:schoolDocs.length},visitsSnapshot=snapshotFromItems(data.visits),agendaSnapshot=snapshotFromItems(data.agenda);
+      document.getElementById('schoolCount').textContent=schoolsSnapshot.size;document.getElementById('visitCount').textContent=visitsSnapshot.size;document.getElementById('agendaCount').textContent=agendaSnapshot.size;renderSchoolPopover(schoolsSnapshot);document.getElementById('dataSummary').hidden=false;renderUpcomingVisits(agendaSnapshot);
+    }
+    async function loadDataSummary(profile,{force=false}={}) {
       const isAdmin = profile.role === 'admin';
       const supervisorId = profile.supervisorId;
       const scopedCollection = (collectionName) => isAdmin
         ? collection(db, collectionName)
         : query(collection(db, collectionName), where('supervisorId', '==', supervisorId));
 
+      const cacheName='home-summary',fresh=!force&&getReadCache(currentUser.uid,cacheName);if(fresh){applyDataSummary(profile,fresh.data);return}
+      const stale=getReadCache(currentUser.uid,cacheName,{allowExpired:true});
       try {
         const [allSchoolsSnapshot, visitsSnapshot, agendaSnapshot] = await Promise.all([
           getDocs(collection(db, 'schools')),
@@ -1445,25 +1460,29 @@
           getDocs(scopedCollection('agenda'))
         ]);
 
-        const schoolDocs = isAdmin
-          ? allSchoolsSnapshot.docs
-          : allSchoolsSnapshot.docs.filter((snapshot) => schoolHasSupervisor(snapshot.data(),supervisorId));
-        const schoolsSnapshot = { docs: schoolDocs, size: schoolDocs.length };
-
-        document.getElementById('schoolCount').textContent = schoolsSnapshot.size;
-        document.getElementById('visitCount').textContent = visitsSnapshot.size;
-        document.getElementById('agendaCount').textContent = agendaSnapshot.size;
-        renderSchoolPopover(schoolsSnapshot);
-        document.getElementById('dataSummary').hidden = false;
-        renderUpcomingVisits(agendaSnapshot);
+        const data={schools:allSchoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()}))};setReadCache(currentUser.uid,'home-summary',data);applyDataSummary(profile,data);
       } catch (error) {
         console.error('Falha ao carregar o resumo de dados:', error);
+        if(stale){applyDataSummary(profile,stale.data);profileMessage.textContent='Resumo exibido da última cópia disponível neste navegador.';profileMessage.hidden=false;return}
         document.getElementById('dataSummary').hidden = true;
         profileMessage.textContent = 'O perfil foi reconhecido, mas os dados migrados ainda não foram liberados pelas regras.';
       }
     }
 
+    async function refreshOfflineSync(){
+      if(!currentUser)return;currentOutboxCount=await getVisitOutboxCount(currentUser.uid);
+      document.getElementById('offlineSyncTitle').textContent=currentOutboxCount?`${currentOutboxCount} registro(s) aguardando envio`:'Sincronização em dia';
+      document.getElementById('offlineSyncText').textContent=currentOutboxCount?'Os dados estão protegidos neste dispositivo.':'Nenhum registro aguarda envio.';
+      document.getElementById('offlineSyncButton').disabled=!currentOutboxCount;
+    }
+    async function syncFromHome(){
+      if(!currentUser)return;const button=document.getElementById('offlineSyncButton');button.disabled=true;button.textContent='Enviando…';
+      try{const result=await syncVisitOutbox(db,currentUser.uid,{force:true});if(result.synced){expireReadCache(currentUser.uid,'home-summary')}await refreshOfflineSync()}
+      finally{button.textContent='Sincronizar';button.disabled=!currentOutboxCount}
+    }
+
     async function showAuthorizedProfile(user) {
+      currentUser=user;
       profileMessage.textContent = 'Validando seu perfil no Firestore…';
 
       try {
@@ -1496,6 +1515,8 @@
         profileMessage.textContent = '';
         profileMessage.hidden = true;
         await validateAccessScope(user, profile);
+        await refreshOfflineSync();
+        const syncResult=await syncVisitOutbox(db,user.uid);if(syncResult.synced)expireReadCache(user.uid,'home-summary');await refreshOfflineSync();
         await loadDataSummary(profile);
         sessionLoading.hidden = true;
         profileView.hidden = false;
@@ -1533,7 +1554,11 @@
       }
     });
 
+    document.getElementById('offlineSyncButton').addEventListener('click',syncFromHome);
+    window.addEventListener('online',syncFromHome);window.addEventListener('supervisor-outbox-change',refreshOfflineSync);
+    setInterval(()=>{if(currentUser&&currentOutboxCount)syncFromHome()},15*60*1000);
     document.getElementById('logoutButton').addEventListener('click', async () => {
+      await refreshOfflineSync();if(currentOutboxCount&&!confirm(`Há ${currentOutboxCount} registro(s) aguardando envio. Eles permanecerão neste dispositivo. Deseja sair?`))return;
       await signOut(auth);
     });
 

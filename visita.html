@@ -107,6 +107,7 @@
     .profile{padding:20px}.profile-head{display:flex;align-items:center;gap:11px}.avatar{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:var(--blue);color:#fff;font-weight:900}.profile h2{margin:0;font-size:1rem}.profile p{margin:3px 0 0;color:var(--muted);font-size:.77rem;overflow-wrap:anywhere}
     .profile-dl{margin:17px 0 0}.profile-dl div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #e5edf1;font-size:.8rem}.profile-dl dt{color:var(--muted)}.profile-dl dd{margin:0;font-weight:800;text-align:right}
     .legend{padding:20px}.legend h2{margin:0 0 13px;font-size:1rem}.legend-row{display:flex;align-items:center;gap:10px;margin-top:9px;color:#496173;font-size:.82rem}.legend-row b{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:var(--color);color:#fff;font-size:.75rem}
+    .sync-card{padding:20px}.sync-card h2{margin:0;font-size:1rem}.sync-summary{display:flex;align-items:center;gap:11px;margin-top:13px}.sync-count{min-width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#fff1d6;color:#8a5a00;font-size:1.05rem;font-weight:900}.sync-copy{margin:0;color:var(--muted);font-size:.8rem;line-height:1.45}.sync-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:14px}.sync-button{min-height:40px;padding:0 13px;border:1px solid var(--line);border-radius:10px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer}.sync-button.secondary{background:#fff;color:var(--navy)}.sync-button:disabled{opacity:.55;cursor:wait}.sync-ok{color:#16734f}.sync-warning{color:#9a6200}
     .notice{margin-top:15px;padding:12px 14px;border-radius:12px;background:#fff3cd;color:#725a12;font-size:.82rem;font-weight:650}
     .toast{position:fixed;z-index:100;right:22px;bottom:22px;width:min(390px,calc(100vw - 32px));padding:15px 17px;border-radius:13px;background:var(--navy);color:#fff;box-shadow:0 15px 40px rgba(15,44,63,.25);font-weight:700}.toast.error{background:#9b2c2c}.toast.success{background:#16734f}
     .success-panel{padding:32px;text-align:center}.success-icon{width:62px;height:62px;display:grid;place-items:center;margin:0 auto 15px;border-radius:20px;background:#dcf6eb;color:#117453;font-size:1.7rem;font-weight:900}.success-panel h2{margin:0;font-size:1.45rem}.success-panel p{margin:8px auto 20px;max-width:520px;color:var(--muted)}.success-actions{width:100%;display:flex;align-items:center;justify-content:center}.success-back{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin:0 auto}.success-back svg{width:17px;height:17px}
@@ -244,7 +245,7 @@
       </section>
 
       <section class="card success-panel" id="successPanel" hidden>
-        <div class="success-icon">✓</div><h2>Registro salvo com segurança</h2><p id="successText"></p>
+        <div class="success-icon">✓</div><h2 id="successTitle">Registro salvo com segurança</h2><p id="successText"></p>
         <div class="success-actions">
           <button class="primary success-back" type="button" id="newRecordButton">
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>
@@ -256,6 +257,7 @@
 
     <aside class="side">
       <section class="card profile"><div class="profile-head"><span class="avatar" id="avatar">—</span><div><h2 id="profileName">Carregando…</h2><p id="profileEmail"></p></div></div><dl class="profile-dl"><div><dt>Perfil</dt><dd id="profileRole">—</dd></div><div><dt>Escolas vinculadas</dt><dd id="schoolCount">—</dd></div><div><dt>Visitas pendentes</dt><dd id="pendingCount">—</dd></div></dl><p class="notice" id="passwordNotice" hidden>Conta marcada para troca de senha no primeiro acesso.</p><p class="notice" id="schoolAccessNotice" hidden>Visualização temporária: publique as novas regras para liberar todas as escolas no registro direto.</p></section>
+      <section class="card sync-card" id="syncCard" hidden><h2>Sincronização</h2><div class="sync-summary"><strong class="sync-count" id="syncCount">0</strong><p class="sync-copy" id="syncText">Todos os registros foram enviados.</p></div><div class="sync-actions"><button class="sync-button" type="button" id="syncNowButton">Sincronizar agora</button><button class="sync-button secondary" type="button" id="exportPendingButton" title="Baixar uma cópia dos registros pendentes">Exportar</button></div></section>
       <section class="card legend"><h2>Padrão de status</h2><div class="legend-row" style="--color:var(--planned)"><b>P</b>Planejada</div><div class="legend-row" style="--color:var(--completed)"><b>V</b>Visitada</div><div class="legend-row" style="--color:var(--justified)"><b>J</b>Justificada</div><div class="legend-row" style="--color:var(--postponed)"><b>A</b>Adiada</div><div class="legend-row" style="--color:var(--cancelled)"><b>C</b>Cancelada</div></section>
     </aside>
   </main>
@@ -264,12 +266,13 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js';
     import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js';
-    import { collection, doc, getDoc, getDocs, getFirestore, query, where, writeBatch, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+    import { collection, doc, getDoc, getDocs, getFirestore, query, where } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
+    import { createOperationId, expireReadCache, exportPendingVisits, getReadCache, listVisitOutbox, queueVisitOperation, setReadCache, syncVisitOutbox } from './supervisor-offline.js';
 
     const firebaseConfig={apiKey:'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',authDomain:'supervisor-ese.firebaseapp.com',projectId:'supervisor-ese',storageBucket:'supervisor-ese.firebasestorage.app',messagingSenderId:'756390446092',appId:'1:756390446092:web:26a898746dd4e3fab45a29'};
     const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
     const $=(selector)=>document.querySelector(selector);
-    const state={user:null,profile:null,source:'planned',activity:'none',status:'completed',schools:new Map(),ownSchoolIds:new Set(),schoolReadLimited:false,agenda:[],visits:[],actions:[],selectedActions:new Set(),agendaDateOffset:0,selectedAgendaDate:''};
+    const state={user:null,profile:null,source:'planned',activity:'none',status:'completed',schools:new Map(),ownSchoolIds:new Set(),schoolReadLimited:false,agenda:[],visits:[],actions:[],selectedActions:new Set(),agendaDateOffset:0,selectedAgendaDate:'',outboxCount:0,syncing:false};
     const labels={completed:'Realizada',postponed:'Adiada',cancelled:'Cancelada',justified:'Justificada'};
 
     function dateKey(value){if(!value)return'';const date=value.toDate?value.toDate():new Date(value);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
@@ -281,15 +284,29 @@
     function redirectLogin(){location.replace('index.html')}
     function scoped(name){return state.profile.role==='admin'?collection(db,name):query(collection(db,name),where('supervisorId','==',state.profile.supervisorId))}
 
-    async function loadData(){
-      const schoolsPromise=(async()=>{try{return await getDocs(collection(db,'schools'))}catch(error){if(error?.code!=='permission-denied'||state.profile.role==='admin')throw error;state.schoolReadLimited=true;return getDocs(scoped('schools'))}})();
-      const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot]=await Promise.all([schoolsPromise,getDocs(scoped('agenda')),getDocs(scoped('visits')),getDocs(collection(db,'actions'))]);
-      state.schools=new Map(schoolsSnapshot.docs.map(item=>[item.id,{id:item.id,...item.data()}]));
+    function applyLoadedData(data){
+      state.schoolReadLimited=data.schoolReadLimited===true;
+      state.schools=new Map(data.schools.map(item=>[item.id,item]));
       state.ownSchoolIds=new Set([...state.schools.values()].filter(item=>state.profile.role==='admin'||schoolHasSupervisor(item,state.profile.supervisorId)).map(item=>item.id));
-      state.agenda=agendaSnapshot.docs.map(item=>({id:item.id,...item.data()}));
-      state.visits=visitsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
-      state.actions=actionsSnapshot.docs.map(item=>({id:item.id,...item.data()})).filter(item=>item.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||a.name.localeCompare(b.name,'pt-BR'));
+      state.agenda=data.agenda;
+      state.visits=data.visits;
+      state.actions=data.actions.filter(item=>item.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||a.name.localeCompare(b.name,'pt-BR'));
       renderSchools();renderAgenda();renderActions();renderProfile();applyQuerySelection();
+    }
+    async function loadData({force=false}={}){
+      const cacheName='visit-form-data',fresh=!force&&getReadCache(state.user.uid,cacheName);
+      if(fresh){applyLoadedData(fresh.data);return}
+      const stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
+      try{
+        state.schoolReadLimited=false;
+        const schoolsPromise=(async()=>{try{return await getDocs(collection(db,'schools'))}catch(error){if(error?.code!=='permission-denied'||state.profile.role==='admin')throw error;state.schoolReadLimited=true;return getDocs(scoped('schools'))}})();
+        const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot]=await Promise.all([schoolsPromise,getDocs(scoped('agenda')),getDocs(scoped('visits')),getDocs(collection(db,'actions'))]);
+        const data={schoolReadLimited:state.schoolReadLimited,schools:schoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()})),visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),actions:actionsSnapshot.docs.map(item=>({id:item.id,...item.data()}))};
+        setReadCache(state.user.uid,cacheName,data);applyLoadedData(data);
+      }catch(error){
+        if(!stale)throw error;
+        applyLoadedData(stale.data);showToast('Sem acesso ao Firebase agora. Exibindo a última cópia disponível neste navegador.','error');
+      }
     }
     function pendingAgenda(){const used=new Set(state.visits.map(item=>item.agendaId).filter(Boolean));return state.agenda.filter(item=>!used.has(item.id)&&!['completed','cancelled','justified'].includes(item.status)).sort((a,b)=>(a.scheduledDate?.seconds||0)-(b.scheduledDate?.seconds||0))}
     function renderProfile(){const name=state.profile.displayName||state.user.email,role=state.profile.role==='admin'?'Administrador':'Supervisor';$('#profileName').textContent=name;$('#profileEmail').textContent=state.profile.email||state.user.email;$('#profileRole').textContent=role;$('#avatar').textContent=initials(name);$('#sidebarAccountAvatar').textContent=initials(name);$('#sidebarAccountName').textContent=name;$('#sidebarAccountRole').textContent=role;$('#sidebarAccount').hidden=false;$('#schoolCount').textContent=state.ownSchoolIds.size;$('#pendingCount').textContent=pendingAgenda().length;$('#passwordNotice').hidden=state.profile.mustChangePassword!==true;$('#schoolAccessNotice').hidden=!state.schoolReadLimited}
@@ -332,23 +349,50 @@
     function selectAgenda(id){const item=state.agenda.find(entry=>entry.id===id);if(!item)return;state.selectedAgendaDate=dateKey(item.scheduledDate);$('#schoolSelect').value=item.schoolId;$('#visitDate').value=dateKey(item.scheduledDate);$('#shiftSelect').value=item.shift||'Manhã'}
     function applyQuerySelection(){const agendaId=new URLSearchParams(location.search).get('agenda');if(agendaId&&pendingAgenda().some(item=>item.id===agendaId)){setSource('planned');chooseAgenda(agendaId)}}
     function validate(){const school=state.schools.get($('#schoolSelect').value),date=$('#visitDate').value,agendaId=$('#agendaSelect').value; if(state.source==='planned'&&!agendaId)throw new Error('Selecione uma visita do planejamento.');if(!school)throw new Error('Selecione uma escola válida.');if(!date)throw new Error('Informe a data da visita.');if(state.activity==='catalog'&&!state.selectedActions.size)throw new Error('Selecione pelo menos uma ação realizada.');if(state.activity==='custom'&&!$('#customSubject').value.trim())throw new Error('Descreva o assunto novo.');if(state.status!=='completed'&&!$('#justification').value.trim())throw new Error('Informe o motivo do status selecionado.');if(agendaId&&state.visits.some(item=>item.agendaId===agendaId))throw new Error('Este planejamento já possui um registro de visita.');return{school,date,agendaId}}
+    async function refreshSyncPanel(){
+      if(!state.user)return;
+      const items=await listVisitOutbox(state.user.uid);state.outboxCount=items.length;
+      $('#syncCard').hidden=false;$('#syncCount').textContent=String(items.length);
+      const needsAttention=items.filter(item=>item.status==='needs_attention').length;
+      $('#syncText').className=`sync-copy ${items.length?'sync-warning':'sync-ok'}`;
+      $('#syncText').textContent=!items.length?'Todos os registros foram enviados ao Firebase.':needsAttention?`${items.length} registro(s) guardado(s); ${needsAttention} exige(m) nova tentativa ou revisão.`:`${items.length} registro(s) protegido(s) neste dispositivo aguardando envio.`;
+      $('#syncNowButton').disabled=state.syncing||!items.length;$('#exportPendingButton').disabled=!items.length;
+    }
+    async function synchronizePending({force=false,notify=true}={}){
+      if(!state.user||state.syncing)return{synced:0,pending:state.outboxCount};
+      state.syncing=true;await refreshSyncPanel();$('#syncNowButton').textContent='Sincronizando…';
+      try{
+        const result=await syncVisitOutbox(db,state.user.uid,{force});
+        if(result.synced){expireReadCache(state.user.uid,'visit-form-data');if(notify)showToast(`${result.synced} registro(s) sincronizado(s) com o Firebase.`,'success')}
+        else if(result.pending&&notify)showToast('Os registros continuam protegidos neste dispositivo e serão enviados automaticamente.','error');
+        return result;
+      }finally{state.syncing=false;$('#syncNowButton').textContent='Sincronizar agora';await refreshSyncPanel()}
+    }
+    function showSaveResult(values,queued){
+      $('#formPanel').hidden=true;$('#successPanel').hidden=false;
+      $('#successTitle').textContent=queued?'Registro protegido neste dispositivo':'Registro salvo com segurança';
+      const detail=state.status==='justified'?`Justificativa para a meta · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`:`${labels[state.status]} · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`;
+      $('#successText').textContent=queued?`${detail} O envio ao Firebase está pendente e será tentado automaticamente.`:detail;
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
     async function saveVisit(event){
       event.preventDefault();
       let values;
       try{values=validate()}catch(error){showToast(error.message,'error');return}
       const button=$('#saveButton');button.disabled=true;button.textContent='Salvando…';
+      let queuedLocally=false;
       try{
         const linkedSupervisorIds=schoolSupervisorIds(values.school);
         const supervisorId=state.profile.role==='admin'?(state.agenda.find(item=>item.id===values.agendaId)?.supervisorId||linkedSupervisorIds[0]):state.profile.supervisorId;
         const assignedSupervisorId=linkedSupervisorIds.includes(supervisorId)?supervisorId:(linkedSupervisorIds[0]||null);
         const actionItems=[...state.selectedActions].map(id=>state.actions.find(item=>item.id===id)).filter(Boolean);
         const reason=$('#justification').value.trim();
-        const visitTimestamp=Timestamp.fromDate(new Date(`${values.date}T12:00:00`));
+        const visitDateMillis=new Date(`${values.date}T12:00:00`).getTime();
         const visitRef=doc(collection(db,'visits'));
         const goalJustificationRef=state.status==='justified'?doc(collection(db,'goalJustifications')):null;
-        const batch=writeBatch(db);
-
-        batch.set(visitRef,{
+        const operationId=createOperationId();
+        if(values.agendaId){const queued=await listVisitOutbox(state.user.uid);if(queued.some(item=>item.agendaId===values.agendaId))throw new Error('Este planejamento já está salvo no dispositivo e aguarda sincronização.')}
+        const visit={
           supervisorId,schoolId:values.school.id,schoolName:values.school.name,
           assignedSupervisorId,
           isOutsideAssignedPortfolio:!linkedSupervisorIds.includes(supervisorId),
@@ -362,30 +406,26 @@
           operationalReason:['postponed','cancelled'].includes(state.status)?reason:null,
           justification:state.status==='justified'?reason:null,
           goalJustificationId:goalJustificationRef?.id||null,
-          shift:$('#shiftSelect').value,visitDate:visitTimestamp,authorEmail:state.user.email,
-          createdByUid:state.user.uid,recordedAt:serverTimestamp(),updatedAt:serverTimestamp(),schemaVersion:1
-        });
-
-        if(goalJustificationRef){
-          batch.set(goalJustificationRef,{
-            supervisorId,visitId:visitRef.id,agendaId:values.agendaId||null,
-            schoolId:values.school.id,schoolName:values.school.name,
-            referenceDate:visitTimestamp,periodKey:values.date.slice(0,7),
-            referenceYear:Number(values.date.slice(0,4)),referenceMonth:Number(values.date.slice(5,7)),
-            reason,validationStatus:'pending',goalCreditRequested:1,goalCreditApproved:0,
-            createdByUid:state.user.uid,submittedByEmail:state.user.email,
-            submittedAt:serverTimestamp(),updatedAt:serverTimestamp(),schemaVersion:1
-          });
-        }
-
-        if(values.agendaId)batch.update(doc(db,'agenda',values.agendaId),{status:state.status,updatedAt:serverTimestamp()});
-        await batch.commit();
-        $('#formPanel').hidden=true;$('#successPanel').hidden=false;
-        $('#successText').textContent=state.status==='justified'
-          ?`Justificativa enviada para validação da meta · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`
-          :`${labels[state.status]} · ${values.school.name} · ${formatDate(new Date(`${values.date}T12:00:00`))}.`;
-        window.scrollTo({top:0,behavior:'smooth'});
-      }catch(error){console.error(error);showToast('Não foi possível salvar o registro. Verifique sua conexão e tente novamente.','error')}
+          shift:$('#shiftSelect').value,visitDate:visitDateMillis,authorEmail:state.user.email,
+          createdByUid:state.user.uid,clientRequestId:operationId,schemaVersion:1
+        };
+        const goalJustification=goalJustificationRef?{
+             supervisorId,visitId:visitRef.id,agendaId:values.agendaId||null,
+             schoolId:values.school.id,schoolName:values.school.name,
+             referenceDate:visitDateMillis,periodKey:values.date.slice(0,7),
+             referenceYear:Number(values.date.slice(0,4)),referenceMonth:Number(values.date.slice(5,7)),
+             reason,validationStatus:'pending',goalCreditRequested:1,goalCreditApproved:0,
+             createdByUid:state.user.uid,submittedByEmail:state.user.email,
+             clientRequestId:operationId,schemaVersion:1
+          }:null;
+        await queueVisitOperation({id:operationId,userUid:state.user.uid,visitId:visitRef.id,goalJustificationId:goalJustificationRef?.id||null,agendaId:values.agendaId||null,visit,goalJustification});
+        queuedLocally=true;
+        const result=await synchronizePending({force:true,notify:false});
+        const stillQueued=(await listVisitOutbox(state.user.uid)).some(item=>item.id===operationId);
+        showSaveResult(values,stillQueued);
+        if(!stillQueued){expireReadCache(state.user.uid,'visit-form-data')}
+        else if(result.failed)showToast('Sem conexão ou cota disponível. O registro foi protegido neste dispositivo.','error');
+      }catch(error){console.error(error);showToast(queuedLocally?'O registro ficou protegido neste dispositivo e será reenviado.':(error.message||'Não foi possível guardar o registro neste dispositivo.'),'error')}
       finally{button.disabled=false;button.textContent='Confirmar registro'}
     }
     async function resetForm(){
@@ -393,7 +433,7 @@
       button.disabled=true;label.textContent='Atualizando…';
       try{
         state.selectedActions.clear();state.selectedAgendaDate='';state.agendaDateOffset=0;$('#visitForm').reset();
-        await loadData();
+        expireReadCache(state.user.uid,'visit-form-data');await loadData({force:true});
         setSource('planned');setActivity('none');setStatus('completed');renderAgenda();renderActions();
         $('#formPanel').hidden=false;$('#successPanel').hidden=true;window.scrollTo({top:0,behavior:'smooth'});
       }catch(error){console.error('Falha ao atualizar os dados após o registro:',error);showToast('O registro foi salvo, mas não foi possível atualizar a lista. Tente novamente.','error')}
@@ -403,8 +443,15 @@
     document.querySelectorAll('[data-source]').forEach(button=>button.addEventListener('click',()=>setSource(button.dataset.source)));
     document.querySelectorAll('[data-activity]').forEach(button=>button.addEventListener('click',()=>setActivity(button.dataset.activity)));
     document.querySelectorAll('[data-status]').forEach(button=>button.addEventListener('click',()=>setStatus(button.dataset.status)));
-    $('#agendaSelect').addEventListener('change',event=>{selectAgenda(event.target.value);renderAgendaPicker()});$('#agendaPreviousDate').addEventListener('click',()=>moveAgendaDate(-1));$('#agendaNextDate').addEventListener('click',()=>moveAgendaDate(1));$('#actionSearch').addEventListener('input',renderActions);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);$('#signoutButton').addEventListener('click',async()=>{await signOut(auth);redirectLogin()});
-    onAuthStateChanged(auth,async user=>{if(!user){redirectLogin();return}try{const profileSnapshot=await getDoc(doc(db,'users',user.uid));if(!profileSnapshot.exists()||profileSnapshot.data().active!==true)throw new Error('Perfil sem acesso.');document.body.dataset.tourUser=user.uid;state.user=user;state.profile=profileSnapshot.data();await loadData();$('#loading').hidden=true;$('#app').hidden=false}catch(error){console.error(error);$('#loading').textContent=error?.code==='permission-denied'?'As regras do Firestore precisam ser atualizadas para liberar esta página.':'Não foi possível carregar esta página. Atualize e tente novamente.'}});
+    $('#agendaSelect').addEventListener('change',event=>{selectAgenda(event.target.value);renderAgendaPicker()});$('#agendaPreviousDate').addEventListener('click',()=>moveAgendaDate(-1));$('#agendaNextDate').addEventListener('click',()=>moveAgendaDate(1));$('#actionSearch').addEventListener('input',renderActions);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);
+    $('#syncNowButton').addEventListener('click',()=>synchronizePending({force:true}));
+    $('#exportPendingButton').addEventListener('click',async()=>exportPendingVisits(await listVisitOutbox(state.user.uid)));
+    $('#signoutButton').addEventListener('click',async()=>{await refreshSyncPanel();if(state.outboxCount&&!confirm(`Há ${state.outboxCount} registro(s) aguardando envio. Eles continuarão guardados neste dispositivo. Deseja sair?`))return;await signOut(auth);redirectLogin()});
+    window.addEventListener('online',()=>synchronizePending({force:true,notify:false}));
+    window.addEventListener('supervisor-outbox-change',refreshSyncPanel);
+    window.addEventListener('beforeunload',event=>{if(!state.outboxCount)return;event.preventDefault();event.returnValue='' });
+    setInterval(()=>{if(state.outboxCount)synchronizePending({notify:false})},5*60*1000);
+    onAuthStateChanged(auth,async user=>{if(!user){redirectLogin();return}try{const profileSnapshot=await getDoc(doc(db,'users',user.uid));if(!profileSnapshot.exists()||profileSnapshot.data().active!==true)throw new Error('Perfil sem acesso.');document.body.dataset.tourUser=user.uid;state.user=user;state.profile=profileSnapshot.data();await refreshSyncPanel();await synchronizePending({notify:false});await loadData();$('#loading').hidden=true;$('#app').hidden=false}catch(error){console.error(error);$('#loading').textContent=error?.code==='permission-denied'?'As regras do Firestore precisam ser atualizadas para liberar esta página.':'Não foi possível carregar esta página. Atualize e tente novamente.'}});
   </script>
 </body>
 </html>
