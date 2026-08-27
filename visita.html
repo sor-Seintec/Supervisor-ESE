@@ -304,9 +304,9 @@
           try{
             const since=new Date(Math.max(0,stale.savedAt-60000)),changed=name=>getDocs(query(scoped(name),where('updatedAt','>',since)));
             const [schoolsDelta,agendaDelta,visitsDelta,actionsDelta]=await Promise.all([
-              getDocs(query(collection(db,'schools'),where('updatedAt','>',since)),
+              getDocs(query(collection(db,'schools'),where('updatedAt','>',since))),
               changed('agenda'),changed('visits'),
-              getDocs(query(collection(db,'actions'),where('updatedAt','>',since))
+              getDocs(query(collection(db,'actions'),where('updatedAt','>',since)))
             ]);
             const data={schoolReadLimited:stale.data.schoolReadLimited,schools:mergeChangedItems(stale.data.schools,schoolsDelta),agenda:mergeChangedItems(stale.data.agenda,agendaDelta),visits:mergeChangedItems(stale.data.visits,visitsDelta),actions:mergeChangedItems(stale.data.actions,actionsDelta)};
             setReadCache(state.user.uid,cacheName,data);applyLoadedData(data);return;

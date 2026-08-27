@@ -1461,7 +1461,7 @@
           try{
             const since=new Date(Math.max(0,stale.savedAt-60000)),changed=name=>getDocs(query(scopedCollection(name),where('updatedAt','>',since)));
             const [schoolsDelta,visitsDelta,agendaDelta]=await Promise.all([
-              getDocs(query(collection(db,'schools'),where('updatedAt','>',since)),
+              getDocs(query(collection(db,'schools'),where('updatedAt','>',since))),
               changed('visits'),
               changed('agenda')
             ]);
