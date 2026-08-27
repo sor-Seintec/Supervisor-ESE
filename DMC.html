@@ -95,6 +95,7 @@ tr:last-child td{border-bottom:none}.supervisor-col{display:flex;align-items:cen
       <div class="filter-group"><label for="filtroAno">Ano</label><select id="filtroAno"><option value="todos">Todos</option></select></div>
       <div class="filter-group"><label for="filtroSup">Supervisor</label><select id="filtroSup"><option value="todos">Todos</option></select></div>
       <button id="btnAdminToggle" class="admin-btn" title="Configurar metas" aria-label="Configurar metas"><i class="fa-solid fa-gear"></i></button>
+      <button id="refreshButton" type="button" style="min-height:38px;padding:0 14px;border:1px solid var(--border);border-radius:9px;background:#fff;color:var(--text);font-weight:750;cursor:pointer">Atualizar</button>
     </div>
   </section>
 
@@ -526,6 +527,7 @@ tr:last-child td{border-bottom:none}.supervisor-col{display:flex;align-items:cen
 <script type="module">
   import{auth,loadGestorData,requireAdmin,saveMonthlyGoals}from'./firebase-gestor.js';
   window.getGestorFirebaseData=loadGestorData;window.saveDmcMonthlyGoals=saveMonthlyGoals;
+  document.getElementById('refreshButton').addEventListener('click',async()=>{const button=document.getElementById('refreshButton');button.disabled=true;button.classList.add('is-syncing');try{await window.carregarPanoramaFirebase(true)}finally{button.disabled=false;button.classList.remove('is-syncing')}});
   try{await requireAdmin();await window.carregarPanoramaFirebase()}catch(error){if(!auth.currentUser)location.href='index.html';else{console.error(error);document.getElementById('tabela-body').innerHTML='<tr><td colspan="7" style="color:red;text-align:center">Esta conta não possui acesso ao Gestor-ESE.</td></tr>'}}
 </script>
 </body>

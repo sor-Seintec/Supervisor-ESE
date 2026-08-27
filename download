@@ -1,0 +1,9 @@
+# Nunca publicar credenciais administrativas do Firebase
+*firebase-adminsdk*.json
+service-account*.json
+.env
+.env.*
+
+# Arquivos locais
+outputs/
+node_modules/

@@ -265,9 +265,12 @@
                 <p>Busque, filtre e gerencie as vistorias escolares.</p>
             </div>
         </div>
-        <button class="btn-export" onclick="exportarRelatorio()">
-            <span class="material-symbols-outlined">download</span> Exportar Relatório
-        </button>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn-export" id="refreshButton" type="button">Atualizar</button>
+            <button class="btn-export" onclick="exportarRelatorio()">
+                <span class="material-symbols-outlined">download</span> Exportar Relatório
+            </button>
+        </div>
     </header>
 
     <!-- CARD 1: BUSCA E QUICK FILTERS -->
@@ -641,6 +644,10 @@
     <script type="module">
         import { auth, loadGestorData, requireAdmin } from './firebase-gestor.js';
         window.getGestorFirebaseData = loadGestorData;
+        document.getElementById('refreshButton').addEventListener('click', async () => {
+            const button=document.getElementById('refreshButton');button.disabled=true;button.classList.add('is-syncing');
+            try{await window.carregarDadosFirebase(true)}finally{button.disabled=false;button.classList.remove('is-syncing')}
+        });
         try { await requireAdmin(); await window.carregarDadosFirebase(); }
         catch (error) { if (!auth.currentUser) location.href='index.html'; else { console.error(error); document.getElementById('loadingOverlay').style.display='none'; alert('Esta conta não possui acesso ao Gestor-ESE.'); } }
     </script>

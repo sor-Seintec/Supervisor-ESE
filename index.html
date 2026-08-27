@@ -946,6 +946,7 @@ html>body{padding:0}</style>
         <h1 id="welcomeTitle">Bem-vindo ao Portal URE.</h1>
       </div>
       <div class="ure-top-actions">
+        <button type="button" class="ure-search" id="refreshButton"><span>Atualizar</span></button>
         <button type="button" class="ure-search" id="searchOpenButton" aria-haspopup="dialog"><i data-lucide="search" aria-hidden="true"></i><span>Buscar registros</span><kbd>Ctrl K</kbd></button>
         <button type="button" class="ure-icon-button" aria-label="Notificações"><i data-lucide="bell" aria-hidden="true"></i><span></span></button>
       </div>
@@ -2217,6 +2218,13 @@ html>body{padding:0}</style>
   }
 
   window.getGestorFirebaseData = loadGestorData;
+  document.getElementById('refreshButton')?.addEventListener('click', async () => {
+    const button = document.getElementById('refreshButton');
+    button.disabled = true;
+    button.classList.add('is-syncing');
+    try { await window.loadPortalData?.(true); }
+    finally { button.disabled = false; button.classList.remove('is-syncing'); }
+  });
   try {
     await activateSession(await requireAdmin());
   } catch (error) {
