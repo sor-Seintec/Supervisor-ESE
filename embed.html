@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Embed de Escola</title>
+  <style>
+    /* Suas variáveis de cor e fontes originais */
+    :root{color-scheme:light;--theme-dark:#477c9e;--theme-medium:#d5eaf5;--theme-light:#eef4f8;--ink:#17354a;--muted:#536c7d;--panel:#fff;--line:#d7e3e9;--soft:#f5f8fa;--success:#10b981;--warning:#f97316;--info:#3b82f6;--purple:#9333ea;--shadow:0 12px 32px rgba(34,65,84,.07)}
+    *{box-sizing:border-box}
+    body{margin:0;padding:15px;background:#fff;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;font-weight:500;line-height:1.55}
+    h1,h2,h3,p{margin:0}
+    
+    /* Estilos isolados apenas para o quadro de detalhes */
+    .detail-header{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+    .code{display:inline-flex;padding:4px 8px;border-radius:999px;background:color-mix(in srgb,var(--theme-medium) 45%,#fff);color:var(--theme-dark);font-size:10px;font-weight:850;width:fit-content}
+    .detail-title h2{font-size:clamp(21px,2.5vw,29px);font-weight:870;letter-spacing:-.03em;line-height:1.18}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .chip{padding:5px 8px;border-radius:999px;background:#f0f5f7;color:#496373;font-size:10px;font-weight:780}
+    
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+    .info-card{min-height:82px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fafcfd}
+    .info-card.is-wide{grid-column:1/-1}
+    .info-label{display:block;color:var(--muted);font-size:9.5px;font-weight:850;letter-spacing:.05em;text-transform:uppercase}
+    .info-value{display:block;margin-top:5px;color:var(--ink);font-size:12px;font-weight:720}
+    .phone-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}
+    .phone-links a{color:var(--theme-dark);font-size:12px;font-weight:780;text-decoration:none}
+    
+    .section-title{margin:20px 0 9px;font-size:13px;font-weight:850}
+    .offer-list, .program-list{display:grid;gap:7px}
+    .offer{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:#fff}
+    .offer strong{font-size:11px}
+    .offer span{color:var(--muted);font-size:10px;font-weight:700;text-align:right}
+    
+    .program{padding:9px 11px;border-left:3px solid var(--program-color);border-radius:0 9px 9px 0;background:color-mix(in srgb,var(--program-color) 8%,#fff)}
+    .program b{display:block;font-size:10px}
+    .program span{display:block;margin-top:2px;color:var(--muted);font-size:10px}
+    
+    .source-note{margin-top:20px;padding:11px 12px;border-radius:11px;background:color-mix(in srgb,var(--theme-medium) 30%,#fff);color:var(--muted);font-size:10px}
+    .error-msg{padding:20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;}
+  </style>
+</head>
+<body>
+  <!-- Container principal onde os dados serão injetados -->
+  <div id="embedContent">
+    <div class="error-msg">Carregando informações da escola...</div>
+  </div>
+
+  <script>
+    // 1. COLE AQUI A SUA CONSTANTE SCHOOL_DATA COMPLETA
+    const SCHOOL_DATA = [
+      // Exemplo: cole seu array completo aqui
+      {"cie":"905318","name":"AMELIA CESAR MACHADO DE ARAUJO PROFª","types":["Regular"],"address":"Rua Joaquim Scherepel, 215 - Jardim Gutierres","phones":["3227-1975","3227-2221"],"offers":[{"attendance":"EF Anos Iniciais","hours":"7h00 às 12h20"},{"attendance":"EF Anos Iniciais","hours":"13h00 às 18h20"}],"night":[],"eja":[],"professional2025":[],"professional2026":[],"officialUrl":"https://transparencia.educacao.sp.gov.br/Home/DetalhesEscola?codesc=905318","neighborhood":"Jardim Gutierres","mapQuery":"Rua Joaquim Scherepel, 215 - Jardim Gutierres, Sorocaba - SP, Brasil"}
+    ];
+
+    // Funções de formatação reutilizadas do seu código original
+    function prettyName(value){const small=new Set(['da','de','do','das','dos','e']),acronyms=new Set(['ceeja','eja','pei','ef','em','prof','profª','dr']);return value.toLocaleLowerCase('pt-BR').split(/\s+/).map((word,index)=>{if(acronyms.has(word))return word.toLocaleUpperCase('pt-BR');if(index&&small.has(word))return word;return word.charAt(0).toLocaleUpperCase('pt-BR')+word.slice(1)}).join(' ')}
+    function appendText(container,tag,text,className){const element=document.createElement(tag);element.textContent=text;if(className)element.className=className;container.appendChild(element);return element}
+    function addProgram(container,title,values,color){if(!values.length)return;const row=document.createElement('div');row.className='program';row.style.setProperty('--program-color',color);appendText(row,'b',title);appendText(row,'span',values.join(' · '));container.appendChild(row)}
+
+    // Lógica para ler a URL e renderizar a escola
+    document.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cieParam = urlParams.get('cie');
+      const contentDiv = document.getElementById('embedContent');
+
+      if (!cieParam) {
+        contentDiv.innerHTML = '<div class="error-msg">Nenhum CIE fornecido na URL.</div>';
+        return;
+      }
+
+      const school = SCHOOL_DATA.find(s => s.cie === cieParam);
+
+      if (!school) {
+        contentDiv.innerHTML = '<div class="error-msg">Escola não encontrada.</div>';
+        return;
+      }
+
+      // Renderização do HTML idêntico ao painel de detalhes da imagem
+      let html = `
+        <div class="detail-header">
+          <span class="code">CIE ${school.cie}</span>
+          <div class="detail-title">
+            <h2>${prettyName(school.name)}</h2>
+            <div class="chips">
+              ${school.types.map(type => `<span class="chip">${type}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card is-wide">
+            <span class="info-label">Endereço</span>
+            <strong class="info-value">${school.address || 'Endereço não informado'}</strong>
+          </div>
+          <div class="info-card">
+            <span class="info-label">Bairro</span>
+            <strong class="info-value">${school.neighborhood || 'Não informado'}</strong>
+          </div>
+          <div class="info-card">
+            <span class="info-label">Telefone</span>
+            <div class="phone-links">
+              ${school.phones.length ? school.phones.map(p => `<a href="tel:+5515${p.replace(/\D/g,'')}">${p}</a>`).join(' ') : 'Não informado'}
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Atendimentos e horários</h3>
+        <div class="offer-list">
+          ${school.offers.length ? school.offers.map(item => `
+            <div class="offer">
+              <strong>${item.attendance}</strong>
+              <span>${item.hours}</span>
+            </div>`).join('') : '<div class="offer"><strong>Nenhum atendimento</strong></div>'}
+        </div>
+
+        <h3 class="section-title">Recursos e modalidades</h3>
+        <div class="program-list" id="programListTarget"></div>
+        
+        <div class="source-note">Informações consolidadas a partir da relação de escolas fornecida.</div>
+      `;
+
+      contentDiv.innerHTML = html;
+
+      // Adicionando os programas usando sua lógica original de cores
+      const programsTarget = document.getElementById('programListTarget');
+      addProgram(programsTarget, 'Atendimento noturno', school.night, 'var(--warning)');
+      addProgram(programsTarget, 'EJA', school.eja, 'var(--warning)');
+      addProgram(programsTarget, 'Educação profissional — 2025', school.professional2025, 'var(--info)');
+      addProgram(programsTarget, 'Educação profissional — 2026', school.professional2026, 'var(--success)');
+      
+      if (!programsTarget.children.length) {
+        programsTarget.innerHTML = '<div class="program" style="--program-color:var(--theme-dark)"><b>Modalidades adicionais</b><span>Nenhuma informação adicional registrada.</span></div>';
+      }
+    });
+  </script>
+</body>
+</html>

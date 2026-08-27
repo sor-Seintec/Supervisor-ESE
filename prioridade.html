@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Prioridades de acompanhamento escolar do Portal URE Sorocaba">
+  <title>Prioridades — Portal URE</title>
+  <style>
+    :root{color-scheme:light;--dark:#477c9e;--medium:#d5eaf5;--light:#eef4f8;--ink:#17354a;--muted:#566f7f;--line:#d9e4ea;--panel:#fff;--danger:#a94a4a;--warning:#a76b28;--success:#347451}
+    :root[data-theme="yellow"]{--dark:#99752e;--medium:#f5e4a9;--light:#fff9e8}
+    :root[data-theme="green"]{--dark:#507c68;--medium:#d8ebdd;--light:#f2f7f3}
+    :root[data-theme="rose"]{--dark:#9b6674;--medium:#f0d9df;--light:#faf2f4}
+    :root[data-theme="lavender"]{--dark:#706d9b;--medium:#deddf1;--light:#f4f3fa}
+    :root[data-theme="peach"]{--dark:#17191b;--medium:#aeb3b7;--light:#fafaf8}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 85% 5%,color-mix(in srgb,var(--medium) 48%,transparent),transparent 30%),var(--light);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;font-weight:500;line-height:1.55}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    .shell{width:min(1480px,100%);margin:auto;padding:30px clamp(18px,4vw,54px) 50px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}
+    .title-wrap{display:flex;align-items:center;gap:15px}
+    .back{width:42px;height:42px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--dark) 22%,#fff);border-radius:13px;background:#fff;color:var(--dark);font-size:22px}
+    .eyebrow{display:block;color:var(--dark);font-size:11px;font-weight:800;letter-spacing:.13em}
+    h1,h2,p{margin:0}
+    h1{margin-top:3px;font-size:clamp(25px,3vw,34px);font-weight:800;letter-spacing:-.035em}
+    .top-actions{display:flex;gap:9px}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 15px;border-radius:11px;font-weight:700}
+    .btn-secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}
+    .btn-primary{border:0;background:var(--dark);color:#fff}
+    .btn:disabled{cursor:not-allowed;opacity:.45}
+    .rule-banner{display:flex;align-items:flex-start;gap:13px;margin-bottom:22px;padding:17px 19px;border:1px solid color-mix(in srgb,var(--dark) 16%,#fff);border-radius:15px;background:color-mix(in srgb,var(--medium) 48%,#fff);color:var(--ink)}
+    .rule-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:var(--dark);color:#fff;font-weight:800}
+    .rule-banner strong{display:block;font-weight:800}
+    .rule-banner span{display:block;margin-top:2px;color:var(--muted);font-size:13px}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+    .kpi{min-height:126px;padding:19px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:0 10px 28px rgba(37,66,84,.055)}
+    .kpi span{color:var(--muted);font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.05em}
+    .kpi strong{display:block;margin:8px 0 3px;font-size:31px;font-weight:850;line-height:1}
+    .kpi small{color:var(--muted);font-size:12px;font-weight:550}
+    .kpi.is-critical{background:var(--dark);color:#fff;border-color:transparent}
+    .kpi.is-critical span,.kpi.is-critical small{color:rgba(255,255,255,.72)}
+    .workspace{overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 14px 36px rgba(37,66,84,.07)}
+    .workspace-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:21px 22px 16px;border-bottom:1px solid var(--line)}
+    .workspace-head h2{font-size:21px;font-weight:800}
+    .workspace-head p{margin-top:3px;color:var(--muted);font-size:13px}
+    .search{width:min(390px,100%);min-height:43px;display:flex;align-items:center;gap:8px;padding:0 13px;border:1px solid #cbd9e1;border-radius:11px;background:#f8fafb}
+    .search:focus-within{border-color:var(--dark);box-shadow:0 0 0 3px color-mix(in srgb,var(--dark) 15%,transparent)}
+    .search input{width:100%;border:0;outline:0;background:transparent;color:var(--ink);font-weight:600}
+    .filters{display:flex;gap:7px;padding:13px 22px;border-bottom:1px solid var(--line);overflow-x:auto;background:#f7f9fa}
+    .filter{min-height:34px;padding:0 12px;border:1px solid #d8e2e7;border-radius:999px;background:#fff;color:#597080;font-size:12px;font-weight:750;white-space:nowrap}
+    .filter.is-active{border-color:var(--dark);background:var(--dark);color:#fff}
+    .table-wrap{width:100%;overflow:auto}
+    table{width:100%;min-width:1050px;border-collapse:separate;border-spacing:0;font-size:13px}
+    th{position:sticky;z-index:2;top:0;padding:11px 13px;border-bottom:1px solid var(--line);background:#edf3f6;color:#4c6575;text-align:left;font-size:10.5px;font-weight:850;letter-spacing:.05em;text-transform:uppercase}
+    td{padding:13px;border-bottom:1px solid #edf1f3;color:#405867;vertical-align:top}
+    tbody tr:hover td{background:#f7fafb}
+    td:first-child{color:var(--ink);font-weight:750}
+    .center{text-align:center}
+    .days{font-weight:800;color:var(--warning)}
+    .days.is-ok{color:var(--success)}
+    .tag{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10.5px;font-weight:800;white-space:nowrap}
+    .tag-critical{background:#f5dddd;color:#983d3d}.tag-overdue{background:#f7ead9;color:#965d21}.tag-pending{background:#e6e5f6;color:#605a99}.tag-ok{background:#dfeee6;color:#2d724c}.tag-justified{background:#f1edcf;color:#75631d}
+    .empty{height:230px;text-align:center;color:var(--muted);vertical-align:middle}
+    .table-foot{display:flex;justify-content:space-between;gap:15px;padding:12px 22px;background:#f8fafb;color:var(--muted);font-size:12px;font-weight:650}
+    .loading{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:rgba(242,247,249,.82);backdrop-filter:blur(6px)}
+    .loading[hidden]{display:none}
+    .loading-card{min-width:240px;padding:25px;border:1px solid var(--line);border-radius:17px;background:#fff;text-align:center;box-shadow:0 20px 55px rgba(24,48,63,.14)}
+    .spinner{width:32px;height:32px;margin:0 auto 12px;border:3px solid var(--medium);border-top-color:var(--dark);border-radius:50%;animation:spin .75s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.workspace-head{align-items:stretch;flex-direction:column}.search{width:100%}}
+    @media(max-width:560px){.shell{padding:18px 12px 35px}.topbar{align-items:flex-start}.top-actions{flex-direction:column}.top-actions .btn{min-height:38px}.kpis{grid-template-columns:1fr 1fr}.kpi{min-height:110px;padding:15px}.kpi strong{font-size:27px}.rule-banner{padding:14px}.table-foot{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="loading-card"><div class="spinner"></div><strong>Atualizando prioridades…</strong></div></div>
+  <main class="shell">
+    <header class="topbar">
+      <div class="title-wrap"><button class="back" id="backButton" type="button" aria-label="Voltar ao portal">←</button><div><span class="eyebrow">GESTÃO 360°</span><h1>Prioridades de acompanhamento</h1></div></div>
+      <div class="top-actions"><button class="btn btn-secondary" id="refreshButton" type="button">↻ Atualizar</button><button class="btn btn-primary" id="exportButton" type="button" disabled>↓ Extrair CSV</button></div>
+    </header>
+    <section class="rule-banner"><div class="rule-icon">15</div><div><strong>Regra inteligente de acompanhamento</strong><span>Uma escola entra em atenção quando não recebe visita realizada há mais de 15 dias. A meta atual é de duas visitas mensais; justificativas aprovadas no mês retiram a escola da fila crítica.</span></div></section>
+    <section class="kpis" aria-label="Resumo das prioridades">
+      <article class="kpi is-critical"><span>Prioridades críticas</span><strong id="kpiCritical">—</strong><small>abaixo da meta e sem justificativa</small></article>
+      <article class="kpi"><span>Sem visita +15 dias</span><strong id="kpiOverdue">—</strong><small>inclui escolas nunca visitadas</small></article>
+      <article class="kpi"><span>Aguardando validação</span><strong id="kpiPending">—</strong><small>registros pendentes ou em análise</small></article>
+      <article class="kpi"><span>Dentro da regra</span><strong id="kpiOk">—</strong><small>meta ou justificativa regular</small></article>
+    </section>
+    <section class="workspace">
+      <div class="workspace-head"><div><h2>Escolas que exigem atenção</h2><p id="updatedAt">Os dados serão consultados em tempo real.</p></div><label class="search">⌕<input id="searchInput" type="search" placeholder="Pesquisar escola ou classificação…" autocomplete="off"></label></div>
+      <div class="filters" role="group" aria-label="Filtrar prioridades"><button class="filter is-active" data-filter="all">Todas</button><button class="filter" data-filter="critical">Meta não atingida</button><button class="filter" data-filter="overdue">Sem visita +15 dias</button><button class="filter" data-filter="pending">Aguardando validação</button><button class="filter" data-filter="justified">Justificadas</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Escola</th><th>Última visita</th><th class="center">Dias sem visita</th><th class="center">Realizadas no mês</th><th class="center">Meta</th><th class="center">Justificada</th><th class="center">Pendências</th><th>Classificação</th></tr></thead><tbody id="tableBody"><tr><td colspan="8" class="empty">Carregando prioridades…</td></tr></tbody></table></div>
+      <footer class="table-foot"><span id="resultCount">0 escolas</span><span>Dados atualizados diretamente da base de visitas.</span></footer>
+    </section>
+  </main>
+  <script>
+    const VISIT_WINDOW_DAYS=15;
+    const DEFAULT_MONTHLY_GOAL=2;
+    const $=id=>document.getElementById(id);
+    let analysis=[];
+    let visible=[];
+    let activeFilter='all';
+    const theme=localStorage.getItem('portal-ure-paleta')||'blue';
+    document.documentElement.dataset.theme=theme;
+    const normalize=value=>(value??'').toString().trim();
+    const fold=value=>normalize(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const parseDate=value=>{if(!value)return null;if(typeof value?.toDate==='function')return value.toDate();const text=normalize(value),br=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(br)return new Date(Number(br[3]),Number(br[2])-1,Number(br[1]));const date=new Date(text);return Number.isNaN(date.getTime())?null:date};
+    const rowDate=row=>parseDate(row['Data da Visita']||row['Data Visita']||row.Data||row['Data do Registro']||row['Data Agendada']);
+    const rowStatus=row=>fold(row.Status||row.status);
+    const completed=row=>rowStatus(row).includes('realizada')||rowStatus(row).includes('visitado');
+    const justified=row=>rowStatus(row).includes('justific')||Boolean(normalize(row.Justificativa||row.justificativa));
+    const pending=row=>['aguardando','pendente','validacao','em analise'].some(term=>rowStatus(row).includes(term));
+    const formatDate=date=>date?new Intl.DateTimeFormat('pt-BR').format(date):'Nunca visitada';
+    function analyze(rows,schools=[],goalJustifications=[]){
+      const today=new Date();today.setHours(0,0,0,0);
+      const groups=new Map();
+      schools.filter(item=>item.active!==false&&item.name).forEach(item=>groups.set(normalize(item.name),[]));
+      rows.forEach(row=>{const school=normalize(row.Escola||row.escola)||'Sem escola informada';if(!groups.has(school))groups.set(school,[]);groups.get(school).push(row)});
+      return [...groups].map(([school,records])=>{
+        const unknown=school==='Sem escola informada';
+        const dates=records.filter(completed).map(rowDate).filter(Boolean).sort((a,b)=>b-a);
+        const lastVisit=dates[0]||null;
+        const days=lastVisit?Math.max(0,Math.floor((today-lastVisit)/86400000)):null;
+        const monthRows=records.filter(row=>{const date=rowDate(row);return date&&date.getMonth()===today.getMonth()&&date.getFullYear()===today.getFullYear()});
+        const completedMonth=monthRows.filter(completed).length;
+        const schoolJustifications=goalJustifications.filter(item=>(normalize(item.schoolName)===school||records.some(row=>row._raw?.schoolId===item.schoolId))&&Number(item.referenceYear)===today.getFullYear()&&Number(item.referenceMonth)===today.getMonth()+1);
+        const registeredJustificationMonth=monthRows.some(justified)||schoolJustifications.length>0;
+        const justifiedMonth=schoolJustifications.some(item=>item.validationStatus==='approved'&&Number(item.goalCreditApproved)>0);
+        const pendingCount=records.filter(pending).length+schoolJustifications.filter(item=>item.validationStatus==='pending').length;
+        const detectedGoals=records.map(row=>Number(row['Meta Mensal']||row.metaMensal||row.Meta||0)).filter(value=>Number.isFinite(value)&&value>0);
+        const goal=detectedGoals.length?Math.max(...detectedGoals):DEFAULT_MONTHLY_GOAL;
+        const overdue=!unknown&&(!lastVisit||days>VISIT_WINDOW_DAYS);
+        const goalMissed=!unknown&&completedMonth<goal;
+        const critical=goalMissed&&!justifiedMonth;
+        const ok=!critical&&!overdue&&!pendingCount;
+        const labels=[];
+        if(critical)labels.push('Meta não atingida');
+        if(overdue)labels.push('Sem visita +15 dias');
+        if(pendingCount)labels.push('Aguardando validação');
+        if(registeredJustificationMonth)labels.push('Justificada');
+        if(ok)labels.push('Dentro da regra');
+        return{school,lastVisit,days,completedMonth,goal,registeredJustificationMonth,justifiedMonth,pendingCount,overdue,goalMissed,critical,ok,labels,search:fold(`${school} ${labels.join(' ')}`)};
+      }).sort((a,b)=>Number(b.critical)-Number(a.critical)||Number(b.overdue)-Number(a.overdue)||b.pendingCount-a.pendingCount||(b.days??9999)-(a.days??9999));
+    }
+    function tag(label){const span=document.createElement('span');let type='tag-ok';if(label.includes('Meta'))type='tag-critical';else if(label.includes('+15'))type='tag-overdue';else if(label.includes('validação'))type='tag-pending';else if(label.includes('Justificada'))type='tag-justified';span.className=`tag ${type}`;span.textContent=label;return span}
+    function cell(row,text,className=''){const td=document.createElement('td');td.textContent=text;if(className)td.className=className;row.appendChild(td);return td}
+    function render(){
+      const term=fold($('searchInput').value);
+      visible=analysis.filter(item=>{
+        const type=(activeFilter==='all'&&!item.ok)||(activeFilter==='critical'&&item.critical)||(activeFilter==='overdue'&&item.overdue)||(activeFilter==='pending'&&item.pendingCount)||(activeFilter==='justified'&&item.registeredJustificationMonth);
+        return type&&(!term||item.search.includes(term));
+      });
+      const body=$('tableBody');body.replaceChildren();
+      if(!visible.length){const tr=document.createElement('tr');const td=cell(tr,'Nenhuma escola encontrada para este filtro.','empty');td.colSpan=8;body.appendChild(tr)}
+      visible.forEach(item=>{const tr=document.createElement('tr');cell(tr,item.school);cell(tr,formatDate(item.lastVisit));const daysCell=cell(tr,item.days===null?'Nunca':`${item.days} dias`,'center days');if(item.days!==null&&item.days<=VISIT_WINDOW_DAYS)daysCell.classList.add('is-ok');cell(tr,String(item.completedMonth),'center');cell(tr,String(item.goal),'center');const justificationLabel=item.justifiedMonth?'Aprovada':item.registeredJustificationMonth?'Em validação':'Não';const justCell=cell(tr,justificationLabel,'center');justCell.style.fontWeight='750';cell(tr,String(item.pendingCount),'center');const labels=document.createElement('td');labels.style.display='flex';labels.style.flexWrap='wrap';labels.style.gap='5px';item.labels.forEach(label=>labels.appendChild(tag(label)));tr.appendChild(labels);body.appendChild(tr)});
+      $('resultCount').textContent=`${visible.length} ${visible.length===1?'escola':'escolas'}`;
+      $('exportButton').disabled=!visible.length;
+    }
+    function updateKpis(){const critical=analysis.filter(item=>item.critical).length,overdue=analysis.filter(item=>item.overdue).length,pendingCount=analysis.reduce((total,item)=>total+item.pendingCount,0),ok=analysis.filter(item=>item.ok).length;$('kpiCritical').textContent=critical;$('kpiOverdue').textContent=overdue;$('kpiPending').textContent=pendingCount;$('kpiOk').textContent=ok}
+    async function load(forceRefresh=false){
+      $('loading').hidden=false;
+      try{const data=await window.getGestorFirebaseData({refresh:forceRefresh});analysis=analyze(data.visitRows,data.schools,data.goalJustifications);updateKpis();render();$('updatedAt').textContent=`Atualizado em ${new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date())}.`}
+      catch(error){console.error(error);analysis=[];updateKpis();render();$('updatedAt').textContent='Não foi possível consultar a base de visitas.'}
+      finally{$('loading').hidden=true}
+    }
+    const csv=value=>`"${normalize(value).replace(/"/g,'""').replace(/[\r\n]+/g,' ')}"`;
+    function exportCsv(){if(!visible.length)return;const header=['Escola','Última visita','Dias sem visita','Realizadas no mês','Meta','Justificada','Pendências','Classificação'];const lines=visible.map(item=>[item.school,formatDate(item.lastVisit),item.days===null?'Nunca':item.days,item.completedMonth,item.goal,item.justifiedMonth?'Sim':'Não',item.pendingCount,item.labels.join(' | ')].map(csv).join(';'));const blob=new Blob([`\uFEFF${header.map(csv).join(';')}\n${lines.join('\n')}`],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`Prioridades_URE_${new Date().toISOString().slice(0,10)}.csv`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+    $('backButton').addEventListener('click',()=>{if(window.parent!==window&&window.parent.portalNavigate)window.parent.portalNavigate('home');else location.href='index.html'});
+    $('refreshButton').addEventListener('click',()=>load(true));
+    $('exportButton').addEventListener('click',exportCsv);
+    $('searchInput').addEventListener('input',render);
+    document.querySelectorAll('.filter').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(item=>item.classList.remove('is-active'));button.classList.add('is-active');activeFilter=button.dataset.filter;render()}));
+    window.loadPrioritiesFirebase=load;
+  </script>
+  <script type="module">
+    import{auth,loadGestorData,requireAdmin}from'./firebase-gestor.js';
+    window.getGestorFirebaseData=loadGestorData;
+    try{await requireAdmin();await window.loadPrioritiesFirebase()}catch(error){if(!auth.currentUser)location.href='index.html';else{console.error(error);document.getElementById('loading').hidden=true;document.getElementById('updatedAt').textContent='Esta conta não possui acesso ao Gestor-ESE.'}}
+  </script>
+</body>
+</html>

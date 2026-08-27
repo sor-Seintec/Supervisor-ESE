@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Equipe ESE — supervisores, setores, atribuições e unidades acompanhadas">
+  <title>Equipe ESE | Portal URE Sorocaba</title>
+  <style>
+    :root{--theme-dark:#477c9e;--theme-medium:#d5eaf5;--theme-light:#eef4f8;--ink:#082b46;--muted:#4e6e84;--line:#cedee8;--panel:#fff;--success:#08b87a;--warning:#f97316;--info:#3b82f6;--violet:#8b38f5;--shadow:0 14px 34px rgba(48,87,112,.10);color-scheme:light}
+    *{box-sizing:border-box}
+    html{background:var(--theme-light)}
+    body{margin:0;min-width:320px;background:linear-gradient(135deg,var(--theme-light),color-mix(in srgb,var(--theme-medium) 28%,#fff));color:var(--ink);font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:15px;font-weight:520;line-height:1.55}
+    button,input,select{font:inherit;color:inherit}
+    button{cursor:pointer}
+    .page{width:100%;min-height:100vh;padding:28px clamp(18px,3vw,48px) 44px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px}
+    .eyebrow{display:block;color:var(--theme-dark);font-size:12px;font-weight:850;letter-spacing:.13em;text-transform:uppercase}
+    h1{margin:3px 0 2px;font-size:clamp(28px,3vw,42px);font-weight:850;letter-spacing:-.045em;line-height:1.1}
+    .topbar p{margin:6px 0 0;color:var(--muted);font-size:15px;font-weight:560}
+    .button{min-height:44px;padding:10px 17px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:14px;font-weight:780;box-shadow:0 5px 16px rgba(51,87,111,.05)}
+    .button:hover{border-color:var(--theme-dark);transform:translateY(-1px)}
+    .button-primary{border-color:var(--theme-dark);background:var(--theme-dark);color:#fff}
+    .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .kpi{min-height:118px;padding:17px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.9);box-shadow:var(--shadow)}
+    .kpi-label{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.025em;text-transform:uppercase}
+    .dot{width:9px;height:9px;border-radius:3px;background:var(--kpi-color,var(--theme-dark))}
+    .kpi strong{display:block;margin-top:9px;color:var(--kpi-color,var(--theme-dark));font-size:30px;font-weight:880;line-height:1}
+    .kpi small{display:block;margin-top:8px;color:var(--muted);font-size:11px;font-weight:620}
+    .filters{display:grid;grid-template-columns:minmax(260px,1.5fr) minmax(210px,.7fr) minmax(190px,.65fr) auto;gap:12px;align-items:end;margin-bottom:18px;padding:17px;border:1px solid color-mix(in srgb,var(--line) 72%,transparent);border-radius:16px;background:color-mix(in srgb,var(--theme-medium) 24%,#fff);box-shadow:0 8px 22px rgba(58,91,110,.05)}
+    .field label{display:block;margin:0 0 6px;color:var(--muted);font-size:11px;font-weight:850;text-transform:uppercase}
+    .field input,.field select{width:100%;height:46px;padding:0 13px;border:1px solid var(--line);border-radius:11px;outline:none;background:#fff;font-size:14px;font-weight:650}
+    .field input:focus,.field select:focus{border-color:var(--theme-dark);box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-medium) 70%,transparent)}
+    .directory-grid{display:grid;grid-template-columns:390px minmax(0,1fr);gap:16px;align-items:start}
+    .panel{overflow:hidden;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.94);box-shadow:var(--shadow)}
+    .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px;border-bottom:1px solid var(--line)}
+    .panel-head h2{margin:0;font-size:18px;font-weight:840}
+    .panel-head p{margin:3px 0 0;color:var(--muted);font-size:12px}
+    .result-count,.status{display:inline-flex;align-items:center;white-space:nowrap;padding:5px 9px;border-radius:999px;background:color-mix(in srgb,var(--theme-medium) 48%,#fff);color:var(--theme-dark);font-size:11px;font-weight:820}
+    .supervisor-list{height:690px;overflow:auto;padding:8px}
+    .supervisor-card{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:11px;align-items:center;width:100%;padding:11px;border:0;border-radius:13px;background:transparent;text-align:left}
+    .supervisor-card:hover{background:color-mix(in srgb,var(--theme-medium) 42%,#fff)}
+    .supervisor-card.is-active{background:var(--theme-dark);color:#fff;box-shadow:0 9px 22px color-mix(in srgb,var(--theme-dark) 28%,transparent)}
+    .avatar{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:color-mix(in srgb,var(--theme-medium) 64%,#fff);color:var(--theme-dark);font-size:13px;font-weight:880}
+    .supervisor-card.is-active .avatar{background:rgba(255,255,255,.17);color:#fff}
+    .card-copy{min-width:0}
+    .card-copy strong,.card-copy span{display:block}
+    .card-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:820}
+    .card-copy span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;color:var(--muted);font-size:11px;font-weight:630}
+    .supervisor-card.is-active .card-copy span{color:rgba(255,255,255,.76)}
+    .card-count{min-width:28px;padding:3px 6px;border-radius:10px;background:color-mix(in srgb,var(--theme-medium) 58%,#fff);color:var(--theme-dark);font-size:10px;font-weight:850;text-align:center}
+    .supervisor-card.is-active .card-count{background:rgba(255,255,255,.17);color:#fff}
+    .detail{min-height:690px}
+    .detail-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:24px;border-bottom:1px solid var(--line)}
+    .identity{display:flex;gap:15px;align-items:center;min-width:0}
+    .identity-avatar{display:grid;place-items:center;flex:0 0 auto;width:58px;height:58px;border-radius:17px;background:var(--theme-dark);color:#fff;font-size:16px;font-weight:880;box-shadow:0 8px 22px color-mix(in srgb,var(--theme-dark) 26%,transparent)}
+    .identity h2{margin:0;font-size:clamp(20px,2vw,28px);font-weight:870;letter-spacing:-.025em;line-height:1.2}
+    .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+    .chip{padding:5px 9px;border-radius:999px;background:color-mix(in srgb,var(--theme-medium) 46%,#fff);color:var(--theme-dark);font-size:10.5px;font-weight:800}
+    .status.is-ok{background:#e5f8f1;color:#087a57}.status.is-pending{background:#fff1e8;color:#b64e0a}
+    .detail-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:18px 24px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--theme-light) 58%,#fff)}
+    .mini-stat{padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    .mini-stat span,.mini-stat strong{display:block}.mini-stat span{color:var(--muted);font-size:10px;font-weight:820;text-transform:uppercase}.mini-stat strong{margin-top:4px;font-size:22px;font-weight:880}
+    .detail-content{padding:22px 24px 26px}
+    .section{margin-top:23px}.section:first-child{margin-top:0}
+    .section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 11px;font-size:15px;font-weight:850}
+    .section-title span{color:var(--muted);font-size:11px;font-weight:720}
+    .action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .action{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:12px;font-weight:650}
+    .action b{display:grid;place-items:center;flex:0 0 auto;width:23px;height:23px;border-radius:8px;background:var(--theme-medium);color:var(--theme-dark);font-size:10px}
+    .tabs{display:flex;gap:7px;margin-bottom:11px}
+    .tab{padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);font-size:11px;font-weight:800}
+    .tab.is-active{border-color:var(--theme-dark);background:var(--theme-dark);color:#fff}
+    .school-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .school{display:flex;align-items:flex-start;gap:8px;padding:10px 11px;border-radius:10px;background:color-mix(in srgb,var(--theme-light) 68%,#fff);font-size:11.5px;font-weight:650}
+    .school::before{content:"⌂";color:var(--theme-dark);font-weight:900}
+    .pec-list{display:flex;flex-wrap:wrap;gap:8px}
+    .pec{padding:8px 11px;border-left:3px solid var(--violet);border-radius:8px;background:#f4efff;color:#5c2ba8;font-size:11px;font-weight:780}
+    .empty{padding:20px;border:1px dashed var(--line);border-radius:12px;background:var(--theme-light);color:var(--muted);font-size:13px;font-weight:650;text-align:center}
+    .source-note{margin-top:23px;padding:12px 13px;border-radius:11px;background:color-mix(in srgb,var(--theme-medium) 31%,#fff);color:var(--muted);font-size:10.5px;font-weight:610}
+    .topbar-title{display:flex;align-items:flex-start;gap:12px}.home-return{width:42px;height:42px;flex:none;display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--theme-dark);cursor:pointer;transition:.2s}.home-return:hover{background:var(--theme-medium);transform:translateX(-2px)}.home-return svg{width:21px;height:21px;fill:currentColor}.toast{position:fixed;right:24px;bottom:24px;z-index:20;max-width:340px;padding:12px 16px;border-radius:12px;background:var(--ink);color:#fff;font-size:12px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.18);opacity:0;transform:translateY(12px);pointer-events:none;transition:.2s}.toast.is-visible{opacity:1;transform:none}
+    @media(max-width:1250px){.kpis{grid-template-columns:repeat(3,1fr)}.directory-grid{grid-template-columns:350px minmax(0,1fr)}}
+    @media(max-width:900px){.page{padding:20px 14px 34px}.filters{grid-template-columns:1fr 1fr}.filters .field:first-child{grid-column:1/-1}.filters .button{grid-column:1/-1}.directory-grid{grid-template-columns:1fr}.supervisor-list{height:auto;max-height:430px}.detail{min-height:0}}
+    @media(max-width:620px){body{font-size:16px}.topbar{align-items:flex-start;flex-direction:column}.topbar .button{width:100%}.kpis{grid-template-columns:repeat(2,1fr)}.kpi{min-height:110px}.filters{grid-template-columns:1fr}.filters .field:first-child{grid-column:auto}.detail-header{flex-direction:column}.detail-stats{grid-template-columns:repeat(2,1fr)}.action-grid,.school-grid{grid-template-columns:1fr}.supervisor-card{grid-template-columns:46px minmax(0,1fr) auto}.detail-content,.detail-header{padding-left:18px;padding-right:18px}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="topbar-title"><button class="home-return" type="button" onclick="if(window.parent!==window&&typeof window.parent.portalNavigate==='function'){window.parent.portalNavigate('home')}else{location.href='index.html'}" aria-label="Voltar para visão geral" title="Voltar para visão geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.6 1 12l6.5 6.4V14H14c2.2 0 4 1.8 4 4v2h2v-2c0-3.3-2.7-6-6-6H7.5V5.6z"/></svg></button><div><span class="eyebrow">Gestão 360°</span><h1>Equipe ESE</h1><p>Supervisores, setores, atribuições e unidades acompanhadas em uma única visão.</p></div></div>
+      <button class="button" id="exportButton" type="button">↓ Exportar lista</button>
+    </header>
+
+    <section class="kpis" aria-label="Resumo da equipe">
+      <article class="kpi" style="--kpi-color:var(--theme-dark)"><span class="kpi-label"><i class="dot"></i>Supervisores</span><strong id="kpiSupervisors">—</strong><small>nomes selecionados para a equipe</small></article>
+      <article class="kpi" style="--kpi-color:var(--success)"><span class="kpi-label"><i class="dot"></i>Com atribuição</span><strong id="kpiFound">—</strong><small>identificados na planilha</small></article>
+      <article class="kpi" style="--kpi-color:var(--violet)"><span class="kpi-label"><i class="dot"></i>Setores</span><strong id="kpiSectors">—</strong><small>frentes de trabalho</small></article>
+      <article class="kpi" style="--kpi-color:var(--info)"><span class="kpi-label"><i class="dot"></i>Estaduais</span><strong id="kpiState">—</strong><small>unidades distribuídas</small></article>
+      <article class="kpi" style="--kpi-color:var(--warning)"><span class="kpi-label"><i class="dot"></i>Particulares</span><strong id="kpiPrivate">—</strong><small>unidades distribuídas</small></article>
+      <article class="kpi" style="--kpi-color:#ef4444"><span class="kpi-label"><i class="dot"></i>Atribuições</span><strong id="kpiActions">—</strong><small>ações das pastas</small></article>
+    </section>
+
+    <section class="filters" aria-label="Filtros da equipe">
+      <div class="field"><label for="searchInput">Buscar supervisor, setor, escola ou atribuição</label><input id="searchInput" type="search" autocomplete="off" placeholder="Digite para pesquisar..."></div>
+      <div class="field"><label for="sectorFilter">Setor</label><select id="sectorFilter"><option value="">Todos os setores</option></select></div>
+      <div class="field"><label for="statusFilter">Situação</label><select id="statusFilter"><option value="">Todas as situações</option><option value="found">Com atribuição</option><option value="pending">Sem atribuição localizada</option></select></div>
+      <button class="button button-primary" id="clearButton" type="button">Limpar filtros</button>
+    </section>
+
+    <section class="directory-grid">
+      <aside class="panel">
+        <header class="panel-head"><div><h2>Supervisores</h2><p>Selecione um nome para consultar.</p></div><span class="result-count" id="resultCount">—</span></header>
+        <div class="supervisor-list" id="supervisorList"></div>
+      </aside>
+
+      <article class="panel detail" id="detailPanel">
+        <header class="detail-header">
+          <div class="identity"><div class="identity-avatar" id="detailAvatar">ESE</div><div><h2 id="detailName">Selecione um supervisor</h2><div class="chips" id="detailSectors"></div></div></div>
+          <span class="status" id="detailStatus">—</span>
+        </header>
+        <div class="detail-stats">
+          <div class="mini-stat"><span>Atribuições</span><strong id="detailActionCount">0</strong></div>
+          <div class="mini-stat"><span>Estaduais</span><strong id="detailStateCount">0</strong></div>
+          <div class="mini-stat"><span>Particulares</span><strong id="detailPrivateCount">0</strong></div>
+          <div class="mini-stat"><span>Apoio PEC</span><strong id="detailPecCount">0</strong></div>
+        </div>
+        <div class="detail-content">
+          <section class="section"><h3 class="section-title">Ações das pastas <span id="actionLabel"></span></h3><div class="action-grid" id="actionList"></div></section>
+          <section class="section"><h3 class="section-title">Unidades acompanhadas <span id="schoolLabel"></span></h3><div class="tabs"><button class="tab is-active" type="button" data-school-tab="state">Estaduais</button><button class="tab" type="button" data-school-tab="private">Particulares</button></div><div class="school-grid" id="schoolList"></div></section>
+          <section class="section"><h3 class="section-title">Apoio PEC <span id="pecLabel"></span></h3><div class="pec-list" id="pecList"></div></section>
+          <div class="source-note" id="sourceNote">Dados consolidados da planilha “Setores Supervisão 2026”, considerando somente os 17 supervisores informados.</div>
+        </div>
+      </article>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const SUPERVISORS = [{"name":"Siliane Veiga M. Rolim Nunes","spreadsheetName":"SILIANE","found":true,"sectors":["APURAÇÃO PRELIMINAR"],"actions":["Ponto Focal A.P.","Coordenação e orientação técnica sobre AP","Análise e Parecer de todas ouvidorias / Denúncias / Fale Conosco / Ações Judiciais com ASURE","Formação de Gestores e ESE"],"stateSchools":["EE Prof.ª Escolástica Rosa de Almeida","EE Fernanda de Camargo Pires","EE Prof. José Odin de Arruda","EE Monteiro Lobato"],"privateSchools":["ÁPICE INSTITUTO EDUCACIONAL LTDA","EMBAIXADA CRISTÃ COLÉGIO","MATERNITA ED INF E FUNDAMENTAL","SER! UNIDADE BOA VISTA COLÉGIO","SER! UNIDADE CAMPOLIM COLÉGIO","SER! UNIDADE SER CRIANÇA COLÉGIO"],"pec":["JAQUELINE","PATRÍCIA"],"sourceRows":"54-59"},{"name":"Fernanda Furian Amorim","spreadsheetName":"FERNANDA AMORIM","found":true,"sectors":["RECOMPOSIÇÃO/TUTOR AF"],"actions":["Recompisição das aprendizagens AF e EM","Professor Tutor AF (edital/formação)","Ponto Focal Orientação de Estudos UEs","Análise Semanal do BI - Recomposição","Formação Semanal ESE"],"stateSchools":["EE Antonio Miguel Pereira Junior","EE Prof. Arquimínio Marques da Silva","EE Prof. Luiz Gonzaga de Camargo Fleury","EE Prof. Renato Sêneca de Sá Fleury"],"privateSchools":["RAFON COLÉGIO","SANTA ROSÁLIA COLÉGIO unid. 1 e 2","VERITAS COLÉGIO INTEGRADO unid 1 e 2"],"pec":["PAULA","CIBELE/FERNANDA","ROSIMEIRE"],"sourceRows":"108-112"},{"name":"Adalberto Antonio R. da Costa","spreadsheetName":"ADALBERTO","found":true,"sectors":["VIDA ESCOLAR/PACTO EJA"],"actions":["Ponto Focal Pedagógico Vida Escolar","Pacto Nacional EJA e CEEJA","Meu diploma SP","Autorização de Cursos e Novas Escolas Particulares","Evolução Funcional Acadêmica 2"],"stateSchools":["CEEJA Prof. Norberto Soares Ramos","EE Francisco Eufrásio Monteiro","EE Prof. Marco Antonio Mencacci","EE Prof. Roberto Paschoalick"],"privateSchools":["IEP COLÉGIO TÉCNICO DE INFERMAGEM (UNIMED)","IGUATEMI COLÉGIO","NOVA ERA COLÉGIO","SAGAZ COLÉGIO","MAGNUS JUNIOR ESCOLA","SÃO RAPHAEL E TEC PROTESE DENTÁRIA"],"pec":["DOUGLAS","VANESSA"],"sourceRows":"72-77"},{"name":"Silmara Aparecida Lopes","spreadsheetName":null,"found":false,"sectors":[],"actions":[],"stateSchools":[],"privateSchools":[],"pec":[],"sourceRows":null},{"name":"Elaine Cristina da Silva","spreadsheetName":"ELAINE","found":true,"sectors":["PROJETOS ESTUDANTES","ARTICULAÇÃO ESE"],"actions":["English EM","Projetos novos para estudantes","Olimpíadas: Engajamento e publicidade","BI - Speak e Open Inglish","CMESO 2","Articulação ESE","Pauta das reuniões semanais","Termo semanal com temas gerais","PTM mensal e Roteiro de acompanhamento ESE","Atualização TEAMs com informações para ESE / DOE / Legislação","Alimentação e análise com a DRE dos Termos de Visita","CMESO 1","Sala de Leitura"],"stateSchools":["EE Gualberto Moreira Dr.","EE Prof. Julio Bierrenbach Lima","EE Prof.ª Nazira Nagib Jorge Murad Rodrigues","EE Senador Vergueiro","EE Prof.ª Ana Cecília Martins","EE Prof.ª Elza Salvestro Bonilha","EE Prof. Wilson Ramos Brandão"],"privateSchools":["BEZERRA DE MENEZES EDUCANDÁRIO","EXPANDE COLÉGIO","ILUMIARE COLÉGIO","KINGDOM SCHOOL","POLITÉCNICO DE SOROCABA","DOM BOSCO SOROCABA COLÉGIO","HUMANUS COLÉGIO","NIPPO COLÉGIO","O FAROL COLÉGIO","SFERA LTDA COLÉGIO","VIVER E APRENDER"],"pec":["MARIA PAULA","SHÉRIDA","CIBELE","SHERIDA","PATRÍCIA","GERMANO/NATANIA","GERMANO"],"sourceRows":"146-158"},{"name":"Divanilza de Camargo Soares Brisola","spreadsheetName":"DIVANILZA","found":true,"sectors":["ALFABETIZA JUNTOS PROF. TUTOR AI"],"actions":["Ponto Focal Alfabetiza Juntos","Plataformas Anos Iniciais","Fluência Leitora AI","Articulação e Interlocução PMS","Avaliações e engajamento anos iniciais","Inglês AI","Parte Diversificada AI","Professor Tutor AI / Editais e Credenciamento"],"stateSchools":["EE Baltazar Fernandes","EE João Machado de Araujo Dr","EE Prof.ª Maria Cândida de Barros Araujo","EE Prof. Waldemar de Freitas Rosa"],"privateSchools":["CICLO VITTAL ESCOLA DE ENFERMAGEM","OBJETIVO CENTRO - INST ED CIE E LETRAS","OBJETIVO PORTAL - INST ED CIE E LETRAS"],"pec":["CIBELE","NATANIA"],"sourceRows":"95-102"},{"name":"Eric Klinke Alves Coelho","spreadsheetName":"ERIC","found":true,"sectors":["APOIO PRESENCIAL - PEI - III"],"actions":["CAF - PEI - Jornada PEI - Apoio 5 e 20","Sala do Futuro","BI - Análise Semanal","Parte Diversificada PEI"],"stateSchools":["EE Prof.ª Antonia Lucchesi","EE Prof.ª Jordina Amaral Arruda","EE Prof.ª Marina Grohmann Soares Fernandes","EE Visconde de Porto Seguro"],"privateSchools":["AKALANTO KIDS COLÉGIO","GALILEI COLÉGIO unid. 1 e 2","MAXXIMUS COLÉGIO","MUNDO SOROCABA COLÉGIO","QUINTAL DA VILA COLÉGIO"],"pec":["PAULA","MARCELA","CIBELE"],"sourceRows":"103-107"},{"name":"Queila Medeiros Veiga","spreadsheetName":"QUEILA","found":true,"sectors":["Educação Especial III"],"actions":["Prof interlocutores - Libras","Acompanhamento dos termos de convênio - AMAS - APAE - CLAVE DE SOL","Acessibilidade","Comissão de Credenciamento e avaliação OSC","DUA e adaptação curricular / PAF","Orientação sobre rotinas / plano de atendimento","Classe Hospitalar"],"stateSchools":["EE Humberto de Campos","EE Prof.ª Laila Galep Sacker","EE Prof. Ossis Salvestrini Mendes"],"privateSchools":["CENTRO EDUCACIONAL TEAMPARO","CLAVE DE SOL","MELANIE KLEIN INST ED ESPECIAL"],"pec":["LILLIAN","NATANIA"],"sourceRows":"20-26"},{"name":"Katia Martins Rodrigues","spreadsheetName":"KATIA","found":true,"sectors":["PEI II"],"actions":["Ponto Focal URE/SEDUC II","Orientação Técnica UE e URE","Plano de Ação para diretores novos","Implementação: orientação técnica e acompanhamento da jornada PEI","Avaliação: PECs / equipes gestoras Res 4 e 12","Análise dos PDIs dos diretores e OTs aos supervisores","Prof de apoio ao protagonismo"],"stateSchools":["EE Prof.ª Dulce Esmeralda Basile Ferreira","EE Prof Enéas Proença de Arruda","EE Hélio Del Cistia"],"privateSchools":["CRISTÃO KUMBAYA COLÉGIO","SANTA ESCOLÁSTICA COLÉGIO","SOROCABA COL EI EF","UIRAPURU COLÉGIO"],"pec":["PAULA","NATANIA"],"sourceRows":"139-145"},{"name":"Mara Regina Borges Ferro","spreadsheetName":"MARA FERRO","found":true,"sectors":["ATRIBUIÇÃO ESCOLAS PARCIAIS"],"actions":["Acompanhmento de saldo de aulas na SED","Atribuição Diariamente","Acompanhamento Carga Horária - Adidos F/O","Dados Funcionais para classificação / Análise de Qualificação / Habilitação","Atribuição com o SEPES online","Recursos relacionados a extinção contratual","Heteroidentificação","Cadastro Emergencial"],"stateSchools":["EE Prof. Diógenes de Almeida Marins","EE Gumercindo Gonçalves","EE Profª. Isabel Lopes Monteiro"],"privateSchools":["DUQUE DE SOUZA COLÉGIO","LICEU PEDRO II","NEXUS COLÉGIO","PRIMEIRO MUNDO COLÉGIO"],"pec":["CAMILA/CIBELE","CIBELE","CAMILA"],"sourceRows":"46-53"},{"name":"Cristiane Aparecida Madureira","spreadsheetName":"CRISTIANE","found":true,"sectors":["SISTEMA PRISIONAL E FUNDAÇÃO CASA"],"actions":["Fundação Casa (editais e acompanhamento)","Educação Prisional (Editais e acompanhamento)","Sala de Leitura (Editais e Acompanhamento)","Educação Étnico-Racial","Diversidade","MP / LA / MSE"],"stateSchools":["EE Prof.ª Beathris Caixeiro Del Cistia","EE Prof.ª Izabel Rodrigues Galvão","EE Julio Prestes de Albuquerque Dr.","EE Prof. Roque Conceição Martins"],"privateSchools":["ABAYOMI COLÉGIO unid. 1 e 2","BE HAPPY COLÉGIO","CRESCER APRENDER","HORIZONTE COLÉGIO","NOVA ESCOLA EDU INFANTIL E ENS FUND","RENASCER ARTE ESCOLA"],"pec":["MARIA DE RITA","NATANIA/ROSIMEIRE","VANESSA"],"sourceRows":"89-94"},{"name":"Mara Cristina da Silva Calixto","spreadsheetName":"MARA CALIXTO","found":true,"sectors":["EDUCAÇÃO PROFISSIONAL"],"actions":["Atribuição Ed Profissional","Formação PAEET","Legislação - Orientação Técnica","SISTEC - Cursos Técnicos","Concluintes Ed Profissional","Programa BEEM","Demandas: números de turmas / cursos","Itinerário Formativo Técnico","Estágio obrigatório (enfermagem)","Organização de visitas técnicas","Matriz curricular Ensino Técnico","Seminário de Boas Práticas"],"stateSchools":["EE João Soares Monsenhor","EE Prof. Joaquim Izidoro Martins","EE Luiz Nogueira Martins - Senador"],"privateSchools":["ATITUDE COLÉGIO SOROCABA unid. 1 e 2","BATISTA SOROCABA COLÉGIO","BEIJA FLOR BERÇARIO E ESCOLA","LUMINOVA ESCOLA","MONTESSORI SEMEAR","VOLARE DE ED INF E ENSINO FUNDAMENTAL"],"pec":["CAMILA","ROSIMEIRE"],"sourceRows":"60-71"},{"name":"José Garcia Chanes Junior","spreadsheetName":"CHANES","found":true,"sectors":["ARTICULAÇÃO EEC"],"actions":["Administração / avaliação / feedback: Entrevistas / Editais PEC / CEC","Organização CEC e Alinhamento","Integração dos CGPs novos e CECs","Acompanhamento das ações CEC e PEC: PTMs / Visitas Pedagógicas e","Apoio Presencial (BI) CEC e PEC","Pesquisa / pós graduação / mestrado e doutorado","PROEDUCA","CAD FORMAÇÃO","Parceria às UEs","Editais e Entrevistas Suporte Pedagógico"],"stateSchools":["EE Prof.ª Amélia César Machado de Araujo","EE Prof. Ezequiel Machado Nascimento","EE Prof. José Quevedo"],"privateSchools":["AGILIZA CURSOS","CONEXÃO SOROCABA COLÉGIO","CONQUISTAR COLÉGIO","PEQUENOS PASSOS COLÉGIO","PORTAL COLÉGIO EDEN","SÃO JOSÉ DE ANCHIETA COLÉGIO","VIDA UNIDADE MUNDO COLÉGIO","WALDORF MICAEL DE SOROCABA ESCOLA"],"pec":["NATANIA","MARIA DE RITA"],"sourceRows":"129-138"},{"name":"Maria Inês Fernandez Metedieri","spreadsheetName":"MARIA INÊS","found":true,"sectors":["COPA DA ESCOLA E TAREFA"],"actions":["Avaliação SAEB e PISA - BIENAL","Copa da Escola - Acompanhamento","Tarefa - BI Semanal","Apoio - pasta 10"],"stateSchools":["EE Antonio Vieira Campos","EE Prof.ª Rosemary de Mello Moreira Pereira","EE Maria Ondina Andrade"],"privateSchools":["CRISTÃO ALMEIDA BARROS COLÉGIO","INSTITUTO EDUCACIONAL UNICO","MAPLE BEAR CANADIAN SCHOOL","MONTESSO COLÉGIO","NOVA GERAÇÃO CENTRO EDUCACIONAL"],"pec":["MARIA PAULA","JOSÉ CARLOS"],"sourceRows":"124-128"},{"name":"Kelly Lesia Taraborelli Veneri","spreadsheetName":"KELLY","found":true,"sectors":["Educação Especial II"],"actions":["Formação Ed. Especial","Abertura de Sala de Recurso e itinerancia","Cuidador - Conviva portal de atendimento","Atendimento Domiciliar","Apoio Conviva para a Ed. Especial"],"stateSchools":["EE Prof. Aggêo Pereira do Amaral","EE Prof.ª Ida Yolanda Lanzoni de Barros","EE Prof.ª Zélia Dulce de Campos Maia"],"privateSchools":["AMAS","APAE SOROCABA","PLENO ENSINO FUNDAMENTAL E MÉDIO","SOROCABANA ORG ENSINO INST ED (OSE)"],"pec":["FERNANDA","CIBELE"],"sourceRows":"14-19"},{"name":"Fernanda Isaura Medeiros Mirim","spreadsheetName":"FERNANDA MIRIM","found":true,"sectors":["Educação Especial I"],"actions":["Coordenação ed especial - URE","Açao judicial - prof aux","atribuição ed especial edital de vagas","escola mais inclusiva","ensino colaborativo","plano estadual da Ed Esp. Res 121/2025","perícias judiciais","ocorrências PA"],"stateSchools":["EE Brigadeiro Tobias","EE Geraldo do Espírito Santo Fogaça de Almeida","EE Profª. Júlia Rios Athayde"],"privateSchools":["Assoc Educacional Pro EX Escola","Integrar - Núcleo de Ed Especial"],"pec":["VANESSA","CAMILA"],"sourceRows":"6-13"},{"name":"Adriana Rosa Marcondes","spreadsheetName":"ADRIANA ROSA","found":true,"sectors":["AVALIAÇÕES INSTITUCIONAIS","ALUNO MONITOR / ORIENTAÇÃO DE ESTUDOS"],"actions":["Organização das avaliações: SARESP","Avaliações Internas / Engajamento: Prova Paulista / Diagnósticas / Semestral","Recuperação","Análise dos dados de todas as avaliações","Plano de ação com vista dos resultados: URE/UE","Prepara SP - Vestibular","BI das Avaliações","Expansão do Médio Noturno (Prof Mediador)","ACDA e Ed Física Noturno","Lei da Aprendizagem Obrigatória dos Termos de Compromissos das UEs e Estágios","Programa Aluno Monitor e Formação do Aluno Monitor"],"stateSchools":["EE João Clímaco de Camargo Pires","EE Francisco Camargo César","EE Mario Guilherme Notari","EE Prof. Accácio de Vasconcelos Camargo","EE Prof.ª Elzide Celestina Souza Pacheco Tunuchi","EE Prof. Francisco Coccaro","EE Reverendo Ovídio Antonio de Souza"],"privateSchools":["CENTRO DE ENSINO GRAU TÉCNICO","ENFESP ENFERMAGEM ESPECIALIZADA","MARQUES ESC TEC DE ENFERMAGEM","ABBA COLÉGIO","APOLLO COLÉGIO","CAMINHO COL ENSINO FUNDAMENTAL","TALENTOS COLÉGIO unid 1 e 2"],"pec":["ELISA","CIBELE/FABIANO/NATANIA","FABIANO","PATRÍCIA"],"sourceRows":"78-88"}];
+    const THEMES={blue:['#477c9e','#d5eaf5','#eef4f8'],yellow:['#99752e','#f5e4a9','#fff9e8'],green:['#507c68','#d8ebdd','#f2f7f3'],rose:['#9b6674','#f0d9df','#faf2f4'],lavender:['#706d9b','#deddf1','#f4f3fa'],peach:['#17191b','#aeb3b7','#fafaf8']};
+    const storedTheme=localStorage.getItem('portal-ure-paleta')||'blue';
+    const palette=THEMES[storedTheme]||THEMES.blue;
+    document.documentElement.style.setProperty('--theme-dark',palette[0]);document.documentElement.style.setProperty('--theme-medium',palette[1]);document.documentElement.style.setProperty('--theme-light',palette[2]);
+
+    const $=id=>document.getElementById(id);
+    const fold=value=>(value||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const initials=name=>name.split(/\s+/).filter(Boolean).slice(0,2).map(word=>word[0]).join('').toUpperCase();
+    const unique=items=>[...new Set(items)];
+    let filtered=[...SUPERVISORS],selected=SUPERVISORS[0],schoolTab='state',toastTimer;
+
+    function setKpis(){
+      $('kpiSupervisors').textContent=SUPERVISORS.length;
+      $('kpiFound').textContent=SUPERVISORS.filter(item=>item.found).length;
+      $('kpiSectors').textContent=unique(SUPERVISORS.flatMap(item=>item.sectors)).length;
+      $('kpiState').textContent=unique(SUPERVISORS.flatMap(item=>item.stateSchools)).length;
+      $('kpiPrivate').textContent=unique(SUPERVISORS.flatMap(item=>item.privateSchools)).length;
+      $('kpiActions').textContent=SUPERVISORS.reduce((total,item)=>total+item.actions.length,0);
+    }
+    function populateSectors(){
+      unique(SUPERVISORS.flatMap(item=>item.sectors)).sort((a,b)=>a.localeCompare(b,'pt-BR')).forEach(sector=>{const option=document.createElement('option');option.value=sector;option.textContent=sector;$('sectorFilter').appendChild(option)});
+    }
+    function searchable(item){return fold([item.name,item.spreadsheetName,...item.sectors,...item.actions,...item.stateSchools,...item.privateSchools,...item.pec].filter(Boolean).join(' '))}
+    function applyFilters(){
+      const query=fold($('searchInput').value),sector=$('sectorFilter').value,status=$('statusFilter').value;
+      filtered=SUPERVISORS.filter(item=>(!query||searchable(item).includes(query))&&(!sector||item.sectors.includes(sector))&&(!status||(status==='found'?item.found:!item.found)));
+      if(!filtered.includes(selected))selected=filtered[0]||null;
+      renderList();renderDetail();
+    }
+    function renderList(){
+      const list=$('supervisorList');list.replaceChildren();$('resultCount').textContent=`${filtered.length} ${filtered.length===1?'resultado':'resultados'}`;
+      filtered.forEach(item=>{const button=document.createElement('button');button.type='button';button.className='supervisor-card'+(item===selected?' is-active':'');button.setAttribute('aria-label',`Abrir ficha de ${item.name}`);const avatar=document.createElement('span');avatar.className='avatar';avatar.textContent=initials(item.name);const copy=document.createElement('span');copy.className='card-copy';const name=document.createElement('strong');name.textContent=item.name;const sector=document.createElement('span');sector.textContent=item.sectors.join(' • ')||'Sem atribuição localizada';copy.append(name,sector);const count=document.createElement('span');count.className='card-count';count.textContent=item.stateSchools.length+item.privateSchools.length;button.append(avatar,copy,count);button.addEventListener('click',()=>{selected=item;schoolTab='state';renderList();renderDetail();if(innerWidth<901)$('detailPanel').scrollIntoView({behavior:'smooth',block:'start'})});list.appendChild(button)});
+      if(!filtered.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='Nenhum supervisor corresponde aos filtros.';list.appendChild(empty)}
+    }
+    function fillList(container,items,className,formatter){container.replaceChildren();if(!items.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='Nenhuma informação localizada na planilha.';container.appendChild(empty);return}items.forEach((item,index)=>{const element=document.createElement('div');element.className=className;if(formatter)formatter(element,item,index);else element.textContent=item;container.appendChild(element)})}
+    function renderDetail(){
+      if(!selected){$('detailName').textContent='Nenhum supervisor encontrado';$('detailAvatar').textContent='—';$('detailSectors').replaceChildren();$('detailStatus').textContent='Sem resultado';$('detailStatus').className='status is-pending';['detailActionCount','detailStateCount','detailPrivateCount','detailPecCount'].forEach(id=>$(id).textContent='0');fillList($('actionList'),[],'action');fillList($('schoolList'),[],'school');fillList($('pecList'),[],'pec');return}
+      $('detailName').textContent=selected.name;$('detailAvatar').textContent=initials(selected.name);const sectors=$('detailSectors');sectors.replaceChildren();(selected.sectors.length?selected.sectors:['Setor não localizado']).forEach(text=>{const chip=document.createElement('span');chip.className='chip';chip.textContent=text;sectors.appendChild(chip)});
+      $('detailStatus').textContent=selected.found?'Atribuição localizada':'Revisão necessária';$('detailStatus').className='status '+(selected.found?'is-ok':'is-pending');$('detailActionCount').textContent=selected.actions.length;$('detailStateCount').textContent=selected.stateSchools.length;$('detailPrivateCount').textContent=selected.privateSchools.length;$('detailPecCount').textContent=selected.pec.length;
+      $('actionLabel').textContent=`${selected.actions.length} registros`;fillList($('actionList'),selected.actions,'action',(element,item,index)=>{const number=document.createElement('b');number.textContent=String(index+1).padStart(2,'0');const text=document.createElement('span');text.textContent=item;element.append(number,text)});
+      const schools=schoolTab==='state'?selected.stateSchools:selected.privateSchools;$('schoolLabel').textContent=`${selected.stateSchools.length+selected.privateSchools.length} unidades`;fillList($('schoolList'),schools,'school');document.querySelectorAll('[data-school-tab]').forEach(tab=>tab.classList.toggle('is-active',tab.dataset.schoolTab===schoolTab));
+      $('pecLabel').textContent=`${selected.pec.length} referências`;fillList($('pecList'),selected.pec,'pec');$('sourceNote').textContent=selected.found?`Correspondência feita com “${selected.spreadsheetName}”, linhas ${selected.sourceRows} da planilha Setores Supervisão 2026.`:'O nome foi mantido conforme a lista informada, mas nenhuma atribuição correspondente foi localizada na planilha. Os dados devem ser complementados após confirmação.';
+    }
+    function showToast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').classList.add('is-visible');toastTimer=setTimeout(()=>$('toast').classList.remove('is-visible'),2600)}
+    function csvCell(value){return `"${String(value??'').replace(/"/g,'""').replace(/[\r\n]+/g,' ')}"`}
+    function exportCsv(){
+      const header=['Supervisor','Nome na planilha','Situação','Setores','Ações','Escolas estaduais','Escolas particulares','Apoio PEC'];const rows=filtered.map(item=>[item.name,item.spreadsheetName||'',item.found?'Com atribuição':'Sem atribuição localizada',item.sectors.join(' | '),item.actions.join(' | '),item.stateSchools.join(' | '),item.privateSchools.join(' | '),item.pec.join(' | ')]);const csv='\ufeff'+[header,...rows].map(row=>row.map(csvCell).join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download='equipe-ese-supervisores.csv';link.click();URL.revokeObjectURL(url);showToast(`${filtered.length} supervisores exportados.`)
+    }
+    $('searchInput').addEventListener('input',applyFilters);$('sectorFilter').addEventListener('change',applyFilters);$('statusFilter').addEventListener('change',applyFilters);$('clearButton').addEventListener('click',()=>{$('searchInput').value='';$('sectorFilter').value='';$('statusFilter').value='';applyFilters()});$('exportButton').addEventListener('click',exportCsv);document.querySelectorAll('[data-school-tab]').forEach(tab=>tab.addEventListener('click',()=>{schoolTab=tab.dataset.schoolTab;renderDetail()}));
+    setKpis();populateSectors();renderList();renderDetail();
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Módulo Visitas × planejamento temporariamente em manutenção — Portal URE Sorocaba">
+  <title>Visitas × planejamento — Em manutenção</title>
+  <style>
+    :root{color-scheme:light;--theme-dark:#477c9e;--theme-medium:#d5eaf5;--theme-light:#eef4f8;--ink:#17354a;--muted:#536c7d;--panel:#fff;--line:#d7e3e9;--shadow:0 24px 70px rgba(34,65,84,.12)}
+    :root[data-theme="yellow"]{--theme-dark:#99752e;--theme-medium:#f5e4a9;--theme-light:#fff9e8}
+    :root[data-theme="green"]{--theme-dark:#507c68;--theme-medium:#d8ebdd;--theme-light:#f2f7f3}
+    :root[data-theme="rose"]{--theme-dark:#9b6674;--theme-medium:#f0d9df;--theme-light:#faf2f4}
+    :root[data-theme="lavender"]{--theme-dark:#706d9b;--theme-medium:#deddf1;--theme-light:#f4f3fa}
+    :root[data-theme="peach"]{--theme-dark:#17191b;--theme-medium:#aeb3b7;--theme-light:#fafaf8}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 12% 10%,color-mix(in srgb,var(--theme-medium) 70%,transparent),transparent 28%),radial-gradient(circle at 88% 86%,color-mix(in srgb,var(--theme-medium) 55%,transparent),transparent 30%),var(--theme-light);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;font-weight:550;line-height:1.55}
+    .card{position:relative;width:min(700px,100%);overflow:hidden;padding:clamp(30px,6vw,58px);border:1px solid color-mix(in srgb,var(--theme-dark) 16%,#fff);border-radius:26px;background:color-mix(in srgb,#fff 94%,var(--theme-medium));box-shadow:var(--shadow);text-align:center}
+    .card::before{content:"";position:absolute;width:220px;height:220px;right:-110px;top:-120px;border:32px solid color-mix(in srgb,var(--theme-medium) 70%,transparent);border-radius:50%}
+    .mark{position:relative;width:82px;height:82px;display:grid;place-items:center;margin:0 auto 22px;border-radius:24px;background:var(--theme-dark);color:#fff;box-shadow:0 14px 32px color-mix(in srgb,var(--theme-dark) 28%,transparent)}
+    .mark svg{width:39px;height:39px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .status{position:relative;display:inline-flex;align-items:center;gap:8px;padding:6px 11px;border-radius:999px;background:color-mix(in srgb,var(--theme-medium) 56%,#fff);color:var(--theme-dark);font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+    .status i{width:8px;height:8px;border-radius:50%;background:var(--theme-dark);box-shadow:0 0 0 5px color-mix(in srgb,var(--theme-dark) 12%,transparent)}
+    h1{position:relative;margin:17px 0 10px;font-size:clamp(29px,6vw,45px);font-weight:880;line-height:1.12;letter-spacing:-.045em}
+    .lead{position:relative;max-width:535px;margin:0 auto;color:var(--muted);font-size:clamp(15px,2.4vw,18px);font-weight:600}
+    .notice{position:relative;max-width:520px;margin:26px auto;padding:15px 18px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--theme-light) 70%,#fff);color:var(--muted);font-size:14px}
+    .actions{position:relative;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+    .button{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:0 18px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:800;transition:transform .18s ease,box-shadow .18s ease}
+    .button:hover{transform:translateY(-2px)}
+    .button-primary{border:1px solid var(--theme-dark);background:var(--theme-dark);color:#fff;box-shadow:0 10px 22px color-mix(in srgb,var(--theme-dark) 22%,transparent)}
+    .footer{position:relative;margin-top:24px;color:var(--muted);font-size:12px;font-weight:650}
+    @media(max-width:480px){body{padding:14px}.card{padding:30px 20px;border-radius:21px}.mark{width:70px;height:70px;border-radius:20px}.button{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5 5L3 18l3 3 6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-3-3 2.4-2.4Z"/><path d="m6 18 2 2"/></svg>
+    </div>
+    <span class="status"><i></i>Em manutenção</span>
+    <h1>Visitas × planejamento</h1>
+    <p class="lead">Estamos revisando este módulo para oferecer uma consulta mais clara, segura e completa.</p>
+    <div class="notice">A página ficará disponível novamente após a conclusão dos ajustes.</div>
+    <div class="actions">
+      <a class="button button-primary" href="index.html"><span aria-hidden="true">←</span> Voltar ao portal</a>
+    </div>
+    <p class="footer">Portal URE · Gestão Sorocaba</p>
+  </main>
+  <script>
+    const theme=localStorage.getItem('portal-ure-paleta')||'blue';
+    document.documentElement.dataset.theme=theme;
+  </script>
+</body>
+</html>

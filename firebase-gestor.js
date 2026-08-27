@@ -11,13 +11,11 @@ import {
   getDoc,
   getDocs,
   getFirestore,
-  query,
   runTransaction,
   serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
-  where,
   writeBatch
 } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
@@ -36,82 +34,13 @@ export const db = getFirestore(app);
 export const MASTER_ADMIN_EMAIL = 'desornit@prof.educacao.sp.gov.br';
 const ACCESS_EMAIL_PREFIX = 'desornit+';
 const ACCESS_EMAIL_DOMAIN = '@prof.educacao.sp.gov.br';
-const CLOUD_SYNC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.5 10a6.5 6.5 0 0 0-12.4-2A5 5 0 0 0 6 18h4v-2H6a3 3 0 1 1 .6-5.94l1.24.25.27-1.24A4.5 4.5 0 0 1 16.7 10H14l3.5 3.5L21 10h-2.5ZM14 14v2h4a3 3 0 0 1-.6 5.94l-1.24-.25-.27 1.24A4.5 4.5 0 0 1 7.3 22H10l-3.5-3.5L3 22h2.5A6.5 6.5 0 0 0 17.9 20a5 5 0 0 0 .1-10h-4v2h4a3 3 0 0 1 0 6h-4Z"/></svg>';
-
-export function decorateCloudSyncButton(button = document.getElementById('refreshButton')) {
-  if (!button || button.dataset.cloudSyncReady === 'true') return button;
-  button.dataset.cloudSyncReady = 'true';
-  button.classList.add('cloud-sync-button');
-  button.innerHTML = `${CLOUD_SYNC_ICON}<span>Atualizar</span><span class="cloud-sync-comet" aria-hidden="true"><i></i><i></i><i></i></span>`;
-  button.title = 'Buscar agora as alterações do Firebase';
-  button.setAttribute('aria-label', 'Atualizar dados pelo Firebase');
-  if (!document.getElementById('gestor-cloud-sync-style')) {
-    const style = document.createElement('style');
-    style.id = 'gestor-cloud-sync-style';
-    style.textContent = '.cloud-sync-button{position:relative!important;isolation:isolate;overflow:visible!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;white-space:nowrap}.cloud-sync-button>svg{width:17px;height:17px;fill:currentColor;flex:none}.cloud-sync-button::before{content:"";position:absolute;inset:-3px;z-index:-1;border:1px solid transparent;border-radius:inherit;pointer-events:none;animation:cloudSyncResonance 4.8s ease-out infinite}.cloud-sync-comet{position:absolute;inset:-4px;pointer-events:none}.cloud-sync-comet i{position:absolute;width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 8px rgba(16,185,129,.72);offset-path:inset(1px round 12px);offset-rotate:0deg;animation:cloudSyncOrbit 4.8s cubic-bezier(.45,.05,.35,1) infinite}.cloud-sync-comet i:nth-child(2){width:4px;height:4px;opacity:.72;animation-delay:-.12s}.cloud-sync-comet i:nth-child(3){width:3px;height:3px;opacity:.48;animation-delay:-.24s}.cloud-sync-button.is-syncing>svg{animation:gestorCloudSync 1s linear infinite}.cloud-sync-button.is-syncing .cloud-sync-comet{display:none}@keyframes gestorCloudSync{to{transform:rotate(360deg)}}@keyframes cloudSyncOrbit{0%{offset-distance:0%;opacity:0;transform:scale(.55)}8%{opacity:1;transform:scale(1)}58%{opacity:1;transform:scale(1)}72%{offset-distance:100%;opacity:0;transform:scale(.55)}100%{offset-distance:100%;opacity:0;transform:scale(.55)}}@keyframes cloudSyncResonance{0%,64%,100%{border-color:transparent;box-shadow:0 0 0 0 transparent}70%{border-color:rgba(16,185,129,.34);box-shadow:0 0 0 0 rgba(16,185,129,.16)}82%{border-color:transparent;box-shadow:0 0 0 6px transparent}}@media(prefers-reduced-motion:reduce){.cloud-sync-button::before,.cloud-sync-comet i{animation:none}.cloud-sync-comet{display:none}}';
-    document.head.appendChild(style);
-  }
-  return button;
-}
-
-if (!window.__gestorCacheFallbackListener) {
-  window.__gestorCacheFallbackListener = true;
-  window.addEventListener('gestor-cache-fallback', () => {
-    const button = document.getElementById('refreshButton');
-    const label = button?.querySelector('span');
-    if (!button || !label) return;
-    label.textContent = 'Cópia local';
-    button.title = 'O Firebase não respondeu; os últimos dados salvos continuam visíveis';
-    window.setTimeout(() => {
-      label.textContent = 'Atualizar';
-      button.title = 'Buscar agora as alterações do Firebase';
-    }, 4000);
-  });
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => decorateCloudSyncButton(), { once: true });
-else queueMicrotask(() => decorateCloudSyncButton());
 
 let adminSessionPromise;
 let dataPromise;
 let dataGeneration = -1;
 const DATA_CACHE_KEY = '__GESTOR_ESE_FIREBASE_DATA_CACHE_V1__';
 const ADMIN_CACHE_KEY = '__GESTOR_ESE_ADMIN_SESSION_CACHE_V1__';
-const DATA_STORAGE_PREFIX = 'gestor-ese-daily-cache-v2';
-
-function localDayKey(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function nextLocalDayStart() {
-  const tomorrow = new Date();
-  tomorrow.setHours(24, 0, 0, 0);
-  return tomorrow.getTime();
-}
-
-function encodeCache(value) {
-  if (value instanceof Map) return { __cacheType: 'Map', entries: [...value.entries()].map(([key, child]) => [key, encodeCache(child)]) };
-  if (value instanceof Date) return { __cacheType: 'Date', milliseconds: value.getTime() };
-  if (value && typeof value.toMillis === 'function') return { __cacheType: 'Timestamp', milliseconds: value.toMillis() };
-  if (Array.isArray(value)) return value.map(encodeCache);
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, encodeCache(child)]));
-  return value;
-}
-
-function decodeCache(value) {
-  if (Array.isArray(value)) return value.map(decodeCache);
-  if (value && typeof value === 'object') {
-    if (value.__cacheType === 'Map') return new Map(value.entries.map(([key, child]) => [key, decodeCache(child)]));
-    if (value.__cacheType === 'Date') return new Date(value.milliseconds);
-    if (value.__cacheType === 'Timestamp') return Timestamp.fromMillis(value.milliseconds);
-    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, decodeCache(child)]));
-  }
-  return value;
-}
-
-function storageKey(prefix, uid = auth.currentUser?.uid || '') {
-  return `${prefix}:${uid}`;
-}
+const DATA_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function cacheHost() {
   try {
@@ -123,17 +52,7 @@ function cacheHost() {
 }
 
 function sharedDataCache() {
-  const memory = cacheHost()[DATA_CACHE_KEY] || null;
-  if (memory?.uid === auth.currentUser?.uid && memory.savedDay === localDayKey() && memory.expiresAt > Date.now()) return memory;
-  try {
-    const parsed = JSON.parse(localStorage.getItem(storageKey(DATA_STORAGE_PREFIX)) || 'null');
-    if (!parsed || parsed.uid !== auth.currentUser?.uid || parsed.savedDay !== localDayKey() || parsed.expiresAt <= Date.now()) return null;
-    const restored = { ...parsed, data: decodeCache(parsed.data) };
-    cacheHost()[DATA_CACHE_KEY] = restored;
-    return restored;
-  } catch {
-    return null;
-  }
+  return cacheHost()[DATA_CACHE_KEY] || null;
 }
 
 function storeSharedData(data) {
@@ -142,30 +61,20 @@ function storeSharedData(data) {
     generation,
     uid: auth.currentUser?.uid || '',
     data,
-    savedDay: localDayKey(),
-    expiresAt: nextLocalDayStart()
+    expiresAt: Date.now() + DATA_CACHE_TTL_MS
   };
-  try {
-    const cached = cacheHost()[DATA_CACHE_KEY];
-    localStorage.setItem(storageKey(DATA_STORAGE_PREFIX), JSON.stringify({ ...cached, data: encodeCache(data) }));
-  } catch {
-    // O cache é uma otimização; a aplicação continua operando sem ele.
-  }
   dataGeneration = generation;
 }
 
-function invalidateDataCache({ discard = false } = {}) {
+function invalidateDataCache() {
   dataPromise = undefined;
   const generation = (sharedDataCache()?.generation || 0) + 1;
   dataGeneration = generation;
   cacheHost()[DATA_CACHE_KEY] = { generation, uid: auth.currentUser?.uid || '', data: null, expiresAt: 0 };
-  if (discard) {
-    try { localStorage.removeItem(storageKey(DATA_STORAGE_PREFIX)); } catch (_) { /* sem impacto funcional */ }
-  }
 }
 
 export function clearGestorDataCache() {
-  invalidateDataCache({ discard: true });
+  invalidateDataCache();
 }
 
 function waitForAuthState() {
@@ -192,7 +101,7 @@ export async function requireAdmin() {
       if (profile.active !== true || profile.role !== 'admin') {
         throw Object.assign(new Error('ADMIN_REQUIRED'), { code: 'access/admin-required' });
       }
-      cacheHost()[ADMIN_CACHE_KEY] = { uid: user.uid, profile, savedDay: localDayKey(), expiresAt: nextLocalDayStart() };
+      cacheHost()[ADMIN_CACHE_KEY] = { uid: user.uid, profile, expiresAt: Date.now() + DATA_CACHE_TTL_MS };
       return { user, profile };
     })();
   }
@@ -229,7 +138,7 @@ function administratorEmailFromLogin(identifier) {
 export async function loginAdmin(identifier, password) {
   adminSessionPromise = null;
   delete cacheHost()[ADMIN_CACHE_KEY];
-  invalidateDataCache({ discard: true });
+  invalidateDataCache();
   const email = administratorEmailFromLogin(identifier);
   await signInWithEmailAndPassword(auth, email, password);
   return requireAdmin();
@@ -238,7 +147,7 @@ export async function loginAdmin(identifier, password) {
 export async function logoutAdmin() {
   adminSessionPromise = null;
   delete cacheHost()[ADMIN_CACHE_KEY];
-  invalidateDataCache({ discard: true });
+  invalidateDataCache();
   await signOut(auth);
 }
 
@@ -823,113 +732,9 @@ async function optionalCollection(name) {
   }
 }
 
-function mergeChangedItems(current, snapshot) {
-  const map = new Map((current || []).map((item) => [item.id, item]));
-  snapshot.docs.forEach((item) => map.set(item.id, { id: item.id, ...item.data() }));
-  return [...map.values()].filter((item) => item.deleted !== true);
-}
-
-function rebuildGestorData(source) {
-  const users = source.users instanceof Map ? source.users : new Map(source.users || []);
-  const supervisors = source.supervisors instanceof Map ? source.supervisors : new Map(source.supervisors || []);
-  const schools = (source.schools || []).map((item) => ({ ...item, supervisorIds: schoolSupervisorIds(item) }));
-  const schoolMap = new Map(schools.map((item) => [item.id, item]));
-  const agenda = source.agenda || [];
-  const visits = source.visits || [];
-  const agendaRows = agenda.map((item) => ({
-    'Data Agendada': brDate(item.scheduledDate),
-    'Data da Agenda': brDate(item.scheduledDate),
-    Data: brDate(item.scheduledDate),
-    Supervisor: supervisorName(item, supervisors),
-    Escola: item.schoolName || schoolMap.get(item.schoolId)?.name || '',
-    Turno: item.shift || '',
-    Status: statusLabel(item),
-    _id: item.id,
-    _raw: item
-  }));
-  const visitRows = visits.map((item) => {
-    const actionText = Array.isArray(item.actionNames) && item.actionNames.length
-      ? item.actionNames.join(' | ')
-      : item.folderAction || item.customSubject || '';
-    return {
-      'Data da Visita': brDate(item.visitDate),
-      'Data Visita': brDate(item.visitDate),
-      'Data do Registro': brDate(item.recordedAt),
-      Data: brDate(item.visitDate),
-      Supervisor: supervisorName(item, supervisors),
-      Escola: item.schoolName || schoolMap.get(item.schoolId)?.name || '',
-      Status: statusLabel(item),
-      Justificativa: item.justification || '',
-      'Motivo Operacional': item.operationalReason || '',
-      'Ações das Pastas': actionText,
-      'Ações': actionText,
-      'E-mail (Autor)': item.authorEmail || '',
-      Origem: item.visitType === 'direct' ? 'Registro direto' : 'Planejamento',
-      TipoOrigem: item.visitType === 'direct' ? 'Registro direto' : 'Planejamento',
-      _id: item.id,
-      _raw: item
-    };
-  });
-  return { ...source, users, supervisors, schools, agenda, visits, agendaRows, visitRows, loadedAt: new Date(), lastSyncAt: Date.now() };
-}
-
-async function changedSince(name, since, { optional = false } = {}) {
-  try {
-    return await getDocs(query(collection(db, name), where('updatedAt', '>', Timestamp.fromMillis(since))));
-  } catch (error) {
-    if (optional && error?.code === 'permission-denied') return { docs: [] };
-    throw error;
-  }
-}
-
-async function refreshGestorDataIncrementally(cachedData) {
-  const syncStartedAt = Date.now();
-  const since = Math.max(0, Number(cachedData.lastSyncAt || cachedData.loadedAt?.getTime?.() || 0) - 60000);
-  if (!since) return null;
-  const [usersDelta, supervisorsDelta, schoolsDelta, agendaDelta, visitsDelta, justificationsDelta, goalsDelta, correctionsDelta] = await Promise.all([
-    changedSince('users', since),
-    changedSince('supervisors', since),
-    changedSince('schools', since),
-    changedSince('agenda', since),
-    changedSince('visits', since),
-    changedSince('goalJustifications', since, { optional: true }),
-    changedSince('monthlyGoals', since, { optional: true }),
-    changedSince('visitCorrectionRequests', since, { optional: true })
-  ]);
-  const users = new Map(cachedData.users);
-  usersDelta.docs.forEach((item) => users.set(item.id, { id: item.id, ...item.data() }));
-  const supervisors = new Map(cachedData.supervisors);
-  supervisorsDelta.docs.forEach((item) => supervisors.set(item.id, { id: item.id, ...item.data() }));
-  return { ...rebuildGestorData({
-    ...cachedData,
-    users,
-    supervisors,
-    schools: mergeChangedItems(cachedData.schools, schoolsDelta),
-    agenda: mergeChangedItems(cachedData.agenda, agendaDelta),
-    visits: mergeChangedItems(cachedData.visits, visitsDelta),
-    goalJustifications: mergeChangedItems(cachedData.goalJustifications, justificationsDelta),
-    monthlyGoals: mergeChangedItems(cachedData.monthlyGoals, goalsDelta),
-    visitCorrectionRequests: mergeChangedItems(cachedData.visitCorrectionRequests, correctionsDelta)
-  }), lastSyncAt: syncStartedAt };
-}
-
 export async function loadGestorData({ refresh = false } = {}) {
   await requireAdmin();
-  const fallback = sharedDataCache();
-  if (refresh && fallback?.data && fallback.uid === auth.currentUser?.uid) {
-    try {
-      const incremental = await refreshGestorDataIncrementally(fallback.data);
-      if (incremental) {
-        invalidateDataCache();
-        storeSharedData(incremental);
-        dataPromise = Promise.resolve(incremental);
-        return incremental;
-      }
-    } catch (error) {
-      console.warn('A sincronização incremental falhou; será feita uma atualização completa.', error);
-    }
-  }
-  if (refresh) invalidateDataCache({ discard: true });
+  if (refresh) invalidateDataCache();
   const shared = sharedDataCache();
   const sharedGeneration = shared?.generation || 0;
   if (dataGeneration !== sharedGeneration) {
@@ -941,16 +746,14 @@ export async function loadGestorData({ refresh = false } = {}) {
   }
   if (!dataPromise) {
     dataPromise = (async () => {
-      const syncStartedAt = Date.now();
-      const [userSnapshot, supervisorSnapshot, schoolSnapshot, agendaSnapshot, visitSnapshot, justificationSnapshot, monthlyGoalSnapshot, correctionSnapshot] = await Promise.all([
+      const [userSnapshot, supervisorSnapshot, schoolSnapshot, agendaSnapshot, visitSnapshot, justificationSnapshot, monthlyGoalSnapshot] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'supervisors')),
         getDocs(collection(db, 'schools')),
         getDocs(collection(db, 'agenda')),
         getDocs(collection(db, 'visits')),
         optionalCollection('goalJustifications'),
-        optionalCollection('monthlyGoals'),
-        optionalCollection('visitCorrectionRequests')
+        optionalCollection('monthlyGoals')
       ]);
 
       const users = new Map(userSnapshot.docs.map((item) => [item.id, { id: item.id, ...item.data() }]));
@@ -964,7 +767,6 @@ export async function loadGestorData({ refresh = false } = {}) {
       const visits = visitSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
       const goalJustifications = justificationSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
       const monthlyGoals = monthlyGoalSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-      const visitCorrectionRequests = correctionSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
 
       const agendaRows = agenda.map((item) => ({
         'Data Agendada': brDate(item.scheduledDate),
@@ -1010,11 +812,9 @@ export async function loadGestorData({ refresh = false } = {}) {
         visits,
         goalJustifications,
         monthlyGoals,
-        visitCorrectionRequests,
         agendaRows,
         visitRows,
-        loadedAt: new Date(),
-        lastSyncAt: syncStartedAt
+        loadedAt: new Date()
       };
       storeSharedData(data);
       return data;
@@ -1023,12 +823,7 @@ export async function loadGestorData({ refresh = false } = {}) {
   try {
     return await dataPromise;
   } catch (error) {
-    invalidateDataCache({ discard: true });
-    if (fallback?.data && fallback.uid === auth.currentUser?.uid) {
-      storeSharedData(fallback.data);
-      window.dispatchEvent(new CustomEvent('gestor-cache-fallback', { detail: { error } }));
-      return fallback.data;
-    }
+    invalidateDataCache();
     throw error;
   }
 }
@@ -1040,9 +835,10 @@ const correctionStatusLabels = {
   cancelled: 'Cancelada'
 };
 
-export async function loadVisitCorrectionRequests({ refresh = false } = {}) {
-  const data = await loadGestorData({ refresh });
-  return data.visitCorrectionRequests || [];
+export async function loadVisitCorrectionRequests() {
+  await requireAdmin();
+  const snapshot = await getDocs(collection(db, 'visitCorrectionRequests'));
+  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
 }
 
 export async function deleteVisitCorrectionRequest(requestId) {

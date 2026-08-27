@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtros de Vistoria - Portal URE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        :root {
+            --bg-main: #f4f7fb;
+            --surface: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --green: #10b981;
+            --green-bg: #dcfce7;
+            --red: #ef4444;
+            --orange: #f97316;
+            --yellow: #eab308;
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
+            
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 30px;
+            font-size: 14px;
+        }
+
+        * { box-sizing: border-box; }
+
+        /* ================= CABEÇALHO ================= */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .header-titles h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            color: var(--text-muted);
+            margin: 0 0 4px 0;
+            font-weight: 700;
+        }
+        .header-titles p { margin: 0; color: #94a3b8; font-size: 14px; }
+        .header-main { display:flex; align-items:center; gap:14px; }
+        .home-return { width:43px; height:43px; flex:0 0 43px; display:grid; place-items:center; padding:0; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--primary); box-shadow:0 7px 18px rgba(46,86,111,.08); cursor:pointer; transition:.18s ease; }
+        .home-return:hover { border-color:var(--primary); background:#e5f1f7; transform:translateX(-2px); }
+        .home-return svg { width:24px; height:24px; fill:currentColor; }
+        
+        .btn-export {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: 0.2s;
+        }
+        .btn-export:hover { background: #f8fafc; color: var(--text-dark); }
+        .btn-export .material-symbols-outlined { font-size: 18px; }
+
+        /* ================= CARDS DE FILTRO ================= */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* BUSCA INTELIGENTE E PILLS */
+        .search-bar-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .search-bar-container .material-symbols-outlined {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--text-dark);
+            outline: none;
+            transition: border 0.2s;
+        }
+        .search-input:focus { border-color: var(--primary); background: #ffffff; }
+
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .quick-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .quick-pill .material-symbols-outlined { font-size: 16px; }
+        .quick-pill:hover { background: #f1f5f9; }
+        .quick-pill.active { background: var(--primary); color: #ffffff; border-color: var(--primary); }
+
+        /* GRID DE FILTROS DETALHADOS (3 COLUNAS) */
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .filter-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .col-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+        .col-title .material-symbols-outlined { color: var(--primary); font-size: 20px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 12px; color: var(--text-muted); }
+        .form-select {
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 13.5px;
+            color: var(--text-dark);
+            outline: none;
+            width: 100%;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .status-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+        .status-chip {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: 0.2s;
+        }
+        .status-chip .material-symbols-outlined { font-size: 14px; }
+        .status-chip.realizada.active { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+        .status-chip.cancelada.active { border-color: var(--red); color: var(--red); background: #fee2e2; }
+        .status-chip.adiada.active { border-color: var(--orange); color: var(--orange); background: #ffedd5; }
+        .status-chip.justificada.active { border-color: var(--yellow); color: #ca8a04; background: #fef08a; }
+
+        /* ================= TABELA DE RESULTADOS ================= */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        .results-header h2 { font-family: 'Outfit', sans-serif; font-size: 18px; margin: 0; color: var(--text-dark); }
+        .results-count { font-size: 13px; color: var(--text-muted); }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding: 12px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            font-size: 13.5px;
+            color: var(--text-dark);
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #f8fafc; }
+
+        .td-origem { color: var(--text-muted); font-size: 13px; }
+        .td-supervisor { font-weight: 700; }
+        .td-escola { font-weight: 500; }
+        .td-acoes { color: var(--text-muted); font-size: 13px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .td-autor { color: var(--text-muted); font-size: 12px; }
+        
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+        .badge-realizada { background: var(--green-bg); color: #047857; }
+        .badge-cancelada { background: #fee2e2; color: #b91c1c; }
+        .badge-adiada { background: #ffedd5; color: #c2410c; }
+        .badge-justificada { background: #fef08a; color: #854d0e; }
+        .badge-default { background: #f1f5f9; color: var(--text-muted); }
+
+        #loadingOverlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-weight: 600; font-size: 16px; color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">
+        <span class="material-symbols-outlined" style="font-size: 32px; animation: spin 1s linear infinite;">sync</span>
+        <p style="margin-top: 10px;">Carregando Base de Dados...</p>
+    </div>
+
+    <!-- CABEÇALHO -->
+    <header class="page-header">
+        <div class="header-main">
+            <button class="home-return" type="button" onclick="if(window.parent!==window&&typeof window.parent.portalNavigate==='function'){window.parent.portalNavigate('home')}else{location.href='index.html'}" aria-label="Voltar à Visão geral" title="Voltar à Visão geral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.6 1 12l6.5 6.4V14H14c2.2 0 4 1.8 4 4v2h2v-2c0-3.3-2.7-6-6-6H7.5V5.6z"/></svg></button>
+            <div class="header-titles">
+                <h1>Filtros de Vistoria</h1>
+                <p>Busque, filtre e gerencie as vistorias escolares.</p>
+            </div>
+        </div>
+        <button class="btn-export" onclick="exportarRelatorio()">
+            <span class="material-symbols-outlined">download</span> Exportar Relatório
+        </button>
+    </header>
+
+    <!-- CARD 1: BUSCA E QUICK FILTERS -->
+    <div class="card">
+        <div class="search-bar-container">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" id="inpBuscaGeral" class="search-input" placeholder="Busca inteligente: supervisor, escola, tipo de visita..." onkeyup="aplicarFiltros()">
+        </div>
+        <div class="quick-filters">
+            <button class="quick-pill" id="qHoje" onclick="toggleQuickFilter('hoje', this)">
+                <span class="material-symbols-outlined">today</span> Realizadas Hoje
+            </button>
+            <button class="quick-pill" id="qSemana" onclick="toggleQuickFilter('semana_realizadas', this)">
+                <span class="material-symbols-outlined">date_range</span> Realizadas na Semana
+            </button>
+            <button class="quick-pill" id="qMes" onclick="toggleQuickFilter('mes_realizadas', this)">
+                <span class="material-symbols-outlined">calendar_month</span> Realizadas no Mês
+            </button>
+            <button class="quick-pill" id="qAno" onclick="toggleQuickFilter('ano_realizadas', this)">
+                <span class="material-symbols-outlined">event</span> Realizadas no Ano
+            </button>
+        </div>
+    </div>
+
+    <!-- CARD 2: FILTROS DETALHADOS -->
+    <div class="card filters-grid">
+        <!-- Coluna 1 -->
+        <div class="filter-column">
+            <div class="col-title"><span class="material-symbols-outlined">group</span> Responsáveis</div>
+            <div class="form-group">
+                <label class="form-label">Supervisor(a)</label>
+                <select class="form-select" id="fSupervisor" onchange="aplicarFiltros()">
+                    <option value="">Selecionar Supervisor...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Escolas</label>
+                <select class="form-select" id="fEscola" onchange="aplicarFiltros()">
+                    <option value="">Selecionar Escola...</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Coluna 2 -->
+        <div class="filter-column">
+            <div class="col-title"><span class="material-symbols-outlined">fact_check</span> Detalhes da Visita</div>
+            <div class="form-group">
+                <label class="form-label">Tipo de Visita</label>
+                <select class="form-select" id="fTipo" onchange="aplicarFiltros()">
+                    <option value="">Todos os tipos...</option>
+                    <option value="Oficial">Oficial (Acompanhamento)</option>
+                    <option value="Extra">Registro Extra</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status da Visita</label>
+                <div class="status-chips">
+                    <div class="status-chip realizada" onclick="toggleStatus('Realizada', this)">
+                        <span class="material-symbols-outlined">check_circle</span> Realizada
+                    </div>
+                    <div class="status-chip cancelada" onclick="toggleStatus('Cancelada', this)">
+                        <span class="material-symbols-outlined">cancel</span> Cancelada
+                    </div>
+                    <div class="status-chip adiada" onclick="toggleStatus('Adiada', this)">
+                        <span class="material-symbols-outlined">schedule</span> Adiada
+                    </div>
+                    <div class="status-chip justificada" onclick="toggleStatus('Justificada', this)">
+                        <span class="material-symbols-outlined">warning</span> Justificada
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna 3 -->
+        <div class="filter-column">
+            <div class="col-title"><span class="material-symbols-outlined">calendar_month</span> Período & Ações</div>
+            <div class="form-group">
+                <label class="form-label">Período</label>
+                <select class="form-select" id="fPeriodo" onchange="aplicarFiltros()">
+                    <option value="">Todo o período</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Esta Semana</option>
+                    <option value="mes">Este Mês</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Ações Realizadas (Pastas)</label>
+                <select class="form-select" id="fAcao" onchange="aplicarFiltros()">
+                    <option value="">Filtrar por ação...</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 3: TABELA DE RESULTADOS -->
+    <div class="card" style="padding: 0;">
+        <div class="results-header" style="padding: 20px 24px 16px;">
+            <h2>Registros Encontrados</h2>
+            <div class="results-count" id="contadorResultados">0 registro(s) encontrado(s)</div>
+        </div>
+        
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Origem / Tipo</th>
+                        <th>Supervisor</th>
+                        <th>Escola</th>
+                        <th>Status</th>
+                        <th>Ações das Pastas / Justificativa</th>
+                        <th>Autor (E-mail)</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaCorpo">
+                    <!-- Linhas geradas via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- LÓGICA JAVASCRIPT -->
+    <script>
+        let baseDados = [];
+        let dadosFiltrados = [];
+        let filtrosStatus = []; 
+        let filtroRapido = "";
+
+        // Formata data ISO para BR
+        function formatarDataBR(dataIso) {
+            if(!dataIso) return '-';
+            try {
+                let d = parseGoogleDate(dataIso);
+                if(isNaN(d)) return dataIso;
+                let dia = String(d.getDate()).padStart(2, '0');
+                let mes = String(d.getMonth() + 1).padStart(2, '0');
+                let ano = d.getFullYear();
+                return `${dia}/${mes}/${ano}`;
+            } catch(e) { return dataIso; }
+        }
+
+        function parseGoogleDate(dataStr) {
+            if(!dataStr) return null;
+            const texto = String(dataStr).trim();
+            const br = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if(br) return new Date(Number(br[3]), Number(br[2]) - 1, Number(br[1]));
+            let d = new Date(dataStr);
+            if (!isNaN(d.getTime())) return d;
+            return null;
+        }
+
+        async function carregarDados(forceRefresh = false) {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            try {
+                const payload = await window.getGestorFirebaseData({refresh:forceRefresh});
+                const data = payload.visitRows;
+                baseDados = data.map(v => {
+                    return {
+                        dataVisita: v['Data da Visita'] || v['Data Visita'] || v['Data'] || v['Data do Registro'] || '',
+                        supervisor: v['Supervisor'] || '',
+                        escola: v['Escola'] || '',
+                        status: v['Status'] || 'Realizada',
+                        justificativa: v['Justificativa'] || '',
+                        acoes: v['Ações das Pastas'] || v['Ações'] || '',
+                        email: v['E-mail (Autor)'] || v['Email Autor'] || '-',
+                        tipo: v.TipoOrigem || 'Oficial' 
+                    }
+                });
+
+                baseDados.reverse(); 
+
+                popularFiltrosSelect();
+                aplicarFiltros();
+            } catch(err) {
+                console.error(err);
+                alert('Não foi possível consultar os registros no Firebase. Entre novamente pelo portal.');
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        function popularFiltrosSelect() {
+            let setSup = new Set();
+            let setEsc = new Set();
+            let setAcoes = new Set();
+
+            baseDados.forEach(item => {
+                if(item.supervisor) setSup.add(item.supervisor.trim());
+                if(item.escola) setEsc.add(item.escola.trim());
+                if(item.acoes) {
+                    let separadas = item.acoes.split('|');
+                    separadas.forEach(a => {
+                        let limpa = a.trim();
+                        if(limpa) setAcoes.add(limpa);
+                    });
+                }
+            });
+
+            const fSup = document.getElementById('fSupervisor');
+            [...setSup].sort().forEach(s => fSup.innerHTML += `<option value="${s}">${s}</option>`);
+
+            const fEsc = document.getElementById('fEscola');
+            [...setEsc].sort().forEach(e => fEsc.innerHTML += `<option value="${e}">${e}</option>`);
+
+            const fAcao = document.getElementById('fAcao');
+            [...setAcoes].sort().forEach(a => fAcao.innerHTML += `<option value="${a}">${a}</option>`);
+        }
+
+        // Toggle Status Chips (Realizada, Cancelada, Adiada, Justificada)
+        function toggleStatus(statusName, element) {
+            element.classList.toggle('active');
+            if(filtrosStatus.includes(statusName)) {
+                filtrosStatus = filtrosStatus.filter(s => s !== statusName);
+            } else {
+                filtrosStatus.push(statusName);
+            }
+            aplicarFiltros();
+        }
+
+        // Toggle Quick Filters (Pills)
+        function toggleQuickFilter(filterType, element) {
+            document.querySelectorAll('.quick-pill').forEach(el => el.classList.remove('active'));
+            if(filtroRapido === filterType) {
+                filtroRapido = ""; 
+            } else {
+                element.classList.add('active');
+                filtroRapido = filterType;
+            }
+            aplicarFiltros();
+        }
+
+        // Núcleo de Filtragem
+        function aplicarFiltros() {
+            const termoBusca = document.getElementById('inpBuscaGeral').value.toLowerCase();
+            const fSup = document.getElementById('fSupervisor').value;
+            const fEsc = document.getElementById('fEscola').value;
+            const fTipo = document.getElementById('fTipo').value;
+            const fPeriodo = document.getElementById('fPeriodo').value;
+            const fAcao = document.getElementById('fAcao').value;
+
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+
+            dadosFiltrados = baseDados.filter(v => {
+                // Busca Geral Textual
+                if(termoBusca) {
+                    const stringUnica = `${v.supervisor} ${v.escola} ${v.tipo} ${v.acoes} ${v.justificativa} ${v.email}`.toLowerCase();
+                    if(!stringUnica.includes(termoBusca)) return false;
+                }
+
+                // Colunas 1 e 2
+                if(fSup && v.supervisor !== fSup) return false;
+                if(fEsc && v.escola !== fEsc) return false;
+                if(fTipo && v.tipo !== fTipo) return false;
+                if(fAcao && !v.acoes.includes(fAcao)) return false;
+
+                // Chips de Status
+                if(filtrosStatus.length > 0) {
+                    let matchStatus = false;
+                    filtrosStatus.forEach(s => {
+                        if(v.status.toLowerCase().includes(s.toLowerCase())) matchStatus = true;
+                    });
+                    if(!matchStatus) return false;
+                }
+
+                let d = parseGoogleDate(v.dataVisita);
+                
+                // Dropdown de Período
+                if(d && fPeriodo) {
+                    if(fPeriodo === 'hoje') {
+                        if(d.toDateString() !== hoje.toDateString()) return false;
+                    } else if (fPeriodo === 'mes') {
+                        if(d.getMonth() !== hoje.getMonth() || d.getFullYear() !== hoje.getFullYear()) return false;
+                    } else if (fPeriodo === 'semana') {
+                        let diffTime = Math.abs(hoje - d);
+                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        if(diffDays > 7) return false;
+                    }
+                }
+
+                // Filtros Rápidos (Pills) Exclusivos para Realizadas
+                if(filtroRapido) {
+                    if(!v.status.toLowerCase().includes('realizada')) return false;
+                    if(!d) return false;
+
+                    if(filtroRapido === 'hoje') {
+                        if(d.toDateString() !== hoje.toDateString()) return false;
+                    } else if(filtroRapido === 'semana_realizadas') {
+                        let diffTime = Math.abs(hoje - d);
+                        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        if(diffDays > 7) return false;
+                    } else if(filtroRapido === 'mes_realizadas') {
+                        if(d.getMonth() !== hoje.getMonth() || d.getFullYear() !== hoje.getFullYear()) return false;
+                    } else if(filtroRapido === 'ano_realizadas') {
+                        if(d.getFullYear() !== hoje.getFullYear()) return false;
+                    }
+                }
+
+                return true;
+            });
+
+            renderizarTabela();
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('tabelaCorpo');
+            tbody.innerHTML = '';
+            
+            document.getElementById('contadorResultados').innerText = `${dadosFiltrados.length} registro(s) encontrado(s)`;
+
+            if(dadosFiltrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-muted);">Nenhum resultado encontrado para os filtros selecionados.</td></tr>`;
+                return;
+            }
+
+            dadosFiltrados.slice(0, 100).forEach(v => {
+                let badgeClass = 'badge-default';
+                let st = v.status.toLowerCase();
+                if(st.includes('realizada')) badgeClass = 'badge-realizada';
+                else if(st.includes('cancelada')) badgeClass = 'badge-cancelada';
+                else if(st.includes('adiada')) badgeClass = 'badge-adiada';
+                else if(st.includes('justificada')) badgeClass = 'badge-justificada'; 
+
+                let acoesJust = v.acoes;
+                if(!acoesJust) acoesJust = v.justificativa;
+                if(!acoesJust) acoesJust = '-';
+
+                let dataFormatada = formatarDataBR(v.dataVisita);
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${dataFormatada}</td>
+                        <td class="td-origem">${v.tipo}</td>
+                        <td class="td-supervisor">${v.supervisor || '-'}</td>
+                        <td class="td-escola">${v.escola || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${v.status || '-'}</span></td>
+                        <td class="td-acoes" title="${acoesJust}">${acoesJust}</td>
+                        <td class="td-autor">${v.email}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function exportarRelatorio() {
+            if(dadosFiltrados.length === 0) return alert("Não há dados para exportar.");
+            
+            let csv = "Data;Origem;Supervisor;Escola;Status;Acoes/Justificativa;Autor\n";
+            dadosFiltrados.forEach(v => {
+                let linha = [
+                    formatarDataBR(v.dataVisita),
+                    v.tipo,
+                    v.supervisor,
+                    v.escola,
+                    v.status,
+                    (v.acoes || v.justificativa || '').replace(/;/g, ','),
+                    v.email
+                ];
+                csv += linha.join(";") + "\n";
+            });
+
+            let blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Vistorias_Filtradas_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        window.carregarDadosFirebase = carregarDados;
+
+    </script>
+    <script type="module">
+        import { auth, loadGestorData, requireAdmin } from './firebase-gestor.js';
+        window.getGestorFirebaseData = loadGestorData;
+        try { await requireAdmin(); await window.carregarDadosFirebase(); }
+        catch (error) { if (!auth.currentUser) location.href='index.html'; else { console.error(error); document.getElementById('loadingOverlay').style.display='none'; alert('Esta conta não possui acesso ao Gestor-ESE.'); } }
+    </script>
+</body>
+</html>
