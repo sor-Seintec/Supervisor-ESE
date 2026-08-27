@@ -18,13 +18,13 @@ export function decorateCloudSyncButton(button = document.getElementById('refres
   if (!button || button.dataset.cloudSyncReady === 'true') return button;
   button.dataset.cloudSyncReady = 'true';
   button.classList.add('cloud-sync-button');
-  button.innerHTML = `${CLOUD_SYNC_ICON}<span>Atualizar</span>`;
+  button.innerHTML = `${CLOUD_SYNC_ICON}<span>Atualizar</span><span class="cloud-sync-comet" aria-hidden="true"><i></i><i></i><i></i></span>`;
   button.title = 'Buscar agora as alterações do Firebase';
   button.setAttribute('aria-label', 'Atualizar dados pelo Firebase');
   if (!document.getElementById('supervisor-cloud-sync-style')) {
     const style = document.createElement('style');
     style.id = 'supervisor-cloud-sync-style';
-    style.textContent = '.cloud-sync-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;white-space:nowrap}.cloud-sync-button svg{width:17px;height:17px;fill:currentColor;flex:none}.cloud-sync-button.is-syncing svg{animation:supervisorCloudSync 1s linear infinite}@keyframes supervisorCloudSync{to{transform:rotate(360deg)}}';
+    style.textContent = '.cloud-sync-button{position:relative!important;isolation:isolate;overflow:visible!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;white-space:nowrap}.cloud-sync-button>svg{width:17px;height:17px;fill:currentColor;flex:none}.cloud-sync-button::before{content:"";position:absolute;inset:-3px;z-index:-1;border:1px solid transparent;border-radius:inherit;pointer-events:none;animation:cloudSyncResonance 4.8s ease-out infinite}.cloud-sync-comet{position:absolute;inset:-4px;pointer-events:none}.cloud-sync-comet i{position:absolute;width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 8px rgba(16,185,129,.72);offset-path:inset(1px round 12px);offset-rotate:0deg;animation:cloudSyncOrbit 4.8s cubic-bezier(.45,.05,.35,1) infinite}.cloud-sync-comet i:nth-child(2){width:4px;height:4px;opacity:.72;animation-delay:-.12s}.cloud-sync-comet i:nth-child(3){width:3px;height:3px;opacity:.48;animation-delay:-.24s}.cloud-sync-button.is-syncing>svg{animation:supervisorCloudSync 1s linear infinite}.cloud-sync-button.is-syncing .cloud-sync-comet{display:none}@keyframes supervisorCloudSync{to{transform:rotate(360deg)}}@keyframes cloudSyncOrbit{0%{offset-distance:0%;opacity:0;transform:scale(.55)}8%{opacity:1;transform:scale(1)}58%{opacity:1;transform:scale(1)}72%{offset-distance:100%;opacity:0;transform:scale(.55)}100%{offset-distance:100%;opacity:0;transform:scale(.55)}}@keyframes cloudSyncResonance{0%,64%,100%{border-color:transparent;box-shadow:0 0 0 0 transparent}70%{border-color:rgba(16,185,129,.34);box-shadow:0 0 0 0 rgba(16,185,129,.16)}82%{border-color:transparent;box-shadow:0 0 0 6px transparent}}@media(prefers-reduced-motion:reduce){.cloud-sync-button::before,.cloud-sync-comet i{animation:none}.cloud-sync-comet{display:none}}';
     document.head.appendChild(style);
   }
   return button;
