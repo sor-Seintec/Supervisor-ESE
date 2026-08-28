@@ -1423,6 +1423,24 @@
             (pendingRequest ? document.getElementById('correctionClose') : requestedStatus).focus();
         }
 
+        function correctionRequestErrorMessage(error) {
+            switch (error?.code) {
+                case 'visit-not-found':
+                    return 'Esta visita não foi encontrada no banco. Atualize o planejamento antes de tentar novamente.';
+                case 'not-own-visit':
+                    return 'Você só pode solicitar correção de visitas registradas no seu próprio planejamento.';
+                case 'status-outdated':
+                    return 'O status desta visita foi alterado desde a última atualização. Atualize o planejamento e confira o status antes de solicitar a correção.';
+                case 'permission-denied':
+                    return 'Não foi possível enviar a solicitação porque sua conta não está vinculada a esta visita ou ainda não foi liberada pela gestão. Atualize a página e tente novamente; se continuar, informe a gestão.';
+                case 'unavailable':
+                case 'deadline-exceeded':
+                    return 'Não foi possível falar com o banco agora. Sua solicitação não foi enviada; verifique a conexão e tente novamente.';
+                default:
+                    return 'Não foi possível enviar a solicitação de correção agora. Atualize o planejamento e tente novamente.';
+            }
+        }
+
         async function submitCorrectionRequest(event) {
             event.preventDefault();
             const visit = state.correctionVisit;
@@ -1437,18 +1455,35 @@
             submit.disabled = true;
             submit.textContent = 'Enviando…';
             try {
+                // A tela pode estar mostrando dados em cache. Antes de criar a
+                // solicitação, conferimos apenas esta visita no banco para que
+                // a regra de segurança receba o status mais recente.
+                const liveVisitSnapshot = await getDoc(doc(db, 'visits', visit.id));
+                if (!liveVisitSnapshot.exists()) {
+                    throw { code: 'visit-not-found' };
+                }
+                const liveVisit = { id: liveVisitSnapshot.id, ...liveVisitSnapshot.data() };
+                if (liveVisit.supervisorId !== currentSupervisorId()) {
+                    throw { code: 'not-own-visit' };
+                }
+                if (liveVisit.statusCode !== visit.statusCode) {
+                    state.visits = state.visits.map((item) => item.id === liveVisit.id ? liveVisit : item);
+                    persistCloudState();
+                    throw { code: 'status-outdated' };
+                }
+
                 const reference = doc(collection(db, 'visitCorrectionRequests'));
                 const batch = writeBatch(db);
                 const localRequest = {
-                    visitId: visit.id,
-                    agendaId: visit.agendaId || state.correctionAgenda?.agendaId || null,
-                    supervisorId: visit.supervisorId,
-                    supervisorName: supervisorName(visit.supervisorId),
-                    schoolId: visit.schoolId,
-                    schoolName: visit.schoolName || state.correctionAgenda?.schoolName || '',
-                    visitDate: visit.visitDate,
-                    previousStatusCode: visit.statusCode,
-                    previousStatusLabel: correctionStatusLabels[visit.statusCode] || visit.status || '',
+                    visitId: liveVisit.id,
+                    agendaId: liveVisit.agendaId || state.correctionAgenda?.agendaId || null,
+                    supervisorId: liveVisit.supervisorId,
+                    supervisorName: supervisorName(liveVisit.supervisorId),
+                    schoolId: liveVisit.schoolId,
+                    schoolName: liveVisit.schoolName || state.correctionAgenda?.schoolName || '',
+                    visitDate: liveVisit.visitDate,
+                    previousStatusCode: liveVisit.statusCode,
+                    previousStatusLabel: correctionStatusLabels[liveVisit.statusCode] || liveVisit.status || '',
                     requestedStatusCode,
                     requestedStatusLabel: correctionStatusLabels[requestedStatusCode],
                     reason,
@@ -1466,9 +1501,7 @@
                 showToast('Solicitação enviada para análise do Gestor-ESE.', 'success');
             } catch (error) {
                 console.error('Falha ao solicitar correção:', error);
-                showToast(error?.code === 'permission-denied'
-                    ? 'Publique as novas regras do Firestore para liberar a solicitação.'
-                    : 'Não foi possível enviar a solicitação de correção.');
+                showToast(correctionRequestErrorMessage(error));
             } finally {
                 submit.disabled = false;
                 submit.textContent = 'Enviar para análise';
