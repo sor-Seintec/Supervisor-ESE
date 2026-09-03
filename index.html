@@ -425,14 +425,14 @@
 
     .details {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
       margin: 0 0 24px;
     }
 
     .data-summary {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
       margin: 0 0 22px;
     }
@@ -977,7 +977,7 @@
       .content-panel { padding: 22px; }
       .card.dashboard { grid-template-columns: 1fr; }
       .dashboard-side { display: grid; grid-template-columns: 1fr; }
-      .dashboard .data-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .dashboard .data-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .agenda-panel { min-height: 520px; }
       .brand-copy h1 { white-space: normal; }
       .school-popover {
@@ -1115,7 +1115,13 @@
               </aside>
             </div>
             <div class="data-metric">
-              <div class="metric-copy"><strong id="visitCount">—</strong><span>Visitas concluídas</span></div>
+              <div class="metric-copy"><strong id="visitCountEE">—</strong><span>Visitas EE concluídas</span></div>
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+              </span>
+            </div>
+            <div class="data-metric">
+              <div class="metric-copy"><strong id="visitCountPart">—</strong><span>Visitas Partic. concluídas</span></div>
               <span class="metric-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
               </span>
@@ -1444,8 +1450,20 @@
     function applyDataSummary(profile,data){
       const isAdmin=profile.role==='admin',supervisorId=profile.supervisorId;
       const schoolDocs=(isAdmin?data.schools:data.schools.filter(item=>schoolHasSupervisor(item,supervisorId))).map(item=>({id:item.id,data:()=>item}));
-      const schoolsSnapshot={docs:schoolDocs,size:schoolDocs.length},visitsSnapshot=snapshotFromItems(data.visits),agendaSnapshot=snapshotFromItems(data.agenda);
-      document.getElementById('schoolCount').textContent=schoolsSnapshot.size;document.getElementById('visitCount').textContent=visitsSnapshot.size;document.getElementById('agendaCount').textContent=agendaSnapshot.size;renderSchoolPopover(schoolsSnapshot);document.getElementById('dataSummary').hidden=false;renderUpcomingVisits(agendaSnapshot);
+      const schoolsSnapshot={docs:schoolDocs,size:schoolDocs.length},agendaSnapshot=snapshotFromItems(data.agenda);
+      const eeNames = new Set(["accaciodevasconcelloscamargoprof","aggeopereiradoamaralprof","altamirgoncalvesprof","ameliacesarmachadodearaujoprof","anaceciliamartinsprof","antonialucchesiprof","antoniocordeiroprof","antoniomiguelpereirajunior","antoniopadilha","antoniovieiracampos","arquiminiomarquesdasilvaprof","arthurcyrillofreiredr","baltazarfernandes","beathriscaixeirodelcistiaprof","ceejanorbertosoaresramosprof","diogenesalmeidamarinsprof","dionysiovieiraprof","dulceesmeraldabferreiraprof","dulceesmeraldabasileferreiraprof","elzasalvestrobonilhaprof","elzidecelestinasouzaptunuchiprof","elzidecelestinasouzapachecotunuchiprofa","eneasproencadearrudaprof","escolasticarosadealmeidaprof","ezequielmachadonascimentoprof","fernandadecamargopiresprof","flaviogagliardiprof","franciscocamargocesar","franciscococcaroprof","franciscoeufrasiomonteiro","franciscoeuphrasiomonteiro","genesiomachadoprof","geneziaisabelcardosomencacciprof","geneziaizabelcardosomencacciprof","geraldodoespiritosfogacaalmeidaprof","geraldodoespiritosantofogacadealmeidaprof","gualbertomoreiradr","guiomarcamolesisouzaprof","gumercindogoncalves","heliodelcistia","humbertodecampos","idayolandalanzonidebarrosprof","isabellopesmonteiroprof","izabelrodriguesgalvaoprof","joaoclimacodecamargopires","joaomachadodearaujodr","joaorodriguesbueno","joaosoaresmonsenhor","joaquimizidoromarinsprof","jordinaamaralarrudaprof","jorgemadureiraprof","joseodindearrudaprof","josequevedoprof","josereginatoprof","joseroquedealmeidarosaprof","juliariosathaydeprof","juliobierrenbachlimaprof","julioprestesdealbuquerquedr","lailagalepsackerprof","laurosanchezprof","luizgonzagadecamargofleuryprof","luiznogueiramartinssenador","marcoantoniomencacciprof","mariacandidadebarrosaraujoprof","mariahelenagazzibonadioprof","mariaondinaandradeprof","mariaondinadeandradeprof","marinagrohmannsoaresfernandesprof","marioguilhermenotari","monteirolobato","naziranagibjorgemuradrodriguesprof","ossissalvestrinimendesprof","ovidioantoniodesouzareverendo","portosegurovisconde","rafaelorsifilhoprof","renatosenecadesafleuryprof","robertopaschoalickprof","roqueconceicaomartinsprof","rosemarydemellomoreirapereiraprof","sarahsalvestroprof","tobiasbrigadeiro","vergueirosenador","waldemardefreitasrosaprof","wandacostadaherprof","wilsonramosbrandaoprof","zeliadulcedecamposmaiaprof"]);
+      let eeCount = 0, partCount = 0;
+      data.visits.forEach(v => {
+        const norm = (v.schoolName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').replace(/^ee/, '').replace(/prof.*?$/, '').replace(/dr$/, '').replace(/monsenhor$/, '').replace(/reverendo$/, '').replace(/visconde$/, '').replace(/senador$/, '').replace(/brigadeiro$/, '');
+        let isEE = false;
+        for (let name of eeNames) { if (name.includes(norm) || norm.includes(name)) { isEE = true; break; } }
+        if (isEE) eeCount++; else partCount++;
+      });
+      document.getElementById('schoolCount').textContent=schoolsSnapshot.size;
+      document.getElementById('visitCountEE').textContent=eeCount;
+      document.getElementById('visitCountPart').textContent=partCount;
+      document.getElementById('agendaCount').textContent=agendaSnapshot.size;
+      renderSchoolPopover(schoolsSnapshot);document.getElementById('dataSummary').hidden=false;renderUpcomingVisits(agendaSnapshot);
     }
     async function loadDataSummary(profile,{force=false}={}) {
       const isAdmin = profile.role === 'admin';
