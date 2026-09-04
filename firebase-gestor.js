@@ -846,6 +846,65 @@ async function optionalAdminCollection(name) {
   }
 }
 
+async function installOfficialSchools(session) {
+  const now = serverTimestamp();
+  for (let index = 0; index < OFFICIAL_SCHOOLS.length; index += 400) {
+    const batch = writeBatch(db);
+    OFFICIAL_SCHOOLS.slice(index, index + 400).forEach((name) => {
+      const id = documentId(name) || `escola-${crypto.randomUUID().slice(0, 8)}`;
+      batch.set(doc(db, 'schools', id), {
+        name,
+        searchName: searchable(name),
+        supervisorId: null,
+        supervisorIds: [],
+        active: true,
+        source: 'official_catalog_2026',
+        catalogVersion: '2026-09-04',
+        schemaVersion: 2,
+        createdByUid: session.user.uid,
+        createdAt: now,
+        updatedAt: now
+      });
+    });
+    await batch.commit();
+  }
+}
+
+async function deleteSchoolCatalog() {
+  const snapshot = await getDocs(collection(db, 'schools'));
+  for (let index = 0; index < snapshot.docs.length; index += 450) {
+    const batch = writeBatch(db);
+    snapshot.docs.slice(index, index + 450).forEach((item) => batch.delete(item.ref));
+    await batch.commit();
+  }
+  return snapshot.docs.length;
+}
+
+async function verifyOfficialSchoolCatalog() {
+  const snapshot = await getDocs(collection(db, 'schools'));
+  const expected = new Set(OFFICIAL_SCHOOLS.map(searchable));
+  const actual = snapshot.docs.map((item) => item.data()).filter((item) => item.active !== false);
+  const actualNames = new Set(actual.map((item) => searchable(item.name)));
+  const missing = OFFICIAL_SCHOOLS.filter((name) => !actualNames.has(searchable(name)));
+  const unexpected = actual.filter((item) => !expected.has(searchable(item.name))).map((item) => item.name || '(sem nome)');
+  if (actual.length !== OFFICIAL_SCHOOLS.length || missing.length || unexpected.length) {
+    const error = new Error(`Catálogo inconsistente após a gravação. Encontradas ${actual.length} escolas; esperadas ${OFFICIAL_SCHOOLS.length}.`);
+    error.code = 'data/school-catalog-inconsistent';
+    error.details = { missing, unexpected, actualCount: actual.length };
+    throw error;
+  }
+  return actual.length;
+}
+
+export async function replaceSchoolsWithOfficialCatalog() {
+  const session = await requireAdmin();
+  const removed = await deleteSchoolCatalog();
+  await installOfficialSchools(session);
+  const installed = await verifyOfficialSchoolCatalog();
+  invalidateDataCache({ discard: true });
+  return { removed, schoolsInstalled: installed };
+}
+
 export async function prepareTestDatabaseReset() {
   await requireAdmin();
   const [schoolsSnapshot, agendaSnapshot, visitsSnapshot, justificationsSnapshot, correctionsSnapshot] = await Promise.all([
@@ -893,28 +952,10 @@ export async function resetTestDatabaseAndInstallOfficialSchools() {
     await batch.commit();
   }
 
-  const now = serverTimestamp();
-  for (let index = 0; index < OFFICIAL_SCHOOLS.length; index += 400) {
-    const batch = writeBatch(db);
-    OFFICIAL_SCHOOLS.slice(index, index + 400).forEach((name) => {
-      const id = documentId(name) || `escola-${crypto.randomUUID().slice(0, 8)}`;
-      batch.set(doc(db, 'schools', id), {
-        name,
-        searchName: searchable(name),
-        supervisorId: null,
-        supervisorIds: [],
-        active: true,
-        source: 'official_catalog_2026',
-        schemaVersion: 2,
-        createdByUid: session.user.uid,
-        createdAt: now,
-        updatedAt: now
-      });
-    });
-    await batch.commit();
-  }
+  await installOfficialSchools(session);
+  const schoolsInstalled = await verifyOfficialSchoolCatalog();
   invalidateDataCache({ discard: true });
-  return { deleted: targets.length, schoolsInstalled: OFFICIAL_SCHOOLS.length };
+  return { deleted: targets.length, schoolsInstalled };
 }
 
 export function dataErrorMessage(error) {
