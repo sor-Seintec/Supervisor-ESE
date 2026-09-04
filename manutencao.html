@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Manutenção administrativa do Supervisor-ESE">
+  <title>Manutenção do banco | Supervisor-ESE</title>
+  <style>
+    :root{--dark:#315f7d;--medium:#d9eaf4;--light:#f3f8fb;--ink:#17384d;--muted:#647d8d;--line:#cfdee7;--danger:#b42318;--danger-bg:#fff3f2;--ok:#067647;--shadow:0 20px 55px rgba(25,65,90,.12)}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 8% 7%,#fff 0,transparent 28%),var(--light);font-family:Inter,"Segoe UI",system-ui,sans-serif;color:var(--ink)}
+    [hidden]{display:none!important}button,input{font:inherit}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px;padding:12px clamp(18px,4vw,56px);border-bottom:1px solid var(--line);background:rgba(255,255,255,.88);backdrop-filter:blur(14px)}
+    .brand{display:flex;align-items:center;gap:11px;color:var(--ink);text-decoration:none;font-weight:850}.mark{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:var(--dark);color:#fff}.nav{display:flex;gap:8px}.nav a{min-height:40px;display:inline-flex;align-items:center;padding:0 13px;border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none;font-weight:750;background:#fff}
+    main{width:min(1060px,calc(100% - 28px));margin:34px auto 60px}.eyebrow{margin:0 0 8px;color:var(--dark);font-size:.76rem;font-weight:850;letter-spacing:.12em;text-transform:uppercase}h1{margin:0;font-size:clamp(1.8rem,4vw,2.6rem)}.lead{max-width:760px;margin:10px 0 26px;color:var(--muted);line-height:1.6}
+    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.card{border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow);padding:24px}.card h2{margin:0 0 8px;font-size:1.08rem}.card p{color:var(--muted);line-height:1.55}.danger{border-color:#f2c7c3;background:linear-gradient(180deg,#fff,var(--danger-bg))}.danger h2{color:var(--danger)}
+    .keep,.remove{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0}.pill{padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:#f9fbfc;font-size:.83rem;font-weight:750}.pill::before{margin-right:7px}.keep .pill::before{content:'✓';color:var(--ok)}.remove .pill::before{content:'×';color:var(--danger)}
+    .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:16px 0}.metric{padding:13px;border:1px solid var(--line);border-radius:12px;background:#f8fbfc}.metric strong{display:block;font-size:1.35rem}.metric span{font-size:.75rem;color:var(--muted)}
+    .confirm{display:grid;gap:8px;margin-top:18px}.confirm label{font-size:.8rem;font-weight:800}.confirm input{min-height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;outline:0}.confirm input:focus{border-color:var(--danger);box-shadow:0 0 0 4px rgba(180,35,24,.08)}
+    .actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.button{min-height:44px;padding:0 15px;border:0;border-radius:10px;font-weight:800;cursor:pointer}.button:disabled{opacity:.48;cursor:not-allowed}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}.danger-button{background:var(--danger);color:#fff}.primary{background:var(--dark);color:#fff}
+    .status{margin-top:14px;padding:12px;border-radius:10px;background:#eef6fb;color:var(--dark);font-size:.83rem;font-weight:700}.status.error{background:#fff0ef;color:var(--danger)}.status.ok{background:#ecfdf3;color:var(--ok)}
+    .school-list{max-height:470px;overflow:auto;margin-top:14px;padding:0;list-style:none;border:1px solid var(--line);border-radius:12px}.school-list li{padding:9px 12px;border-bottom:1px solid #edf2f5;font-size:.78rem}.school-list li:last-child{border-bottom:0}.count{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;margin-left:6px;border-radius:999px;background:var(--medium);font-size:.75rem}
+    .loading{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:var(--light);font-weight:800}.note{font-size:.78rem;color:var(--muted)}
+    @media(max-width:780px){.grid{grid-template-columns:1fr}.keep,.remove{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.nav{width:100%}.nav a{flex:1;justify-content:center}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">Validando acesso administrativo…</div>
+  <header class="topbar"><a class="brand" href="index.html"><span class="mark">⚙</span><span>Supervisor-ESE · Manutenção</span></a><nav class="nav"><a href="index.html">Início</a><a href="visita.html">Registrar visita</a></nav></header>
+  <main id="app" hidden>
+    <p class="eyebrow">Administração · banco de testes</p>
+    <h1>Sanitizar dados e instalar escolas oficiais</h1>
+    <p class="lead">Esta rotina remove registros operacionais de teste e substitui o cadastro atual de escolas pela lista oficial definida para o sistema. Usuários, supervisores e ações cadastradas são preservados.</p>
+    <div class="grid">
+      <section class="card danger">
+        <h2>Limpeza controlada</h2>
+        <p>Antes de executar, faça o backup JSON. A limpeza atua somente nas coleções operacionais e no catálogo de escolas.</p>
+        <div class="remove"><div class="pill">Escolas atuais</div><div class="pill">Planejamentos</div><div class="pill">Visitas</div><div class="pill">Justificativas</div><div class="pill">Solicitações de correção</div></div>
+        <h2 style="color:var(--ink);margin-top:20px">Será preservado</h2>
+        <div class="keep"><div class="pill">Usuários</div><div class="pill">Supervisores</div><div class="pill">Ações</div><div class="pill">Autenticação</div></div>
+        <div class="summary" id="summary"><div class="metric"><strong id="countSchools">—</strong><span>escolas atuais</span></div><div class="metric"><strong id="countAgenda">—</strong><span>planejamentos</span></div><div class="metric"><strong id="countVisits">—</strong><span>visitas</span></div><div class="metric"><strong id="countOther">—</strong><span>outros registros</span></div></div>
+        <div class="actions"><button class="button secondary" id="backupButton" type="button">Baixar backup JSON</button><button class="button secondary" id="refreshButton" type="button">Atualizar contagem</button></div>
+        <div class="confirm"><label for="confirmText">Para liberar a limpeza, digite exatamente: APAGAR TESTES</label><input id="confirmText" autocomplete="off" placeholder="APAGAR TESTES"></div>
+        <div class="actions"><button class="button danger-button" id="resetButton" type="button" disabled>Limpar e instalar 80 escolas oficiais</button></div>
+        <div class="status" id="status">Nenhuma alteração foi executada.</div>
+        <p class="note">As escolas novas serão criadas ativas e inicialmente sem vínculo de supervisor. Os vínculos poderão ser definidos depois pelo cadastro administrativo.</p>
+      </section>
+      <section class="card">
+        <h2>Catálogo oficial <span class="count" id="officialCount">80</span></h2>
+        <p>Estes são os nomes padronizados que serão usados no dropdown e nas novas visitas.</p>
+        <ul class="school-list" id="schoolList"></ul>
+      </section>
+    </div>
+  </main>
+  <script type="module">
+    import { OFFICIAL_SCHOOLS, prepareTestDatabaseReset, resetTestDatabaseAndInstallOfficialSchools, requireAdmin } from './firebase-gestor.js';
+    const $=(s)=>document.querySelector(s);let prepared=null;
+    function setStatus(message,type=''){const el=$('#status');el.textContent=message;el.className=`status ${type}`}
+    function renderSchools(){const list=$('#schoolList');list.replaceChildren();OFFICIAL_SCHOOLS.forEach(name=>{const li=document.createElement('li');li.textContent=name;list.append(li)});$('#officialCount').textContent=OFFICIAL_SCHOOLS.length}
+    async function loadCounts(){setStatus('Lendo os registros atuais do Firestore…');prepared=await prepareTestDatabaseReset();const c=prepared.counts;$('#countSchools').textContent=c.schools;$('#countAgenda').textContent=c.agenda;$('#countVisits').textContent=c.visits;$('#countOther').textContent=c.goalJustifications+c.visitCorrectionRequests;setStatus('Contagem atualizada. Faça o backup antes da limpeza.','ok')}
+    function downloadBackup(){if(!prepared?.backup)return;const blob=new Blob([JSON.stringify(prepared.backup,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`supervisor-ese-backup-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);setStatus('Backup JSON gerado. Guarde esse arquivo antes de prosseguir.','ok')}
+    $('#confirmText').addEventListener('input',e=>{$('#resetButton').disabled=e.target.value.trim()!=='APAGAR TESTES'});
+    $('#backupButton').addEventListener('click',downloadBackup);$('#refreshButton').addEventListener('click',()=>loadCounts().catch(handleError));
+    $('#resetButton').addEventListener('click',async()=>{if($('#confirmText').value.trim()!=='APAGAR TESTES')return;if(!confirm('Confirma a exclusão dos dados operacionais de teste e das escolas atuais? Usuários, supervisores e ações serão preservados.'))return;const button=$('#resetButton');button.disabled=true;button.textContent='Executando limpeza…';setStatus('Limpando dados de teste e instalando o catálogo oficial…');try{const result=await resetTestDatabaseAndInstallOfficialSchools();$('#confirmText').value='';setStatus(`Concluído: ${result.deleted} registro(s) antigo(s) removido(s) e ${result.schoolsInstalled} escolas oficiais instaladas.`,'ok');await loadCounts()}catch(error){handleError(error)}finally{button.textContent='Limpar e instalar 80 escolas oficiais';button.disabled=$('#confirmText').value.trim()!=='APAGAR TESTES'}});
+    function handleError(error){console.error(error);setStatus(error?.code==='permission-denied'?'O Firestore bloqueou parte da operação. Verifique se as regras administrativas publicadas estão atualizadas.':(error?.message||'Não foi possível concluir a operação.'),'error')}
+    (async()=>{try{await requireAdmin();renderSchools();await loadCounts();$('#loading').hidden=true;$('#app').hidden=false}catch(error){console.error(error);$('#loading').textContent='Acesso negado. Esta página é exclusiva para administradores.'}})();
+  </script>
+</body>
+</html>

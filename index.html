@@ -425,14 +425,14 @@
 
     .details {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
       margin: 0 0 24px;
     }
 
     .data-summary {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
       margin: 0 0 22px;
     }
@@ -977,7 +977,7 @@
       .content-panel { padding: 22px; }
       .card.dashboard { grid-template-columns: 1fr; }
       .dashboard-side { display: grid; grid-template-columns: 1fr; }
-      .dashboard .data-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .dashboard .data-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .agenda-panel { min-height: 520px; }
       .brand-copy h1 { white-space: normal; }
       .school-popover {
@@ -1115,13 +1115,7 @@
               </aside>
             </div>
             <div class="data-metric">
-              <div class="metric-copy"><strong id="visitCountEE">—</strong><span>Visitas EE concluídas</span></div>
-              <span class="metric-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
-              </span>
-            </div>
-            <div class="data-metric">
-              <div class="metric-copy"><strong id="visitCountPart">—</strong><span>Visitas Partic. concluídas</span></div>
+              <div class="metric-copy"><strong id="visitCount">—</strong><span>Visitas concluídas</span></div>
               <span class="metric-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
               </span>
@@ -1144,6 +1138,10 @@
             <a class="dashboard-action" href="kanban.html">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3"/><rect x="9" y="2" width="6" height="5" rx="1"/><path d="m8 13 2 2 4-4m-6 8h8"/></svg>
               <span>Planejamento</span>
+            </a>
+            <a class="dashboard-action" id="maintenanceAction" href="manutencao.html" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.04.08V21h-4v-.92A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1L3.92 14H3v-4h.92A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.04-.08V3h4v.92A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.38.31.72.6 1l.08.04H21v4h-.92a1.7 1.7 0 0 0-.68 1Z"/></svg>
+              <span>Manutenção<br>do banco</span>
             </a>
           </nav>
         </aside>
@@ -1450,20 +1448,8 @@
     function applyDataSummary(profile,data){
       const isAdmin=profile.role==='admin',supervisorId=profile.supervisorId;
       const schoolDocs=(isAdmin?data.schools:data.schools.filter(item=>schoolHasSupervisor(item,supervisorId))).map(item=>({id:item.id,data:()=>item}));
-      const schoolsSnapshot={docs:schoolDocs,size:schoolDocs.length},agendaSnapshot=snapshotFromItems(data.agenda);
-      const eeNames = new Set(["accaciodevasconcelloscamargoprof","aggeopereiradoamaralprof","altamirgoncalvesprof","ameliacesarmachadodearaujoprof","anaceciliamartinsprof","antonialucchesiprof","antoniocordeiroprof","antoniomiguelpereirajunior","antoniopadilha","antoniovieiracampos","arquiminiomarquesdasilvaprof","arthurcyrillofreiredr","baltazarfernandes","beathriscaixeirodelcistiaprof","ceejanorbertosoaresramosprof","diogenesalmeidamarinsprof","dionysiovieiraprof","dulceesmeraldabferreiraprof","dulceesmeraldabasileferreiraprof","elzasalvestrobonilhaprof","elzidecelestinasouzaptunuchiprof","elzidecelestinasouzapachecotunuchiprofa","eneasproencadearrudaprof","escolasticarosadealmeidaprof","ezequielmachadonascimentoprof","fernandadecamargopiresprof","flaviogagliardiprof","franciscocamargocesar","franciscococcaroprof","franciscoeufrasiomonteiro","franciscoeuphrasiomonteiro","genesiomachadoprof","geneziaisabelcardosomencacciprof","geneziaizabelcardosomencacciprof","geraldodoespiritosfogacaalmeidaprof","geraldodoespiritosantofogacadealmeidaprof","gualbertomoreiradr","guiomarcamolesisouzaprof","gumercindogoncalves","heliodelcistia","humbertodecampos","idayolandalanzonidebarrosprof","isabellopesmonteiroprof","izabelrodriguesgalvaoprof","joaoclimacodecamargopires","joaomachadodearaujodr","joaorodriguesbueno","joaosoaresmonsenhor","joaquimizidoromarinsprof","jordinaamaralarrudaprof","jorgemadureiraprof","joseodindearrudaprof","josequevedoprof","josereginatoprof","joseroquedealmeidarosaprof","juliariosathaydeprof","juliobierrenbachlimaprof","julioprestesdealbuquerquedr","lailagalepsackerprof","laurosanchezprof","luizgonzagadecamargofleuryprof","luiznogueiramartinssenador","marcoantoniomencacciprof","mariacandidadebarrosaraujoprof","mariahelenagazzibonadioprof","mariaondinaandradeprof","mariaondinadeandradeprof","marinagrohmannsoaresfernandesprof","marioguilhermenotari","monteirolobato","naziranagibjorgemuradrodriguesprof","ossissalvestrinimendesprof","ovidioantoniodesouzareverendo","portosegurovisconde","rafaelorsifilhoprof","renatosenecadesafleuryprof","robertopaschoalickprof","roqueconceicaomartinsprof","rosemarydemellomoreirapereiraprof","sarahsalvestroprof","tobiasbrigadeiro","vergueirosenador","waldemardefreitasrosaprof","wandacostadaherprof","wilsonramosbrandaoprof","zeliadulcedecamposmaiaprof"]);
-      let eeCount = 0, partCount = 0;
-      data.visits.forEach(v => {
-        const norm = (v.schoolName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').replace(/^ee/, '').replace(/prof.*?$/, '').replace(/dr$/, '').replace(/monsenhor$/, '').replace(/reverendo$/, '').replace(/visconde$/, '').replace(/senador$/, '').replace(/brigadeiro$/, '');
-        let isEE = false;
-        for (let name of eeNames) { if (name.includes(norm) || norm.includes(name)) { isEE = true; break; } }
-        if (isEE) eeCount++; else partCount++;
-      });
-      document.getElementById('schoolCount').textContent=schoolsSnapshot.size;
-      document.getElementById('visitCountEE').textContent=eeCount;
-      document.getElementById('visitCountPart').textContent=partCount;
-      document.getElementById('agendaCount').textContent=agendaSnapshot.size;
-      renderSchoolPopover(schoolsSnapshot);document.getElementById('dataSummary').hidden=false;renderUpcomingVisits(agendaSnapshot);
+      const schoolsSnapshot={docs:schoolDocs,size:schoolDocs.length},visitsSnapshot=snapshotFromItems(data.visits),agendaSnapshot=snapshotFromItems(data.agenda);
+      document.getElementById('schoolCount').textContent=schoolsSnapshot.size;document.getElementById('visitCount').textContent=visitsSnapshot.size;document.getElementById('agendaCount').textContent=agendaSnapshot.size;renderSchoolPopover(schoolsSnapshot);document.getElementById('dataSummary').hidden=false;renderUpcomingVisits(agendaSnapshot);
     }
     async function loadDataSummary(profile,{force=false}={}) {
       const isAdmin = profile.role === 'admin';
@@ -1485,9 +1471,9 @@
             ]);
             const data={schools:mergeChangedItems(stale.data.schools,schoolsDelta),visits:mergeChangedItems(stale.data.visits,visitsDelta),agenda:mergeChangedItems(stale.data.agenda,agendaDelta)};
             setReadCache(currentUser.uid,cacheName,data);
-            const visitCache=getReadCache(currentUser.uid,'visit-form-data',{allowExpired:true});
-            if(visitCache)setReadCache(currentUser.uid,'visit-form-data',{...visitCache.data,schools:mergeChangedItems(visitCache.data.schools,schoolsDelta),visits:mergeChangedItems(visitCache.data.visits,visitsDelta),agenda:mergeChangedItems(visitCache.data.agenda,agendaDelta)});
-            setReadCache(currentUser.uid,'kanban-schools',data.schools);
+            const visitCache=getReadCache(currentUser.uid,'visit-form-data-v2',{allowExpired:true});
+            if(visitCache)setReadCache(currentUser.uid,'visit-form-data-v2',{...visitCache.data,schools:mergeChangedItems(visitCache.data.schools,schoolsDelta),visits:mergeChangedItems(visitCache.data.visits,visitsDelta),agenda:mergeChangedItems(visitCache.data.agenda,agendaDelta)});
+            setReadCache(currentUser.uid,'kanban-schools-v2',data.schools);
             const supervisorIds=isAdmin?[...new Set([...data.agenda,...data.visits].map(item=>item.supervisorId).filter(Boolean))]:[supervisorId];
             supervisorIds.forEach(id=>{const existing=getReadCache(currentUser.uid,`kanban-cloud-${id}`,{allowExpired:true});if(existing)setReadCache(currentUser.uid,`kanban-cloud-${id}`,{...existing.data,agenda:mergeChangedItems(existing.data.agenda,{docs:agendaDelta.docs.filter(item=>item.data().supervisorId===id)}),visits:mergeChangedItems(existing.data.visits,{docs:visitsDelta.docs.filter(item=>item.data().supervisorId===id)})})});
             applyDataSummary(profile,data);return;
@@ -1508,9 +1494,9 @@
         const supervisors=isAdmin?supervisorsResult.docs.map(item=>({id:item.id,...item.data()})):(supervisorsResult.exists()?[{id:supervisorsResult.id,...supervisorsResult.data()}]:[]);
         const corrections=correctionsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
         setReadCache(currentUser.uid,'home-summary',data);
-        setReadCache(currentUser.uid,'visit-form-data',{schoolReadLimited:false,schools:data.schools,agenda:data.agenda,visits:data.visits,actions});
+        setReadCache(currentUser.uid,'visit-form-data-v2',{schoolReadLimited:false,schools:data.schools,agenda:data.agenda,visits:data.visits,actions});
         setReadCache(currentUser.uid,'kanban-supervisors',supervisors);
-        setReadCache(currentUser.uid,'kanban-schools',data.schools);
+        setReadCache(currentUser.uid,'kanban-schools-v2',data.schools);
         const supervisorIds=isAdmin?supervisors.map(item=>item.id):[supervisorId];
         supervisorIds.filter(Boolean).forEach(id=>setReadCache(currentUser.uid,`kanban-cloud-${id}`,{agenda:data.agenda.filter(item=>item.supervisorId===id),visits:data.visits.filter(item=>item.supervisorId===id),corrections:corrections.filter(item=>item.supervisorId===id)}));
         applyDataSummary(profile,data);
@@ -1549,6 +1535,8 @@
 
         const profile = profileSnapshot.data();
         currentProfile = profile;
+        const maintenanceAction = document.getElementById('maintenanceAction');
+        if (maintenanceAction) maintenanceAction.hidden = profile.role !== 'admin';
         if (profile.active !== true) {
           sessionNotice = 'Este perfil está desativado. Procure o administrador.';
           await signOut(auth);

@@ -753,6 +753,170 @@ export async function setSchoolActive(schoolId, active) {
   invalidateDataCache();
 }
 
+
+export const OFFICIAL_SCHOOLS = Object.freeze([
+  "CEEJA NORBERTO SOARES RAMOS - Prof.",
+  "ACCÁCIO DE VASCONCELLOS CAMARGO - Prof.",
+  "AGGÊO PEREIRA DO AMARAL - Prof.",
+  "ALTAMIR GONÇALVES - Prof.",
+  "AMÉLIA CÉSAR MACHADO DE ARAÚJO - Profª.",
+  "ANA CECÍLIA MARTINS - Profª.",
+  "ANTONIA LUCCHESI - Profª.",
+  "ANTONIO CORDEIRO - Prof.",
+  "ANTONIO MIGUEL PEREIRA JÚNIOR",
+  "ANTONIO PADILHA",
+  "ANTONIO VIEIRA CAMPOS",
+  "ARQUÍMINIO MARQUES DA SILVA - Prof.",
+  "ARTHUR CYRILLO FREIRE - Dr.",
+  "BALTAZAR FERNANDES",
+  "BEATHRIS CAIXEIRO DEL CISTIA - Profª.",
+  "DIÓGENES ALMEIDA MARINS - Prof.",
+  "DIONYSIO VIEIRA - Prof.",
+  "DULCE ESMERALDA BASILE FERREIRA - Profª.",
+  "ELZA SALVESTRO BONILHA - Profª.",
+  "ELZIDE CELESTINA SOUZA P. TUNUCHI Profª",
+  "ENÉAS PROENÇA DE ARRUDA - Prof.",
+  "ESCOLÁSTICA ROSA DE ALMEIDA - Profª.",
+  "EZEQUIEL MACHADO NASCIMENTO - Prof.",
+  "FERNANDA DE CAMARGO PIRES - Profª",
+  "FLÁVIO GAGLIARDI - Prof.",
+  "FRANCISCO CAMARGO CÉSAR",
+  "FRANCISCO COCCARO - Prof.",
+  "FRANCISCO EUFRÁSIO MONTEIRO",
+  "GENÉSIO MACHADO - Prof.",
+  "GENÉZIA ISABEL CARDOSO MENCACCI - Profª.",
+  "GERALDO DO ESPIRITO S. FOGAÇA ALMEIDA Prof.",
+  "GUALBERTO MOREIRA - Dr.",
+  "GUIOMAR CAMOLESI SOUZA - Profª.",
+  "GUMERCINDO GONÇALVES",
+  "HÉLIO DEL CISTIA",
+  "HUMBERTO DE CAMPOS",
+  "IDA YOLANDA LANZONI DE BARROS - Profª.",
+  "ISABEL LOPES MONTEIRO - Profª.",
+  "IZABEL RODRIGUES GALVÃO - Profª.",
+  "JOÃO CLIMACO DE CAMARGO PIRES",
+  "JOÃO MACHADO DE ARAÚJO - Dr.",
+  "JOÃO RODRIGUES BUENO",
+  "JOÃO SOARES - Monsenhor",
+  "JOAQUIM IZIDORO MARINS - Prof.",
+  "JORDINA AMARAL ARRUDA - Profª.",
+  "JORGE MADUREIRA - Prof.",
+  "JOSÉ ODIN DE ARRUDA - Prof.",
+  "JOSÉ QUEVEDO - Prof.",
+  "JOSÉ REGINATO - Prof.",
+  "JOSÉ ROQUE DE ALMEIDA ROSA - Prof.",
+  "JÚLIA RIOS ATHAYDE - Profª.",
+  "JÚLIO BIERRENBACH LIMA - Prof.",
+  "JÚLIO PRESTES DE ALBUQUERQUE - Dr.",
+  "LAILA GALEP SACKER - Profª.",
+  "LAURO SANCHEZ - Prof.",
+  "LUIZ GONZAGA DE CAMARGO FLEURY - Prof.",
+  "LUIZ NOGUEIRA MARTINS - Senador",
+  "MARCO ANTONIO MENCACCI - Prof.",
+  "MARIA CÂNDIDA DE BARROS ARAÚJO - Profª.",
+  "MARINA GROHMANN SOARES FERNANDES - Profª.",
+  "MARIA HELENA GAZZI BONADIO PROFª",
+  "MARIA ONDINA DE ANDRADE Profª",
+  "MÁRIO GUILHERME NOTARI",
+  "MONTEIRO LOBATO",
+  "NAZIRA NAGIB JORGE MURAD RODRIGUES - Profª.",
+  "OSSIS SALVESTRINI MENDES - Profª.",
+  "OVÍDIO ANTONIO DE SOUZA - Reverendo",
+  "PORTO SEGURO - Visconde",
+  "RAFAEL ORSI FILHO - Prof.",
+  "RENATO SÊNECA DE SÁ FLEURY - Prof.",
+  "ROBERTO PASCHOALICK - Prof.",
+  "ROQUE CONCEIÇÃO MARTINS - Prof.",
+  "ROSEMARY DE MELLO MOREIRA PEREIRA - Profª.",
+  "SARAH SALVESTRO - Profª.",
+  "TOBIAS - Brigadeiro",
+  "VERGUEIRO - Senador",
+  "WALDEMAR DE FREITAS ROSA - Prof.",
+  "WANDA COSTA DAHER - Profª.",
+  "WILSON RAMOS BRANDÃO - Prof.",
+  "ZÉLIA DULCE DE CAMPOS MAIA - Profª."
+]);
+
+async function optionalAdminCollection(name) {
+  try {
+    return await getDocs(collection(db, name));
+  } catch (error) {
+    if (error?.code === 'permission-denied') return { docs: [] };
+    throw error;
+  }
+}
+
+export async function prepareTestDatabaseReset() {
+  await requireAdmin();
+  const [schoolsSnapshot, agendaSnapshot, visitsSnapshot, justificationsSnapshot, correctionsSnapshot] = await Promise.all([
+    getDocs(collection(db, 'schools')),
+    getDocs(collection(db, 'agenda')),
+    getDocs(collection(db, 'visits')),
+    getDocs(collection(db, 'goalJustifications')),
+    optionalAdminCollection('visitCorrectionRequests')
+  ]);
+  const records = (items) => items.map((item) => ({ id: item.id, ...backupValue(item.data()) }));
+  return {
+    counts: {
+      schools: schoolsSnapshot.docs.length,
+      agenda: agendaSnapshot.docs.length,
+      visits: visitsSnapshot.docs.length,
+      goalJustifications: justificationsSnapshot.docs.length,
+      visitCorrectionRequests: correctionsSnapshot.docs.length
+    },
+    backup: {
+      schemaVersion: 2,
+      type: 'supervisor-ese-test-reset',
+      generatedAt: new Date().toISOString(),
+      schools: records(schoolsSnapshot.docs),
+      agenda: records(agendaSnapshot.docs),
+      visits: records(visitsSnapshot.docs),
+      goalJustifications: records(justificationsSnapshot.docs),
+      visitCorrectionRequests: records(correctionsSnapshot.docs)
+    }
+  };
+}
+
+export async function resetTestDatabaseAndInstallOfficialSchools() {
+  const session = await requireAdmin();
+  const snapshots = await Promise.all([
+    getDocs(collection(db, 'schools')),
+    getDocs(collection(db, 'agenda')),
+    getDocs(collection(db, 'visits')),
+    getDocs(collection(db, 'goalJustifications')),
+    optionalAdminCollection('visitCorrectionRequests')
+  ]);
+  const targets = snapshots.flatMap((snapshot) => snapshot.docs.map((item) => item.ref));
+  for (let index = 0; index < targets.length; index += 450) {
+    const batch = writeBatch(db);
+    targets.slice(index, index + 450).forEach((reference) => batch.delete(reference));
+    await batch.commit();
+  }
+
+  const now = serverTimestamp();
+  for (let index = 0; index < OFFICIAL_SCHOOLS.length; index += 400) {
+    const batch = writeBatch(db);
+    OFFICIAL_SCHOOLS.slice(index, index + 400).forEach((name) => {
+      const id = documentId(name) || `escola-${crypto.randomUUID().slice(0, 8)}`;
+      batch.set(doc(db, 'schools', id), {
+        name,
+        searchName: searchable(name),
+        supervisorId: null,
+        supervisorIds: [],
+        active: true,
+        source: 'official_catalog_2026',
+        schemaVersion: 2,
+        createdByUid: session.user.uid,
+        createdAt: now,
+        updatedAt: now
+      });
+    });
+    await batch.commit();
+  }
+  invalidateDataCache({ discard: true });
+  return { deleted: targets.length, schoolsInstalled: OFFICIAL_SCHOOLS.length };
+}
+
 export function dataErrorMessage(error) {
   const messages = {
     'data/name-required': 'Informe o nome.',

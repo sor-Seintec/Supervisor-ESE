@@ -76,3 +76,18 @@ Criar a coleção auditável de metas e o painel administrativo para:
 - recalcular os KPIs com visitas realizadas mais créditos aprovados.
 
 Até essa etapa, `meta.html` identifica claramente os ajustes feitos no navegador como provisórios, e `DMC.html` bloqueia o envio para o sistema antigo.
+
+## Manutenção do banco de testes
+
+A página `manutencao.html` fica disponível no painel inicial somente para perfis `admin`.
+Ela permite:
+
+- gerar um backup JSON antes da limpeza;
+- apagar escolas, agenda, visitas, justificativas e solicitações de correção de teste;
+- preservar `users`, `supervisors`, `actions` e Firebase Authentication;
+- instalar automaticamente o catálogo oficial com 80 escolas;
+- exigir a frase `APAGAR TESTES` e confirmação adicional antes da operação destrutiva.
+
+Após a carga, as escolas ficam ativas e sem vínculo de supervisor. Os vínculos devem ser configurados antes de usar o planejamento por carteira. O registro direto continua disponível para todas as escolas ativas.
+
+O formulário `visita.html` agora possui pesquisa por nome no modo **Registro direto · todas as escolas**, ignorando diferenças de acentuação na busca.

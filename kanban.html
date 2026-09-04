@@ -1241,7 +1241,7 @@
             schoolsContainer.innerHTML = '<div class="empty-schools">Carregando escolas…</div>';
             if (!supervisorId) return;
 
-            const cacheName='kanban-schools',cached=getReadCache(state.user.uid,cacheName),stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
+            const cacheName='kanban-schools-v2',cached=getReadCache(state.user.uid,cacheName),stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
             let allSchools=cached?.data;
             if(!allSchools&&stale?.sameDay&&stale.savedAt){const delta=await getDocs(query(collection(db,'schools'),where('updatedAt','>',new Date(Math.max(0,stale.savedAt-60000)))));allSchools=mergeChangedItems(stale.data,delta);setReadCache(state.user.uid,cacheName,allSchools)}
             if(!allSchools){const snapshot=await getDocs(collection(db,'schools'));allSchools=snapshot.docs.map(item=>({id:item.id,...item.data()}));setReadCache(state.user.uid,cacheName,allSchools)}
@@ -1791,7 +1791,7 @@
             };
             try{
                 expireReadCache(state.user.uid,'kanban-supervisors');
-                expireReadCache(state.user.uid,'kanban-schools');
+                expireReadCache(state.user.uid,'kanban-schools-v2');
                 expireReadCache(state.user.uid,`kanban-cloud-${currentSupervisorId()}`);
                 await loadSupervisors();await loadSchools();await loadCloudData();updateSyncBadge();
                 showToast('Planejamento atualizado pelo Firebase.','success');
