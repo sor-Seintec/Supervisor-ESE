@@ -39,6 +39,17 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/schools/$(schoolId)).data.active == true;
     }
 
+    function schoolPinnedToSupervisor(schoolId, supervisorId) {
+      return exists(/databases/$(database)/documents/supervisorSchoolPins/$(supervisorId))
+        && schoolId in get(/databases/$(database)/documents/supervisorSchoolPins/$(supervisorId)).data.schoolIds;
+    }
+
+    function schoolAvailableToSupervisor(schoolId, supervisorId) {
+      return activeSchool(schoolId)
+        && (schoolBelongsToSupervisor(schoolId, supervisorId)
+          || schoolPinnedToSupervisor(schoolId, supervisorId));
+    }
+
     function validVisitStatus(statusCode) {
       return statusCode in ['completed', 'cancelled', 'postponed', 'justified'];
     }
@@ -68,6 +79,13 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Carteira pessoal de escolas fixadas no planejamento. Cada supervisor
+    // administra somente a própria lista; administradores podem apoiar qualquer carteira.
+    match /supervisorSchoolPins/{supervisorId} {
+      allow read: if isAdmin() || ownsSupervisorProfile(supervisorId);
+      allow create, update, delete: if isAdmin() || ownsSupervisorProfile(supervisorId);
+    }
+
     match /visits/{visitId} {
       allow read: if isAdmin()
         || ownsSupervisorProfile(resource.data.supervisorId);
@@ -78,11 +96,10 @@ service cloud.firestore {
           && request.resource.data.schemaVersion == 1
           && validVisitStatus(request.resource.data.statusCode)
           && activeSchool(request.resource.data.schoolId)
-          && request.resource.data.assignedSupervisorId
-            == get(/databases/$(database)/documents/schools/$(request.resource.data.schoolId)).data.supervisorId
+          && request.resource.data.assignedSupervisorId == request.resource.data.supervisorId
           && (
             (request.resource.data.visitType == 'planned'
-              && schoolBelongsToSupervisor(
+              && schoolAvailableToSupervisor(
                 request.resource.data.schoolId,
                 request.resource.data.supervisorId
               ))
@@ -112,7 +129,7 @@ service cloud.firestore {
           && request.resource.data.createdByUid == request.auth.uid
           && request.resource.data.schemaVersion == 1
           && request.resource.data.status == 'scheduled'
-          && schoolBelongsToSupervisor(
+          && schoolAvailableToSupervisor(
             request.resource.data.schoolId,
             request.resource.data.supervisorId
           ));

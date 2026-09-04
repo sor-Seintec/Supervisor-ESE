@@ -328,6 +328,94 @@
             padding: 20px 0;
         }
 
+        .school-picker {
+            padding: 10px 10px 8px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,.72);
+        }
+        .school-picker-label {
+            display:block;
+            margin-bottom:6px;
+            font-size:10px;
+            font-weight:800;
+            letter-spacing:.04em;
+            text-transform:uppercase;
+            color:var(--text-muted);
+        }
+        .school-search-wrap { position:relative; }
+        .school-search-input {
+            width:100%;
+            min-height:38px;
+            padding:8px 34px 8px 11px;
+            border:1px solid var(--border-dark);
+            border-radius:9px;
+            background:#fff;
+            color:var(--text-dark);
+            font:inherit;
+            font-size:12px;
+            outline:none;
+        }
+        .school-search-input:focus { border-color:#5b8eae; box-shadow:0 0 0 3px rgba(69,125,158,.12); }
+        .school-search-icon { position:absolute; right:11px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:13px; pointer-events:none; }
+        .school-search-results {
+            display:none;
+            margin-top:6px;
+            max-height:250px;
+            overflow:auto;
+            border:1px solid var(--border-dark);
+            border-radius:9px;
+            background:#fff;
+            box-shadow:0 10px 24px rgba(15,23,42,.10);
+        }
+        .school-search-results.open { display:block; }
+        .school-result-row {
+            display:flex;
+            align-items:center;
+            gap:7px;
+            padding:8px 9px;
+            border-bottom:1px solid var(--border);
+        }
+        .school-result-row:last-child { border-bottom:0; }
+        .school-result-name { flex:1; min-width:0; font-size:11px; line-height:1.3; font-weight:700; color:var(--text-dark); }
+        .school-pin-btn {
+            border:1px solid var(--border-dark);
+            background:#f8fafc;
+            color:var(--text-dark);
+            border-radius:7px;
+            padding:5px 7px;
+            font-size:10px;
+            font-weight:800;
+            cursor:pointer;
+            white-space:nowrap;
+        }
+        .school-pin-btn:hover { background:#eef6fa; border-color:#7ba2ba; }
+        .school-pin-btn.is-pinned { background:#e9f8ef; border-color:#9ad5ad; color:#17653a; }
+        .pinned-schools-title {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+            padding:9px 12px 3px;
+            color:var(--text-muted);
+            font-size:10px;
+            font-weight:800;
+            letter-spacing:.04em;
+            text-transform:uppercase;
+        }
+        .pinned-count {
+            min-width:22px; height:20px; padding:0 6px; display:grid; place-items:center;
+            border-radius:999px; background:#eaf2f7; color:#315f79; font-size:10px;
+        }
+        .available-card-wrap { position:relative; }
+        .unpin-card-btn {
+            position:absolute; top:6px; right:6px; z-index:4;
+            width:24px; height:24px; border:0; border-radius:7px;
+            background:rgba(255,255,255,.92); color:#64748b; cursor:pointer;
+            display:grid; place-items:center; font-size:12px; box-shadow:0 1px 4px rgba(15,23,42,.12);
+        }
+        .unpin-card-btn:hover { background:#fff1f2; color:#be123c; }
+        .available-card-wrap .k-card { padding-right:34px; }
+
         .calendar-container {
             flex: 1;
             background: var(--surface);
@@ -895,8 +983,17 @@
     <div class="main-layout">
         <div class="sidebar">
             <div class="sidebar-header">Escolas Disponíveis</div>
+            <div class="school-picker">
+                <label class="school-picker-label" for="schoolPortfolioSearch">Localizar e fixar escola</label>
+                <div class="school-search-wrap">
+                    <input id="schoolPortfolioSearch" class="school-search-input" type="search" autocomplete="off" placeholder="Pesquisar entre as 80 escolas…">
+                    <span class="school-search-icon" aria-hidden="true">⌕</span>
+                </div>
+                <div id="schoolSearchResults" class="school-search-results" role="listbox"></div>
+            </div>
+            <div class="pinned-schools-title"><span>Minhas escolas fixadas</span><span id="pinnedSchoolCount" class="pinned-count">0</span></div>
             <div class="schools-container" id="schoolsContainer">
-                <div class="empty-schools">Selecione um supervisor.</div>
+                <div class="empty-schools">Pesquise uma escola acima e clique em Fixar.</div>
             </div>
             <section class="status-legend" aria-labelledby="statusLegendTitle">
                 <h2 id="statusLegendTitle">Padrão de status</h2>
@@ -972,6 +1069,7 @@
             getFirestore,
             query,
             serverTimestamp,
+            setDoc,
             where,
             writeBatch
         } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
@@ -995,6 +1093,8 @@
             profile: null,
             supervisors: new Map(),
             schools: new Map(),
+            allSchools: new Map(),
+            pinnedSchoolIds: new Set(),
             agendaCloud: [],
             visits: [],
             correctionRequests: [],
@@ -1014,6 +1114,9 @@
         const selectSupervisor = document.getElementById('selectSup');
         const supervisorFilter = document.getElementById('filtroSupervisor');
         const schoolsContainer = document.getElementById('schoolsContainer');
+        const schoolPortfolioSearch = document.getElementById('schoolPortfolioSearch');
+        const schoolSearchResults = document.getElementById('schoolSearchResults');
+        const pinnedSchoolCount = document.getElementById('pinnedSchoolCount');
         document.querySelector('.header h1').textContent = 'Planejamento semanal de visitas';
         document.querySelector('#filtroGlobalContainer').style.display = 'none';
         document.querySelector('label[for="selectSup"]')?.removeAttribute('for');
@@ -1235,30 +1338,120 @@
             }
         }
 
+        function normalizeSchoolSearch(value) {
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        }
+
+        function pinDocRef(supervisorId = currentSupervisorId()) {
+            return supervisorId ? doc(db, 'supervisorSchoolPins', supervisorId) : null;
+        }
+
+        async function loadPinnedSchools() {
+            const supervisorId = currentSupervisorId();
+            state.pinnedSchoolIds = new Set();
+            if (!supervisorId) return;
+            const snapshot = await getDoc(pinDocRef(supervisorId));
+            if (snapshot.exists()) {
+                const ids = Array.isArray(snapshot.data().schoolIds) ? snapshot.data().schoolIds : [];
+                ids.forEach((id) => { if (state.allSchools.has(id)) state.pinnedSchoolIds.add(id); });
+                return;
+            }
+            // Compatibilidade: na primeira utilização, aproveita vínculos antigos existentes.
+            state.allSchools.forEach((school) => {
+                if (schoolHasSupervisor(school, supervisorId)) state.pinnedSchoolIds.add(school.id);
+            });
+            if (state.pinnedSchoolIds.size) await persistPinnedSchools(false);
+        }
+
+        async function persistPinnedSchools(showFeedback = true) {
+            const supervisorId = currentSupervisorId();
+            if (!supervisorId) return;
+            const schoolIds = [...state.pinnedSchoolIds];
+            await setDoc(pinDocRef(supervisorId), {
+                supervisorId,
+                schoolIds,
+                updatedAt: serverTimestamp(),
+                updatedByUid: state.user.uid,
+                schemaVersion: 1
+            }, { merge: true });
+            if (showFeedback) showToast('Suas escolas fixadas foram atualizadas.', 'success');
+        }
+
+        async function togglePinnedSchool(schoolId, shouldPin) {
+            const school = state.allSchools.get(schoolId);
+            if (!school) return;
+            const before = new Set(state.pinnedSchoolIds);
+            if (shouldPin) state.pinnedSchoolIds.add(schoolId);
+            else state.pinnedSchoolIds.delete(schoolId);
+            renderAvailableSchools();
+            renderSchoolSearchResults();
+            try {
+                await persistPinnedSchools(false);
+                showToast(shouldPin ? `${school.name} fixada.` : `${school.name} desfixada.`, 'success');
+            } catch (error) {
+                console.error('Falha ao salvar escolas fixadas:', error);
+                state.pinnedSchoolIds = before;
+                renderAvailableSchools();
+                renderSchoolSearchResults();
+                showToast(error?.code === 'permission-denied' ? 'Publique as regras atualizadas do Firestore para usar escolas fixadas.' : 'Não foi possível salvar essa escola agora.');
+            }
+        }
+
+        function renderSchoolSearchResults() {
+            const supervisorId = currentSupervisorId();
+            if (!supervisorId) { schoolSearchResults.classList.remove('open'); return; }
+            const term = normalizeSchoolSearch(schoolPortfolioSearch.value);
+            const all = [...state.allSchools.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+            const matches = all.filter((school) => !term || normalizeSchoolSearch(`${school.name} ${school.searchName || ''}`).includes(term)).slice(0, 30);
+            schoolSearchResults.innerHTML = '';
+            if (!matches.length) {
+                schoolSearchResults.innerHTML = '<div class="empty-schools" style="padding:12px">Nenhuma escola encontrada.</div>';
+                schoolSearchResults.classList.add('open');
+                return;
+            }
+            matches.forEach((school) => {
+                const pinned = state.pinnedSchoolIds.has(school.id);
+                const row = document.createElement('div');
+                row.className = 'school-result-row';
+                row.innerHTML = `<div class="school-result-name">${escapeHtml(school.name)}</div><button type="button" class="school-pin-btn ${pinned ? 'is-pinned' : ''}">${pinned ? '✓ Fixada' : '＋ Fixar'}</button>`;
+                row.querySelector('button').addEventListener('click', (event) => { event.stopPropagation(); togglePinnedSchool(school.id, !pinned); });
+                schoolSearchResults.appendChild(row);
+            });
+            schoolSearchResults.classList.add('open');
+        }
+
         async function loadSchools() {
             const supervisorId = currentSupervisorId();
             state.schools.clear();
+            state.allSchools.clear();
+            state.pinnedSchoolIds = new Set();
             schoolsContainer.innerHTML = '<div class="empty-schools">Carregando escolas…</div>';
+            pinnedSchoolCount.textContent = '0';
             if (!supervisorId) return;
 
-            const cacheName='kanban-schools-v2',cached=getReadCache(state.user.uid,cacheName),stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
-            let allSchools=cached?.data;
-            if(!allSchools&&stale?.sameDay&&stale.savedAt){const delta=await getDocs(query(collection(db,'schools'),where('updatedAt','>',new Date(Math.max(0,stale.savedAt-60000)))));allSchools=mergeChangedItems(stale.data,delta);setReadCache(state.user.uid,cacheName,allSchools)}
-            if(!allSchools){const snapshot=await getDocs(collection(db,'schools'));allSchools=snapshot.docs.map(item=>({id:item.id,...item.data()}));setReadCache(state.user.uid,cacheName,allSchools)}
-            allSchools.forEach((school) => {
-                if (school.active !== false && schoolHasSupervisor(school,supervisorId)) state.schools.set(school.id,school);
-            });
+            // A carteira usa a lista institucional completa. Carga completa evita manter escolas apagadas em cache incremental.
+            const snapshot = await getDocs(collection(db,'schools'));
+            const allSchools = snapshot.docs.map(item=>({id:item.id,...item.data()})).filter(school=>school.active!==false);
+            setReadCache(state.user.uid,'kanban-schools-v3',allSchools);
+            allSchools.forEach((school) => state.allSchools.set(school.id, school));
+            await loadPinnedSchools();
+            state.pinnedSchoolIds.forEach((id) => { const school=state.allSchools.get(id); if(school) state.schools.set(id,school); });
             renderAvailableSchools();
+            renderSchoolSearchResults();
+            schoolSearchResults.classList.remove('open');
         }
 
         function renderAvailableSchools() {
             const supervisorId = currentSupervisorId();
             const name = supervisorName(supervisorId);
             schoolsContainer.innerHTML = '';
+            state.schools.clear();
+            state.pinnedSchoolIds.forEach((id)=>{const school=state.allSchools.get(id);if(school)state.schools.set(id,school)});
             const schools = [...state.schools.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+            pinnedSchoolCount.textContent = String(schools.length);
 
             if (!schools.length) {
-                schoolsContainer.innerHTML = '<div class="empty-schools">Nenhuma escola vinculada.</div>';
+                schoolsContainer.innerHTML = '<div class="empty-schools">Nenhuma escola fixada.<br>Pesquise acima e clique em <strong>Fixar</strong>.</div>';
                 return;
             }
 
@@ -1271,28 +1464,32 @@
                     assignedSupervisorId: supervisorId,
                     shift: 'Manhã'
                 };
+                const wrap = document.createElement('div');
+                wrap.className = 'available-card-wrap';
                 const card = document.createElement('div');
                 card.className = `k-card ${hashColor(supervisorId)}`;
                 card.draggable = true;
                 card.dataset.shift = item.shift;
                 card.innerHTML = cardHtml(item);
+                const unpin = document.createElement('button');
+                unpin.type = 'button';
+                unpin.className = 'unpin-card-btn';
+                unpin.title = 'Desfixar escola';
+                unpin.setAttribute('aria-label', `Desfixar ${school.name}`);
+                unpin.textContent = '×';
+                unpin.addEventListener('click', (event) => { event.stopPropagation(); togglePinnedSchool(school.id, false); });
 
                 const shiftSelect = card.querySelector('.turno-select-inline');
                 shiftSelect.addEventListener('mousedown', (event) => event.stopPropagation());
-                shiftSelect.addEventListener('change', (event) => {
-                    card.dataset.shift = event.target.value;
-                });
-
+                shiftSelect.addEventListener('change', (event) => { card.dataset.shift = event.target.value; });
                 card.addEventListener('dragstart', (event) => {
                     state.dragging = { ...item, shift: card.dataset.shift };
                     event.dataTransfer.effectAllowed = 'copy';
                     setTimeout(() => { card.style.opacity = '0.5'; }, 0);
                 });
-                card.addEventListener('dragend', () => {
-                    card.style.opacity = '1';
-                    state.dragging = null;
-                });
-                schoolsContainer.appendChild(card);
+                card.addEventListener('dragend', () => { card.style.opacity = '1'; state.dragging = null; });
+                wrap.append(card, unpin);
+                schoolsContainer.appendChild(wrap);
             });
         }
 
@@ -1765,6 +1962,12 @@
         window.carregarEscolasDisponiveis = changeSupervisor;
         window.marcarModificado = markDirty;
 
+        schoolPortfolioSearch.addEventListener('focus', renderSchoolSearchResults);
+        schoolPortfolioSearch.addEventListener('input', renderSchoolSearchResults);
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.school-picker')) schoolSearchResults.classList.remove('open');
+        });
+
         document.getElementById('correctionForm').addEventListener('submit', submitCorrectionRequest);
         document.getElementById('correctionClose').addEventListener('click', closeCorrectionModal);
         document.getElementById('correctionCancel').addEventListener('click', closeCorrectionModal);
@@ -1791,7 +1994,7 @@
             };
             try{
                 expireReadCache(state.user.uid,'kanban-supervisors');
-                expireReadCache(state.user.uid,'kanban-schools-v2');
+                expireReadCache(state.user.uid,'kanban-schools-v3');
                 expireReadCache(state.user.uid,`kanban-cloud-${currentSupervisorId()}`);
                 await loadSupervisors();await loadSchools();await loadCloudData();updateSyncBadge();
                 showToast('Planejamento atualizado pelo Firebase.','success');

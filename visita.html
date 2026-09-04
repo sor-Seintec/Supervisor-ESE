@@ -406,7 +406,7 @@
       try{
         const linkedSupervisorIds=schoolSupervisorIds(values.school);
         const supervisorId=state.profile.role==='admin'?(state.agenda.find(item=>item.id===values.agendaId)?.supervisorId||linkedSupervisorIds[0]):state.profile.supervisorId;
-        const assignedSupervisorId=linkedSupervisorIds.includes(supervisorId)?supervisorId:(linkedSupervisorIds[0]||null);
+        const assignedSupervisorId=supervisorId || linkedSupervisorIds[0] || null;
         const actionItems=[...state.selectedActions].map(id=>state.actions.find(item=>item.id===id)).filter(Boolean);
         const reason=$('#justification').value.trim();
         const visitDateMillis=new Date(`${values.date}T12:00:00`).getTime();
