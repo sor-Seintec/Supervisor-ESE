@@ -1350,17 +1350,42 @@
             const supervisorId = currentSupervisorId();
             state.pinnedSchoolIds = new Set();
             if (!supervisorId) return;
-            const snapshot = await getDoc(pinDocRef(supervisorId));
-            if (snapshot.exists()) {
-                const ids = Array.isArray(snapshot.data().schoolIds) ? snapshot.data().schoolIds : [];
-                ids.forEach((id) => { if (state.allSchools.has(id)) state.pinnedSchoolIds.add(id); });
-                return;
+
+            try {
+                const snapshot = await getDoc(pinDocRef(supervisorId));
+                if (snapshot.exists()) {
+                    const ids = Array.isArray(snapshot.data().schoolIds) ? snapshot.data().schoolIds : [];
+                    ids.forEach((id) => { if (state.allSchools.has(id)) state.pinnedSchoolIds.add(id); });
+                    return;
+                }
+
+                // Compatibilidade: na primeira utilização, aproveita vínculos antigos existentes.
+                state.allSchools.forEach((school) => {
+                    if (schoolHasSupervisor(school, supervisorId)) state.pinnedSchoolIds.add(school.id);
+                });
+
+                // A migração automática é opcional. Uma falha de permissão aqui não pode
+                // impedir a abertura do Planejamento.
+                if (state.pinnedSchoolIds.size) {
+                    try {
+                        await persistPinnedSchools(false);
+                    } catch (migrationError) {
+                        console.warn('Não foi possível migrar vínculos antigos para escolas fixadas:', migrationError);
+                    }
+                }
+            } catch (error) {
+                // Se as regras de supervisorSchoolPins ainda não foram publicadas, mantém o
+                // Planejamento utilizável com os vínculos legados em vez de redirecionar ao portal.
+                console.warn('Falha ao carregar escolas fixadas; usando compatibilidade local:', error);
+                state.allSchools.forEach((school) => {
+                    if (schoolHasSupervisor(school, supervisorId)) state.pinnedSchoolIds.add(school.id);
+                });
+                if (error?.code === 'permission-denied') {
+                    showToast('Planejamento aberto. Publique as regras atualizadas do Firestore para salvar escolas fixadas.', 'error');
+                } else {
+                    showToast('Planejamento aberto, mas não foi possível carregar suas escolas fixadas agora.', 'error');
+                }
             }
-            // Compatibilidade: na primeira utilização, aproveita vínculos antigos existentes.
-            state.allSchools.forEach((school) => {
-                if (schoolHasSupervisor(school, supervisorId)) state.pinnedSchoolIds.add(school.id);
-            });
-            if (state.pinnedSchoolIds.size) await persistPinnedSchools(false);
         }
 
         async function persistPinnedSchools(showFeedback = true) {
@@ -2042,7 +2067,10 @@
                 updateSyncBadge();
             } catch (error) {
                 console.error('Falha ao iniciar o Kanban:', error);
-                redirectToLogin('Não foi possível carregar o planejamento.');
+                // O usuário já foi autenticado e validado acima. Erros de carga de dados
+                // não devem expulsá-lo do Planejamento.
+                showToast('O planejamento abriu com dados parciais. Clique em Atualizar para tentar novamente.', 'error');
+                try { updateSyncBadge(); renderAvailableSchools(); renderCalendar(); } catch (renderError) { console.warn(renderError); }
             }
         });
     </script>

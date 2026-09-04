@@ -1422,7 +1422,7 @@
       if (!schools.length) {
         const empty = document.createElement('span');
         empty.className = 'school-popover-item';
-        empty.textContent = 'Nenhuma escola vinculada.';
+        empty.textContent = 'Nenhuma escola fixada.';
         list.appendChild(empty);
         return;
       }
@@ -1445,10 +1445,19 @@
 
     function snapshotFromItems(items){return{size:items.length,docs:items.map(item=>({id:item.id,data:()=>item}))}}
     function mergeChangedItems(current,snapshot){const map=new Map((current||[]).map(item=>[item.id,item]));snapshot.docs.forEach(item=>map.set(item.id,{id:item.id,...item.data()}));return[...map.values()].filter(item=>item.deleted!==true)}
+    function activeSchools(items=[]){return items.filter(item=>item.active!==false)}
     function applyDataSummary(profile,data){
-      const isAdmin=profile.role==='admin',supervisorId=profile.supervisorId;
-      const schoolDocs=(isAdmin?data.schools:data.schools.filter(item=>schoolHasSupervisor(item,supervisorId))).map(item=>({id:item.id,data:()=>item}));
+      const isAdmin=profile.role==='admin';
+      const pinnedIds=new Set(Array.isArray(data.pinnedSchoolIds)?data.pinnedSchoolIds:[]);
+      const visibleSchools=isAdmin
+        ? activeSchools(data.schools)
+        : activeSchools(data.schools).filter(item=>pinnedIds.has(item.id));
+      const schoolDocs=visibleSchools.map(item=>({id:item.id,data:()=>item}));
       const schoolsSnapshot={docs:schoolDocs,size:schoolDocs.length},visitsSnapshot=snapshotFromItems(data.visits),agendaSnapshot=snapshotFromItems(data.agenda);
+      const schoolMetric=document.getElementById('schoolMetric');
+      const popoverTitle=schoolMetric?.querySelector('.school-popover-title');
+      if(schoolMetric)schoolMetric.setAttribute('aria-label',isAdmin?'Escolas institucionais ativas. Passe o mouse ou pressione Tab para visualizar os nomes.':'Minhas escolas fixadas. Passe o mouse ou pressione Tab para visualizar os nomes.');
+      if(popoverTitle)popoverTitle.textContent=isAdmin?'Escolas institucionais':'Minhas escolas fixadas';
       document.getElementById('schoolCount').textContent=schoolsSnapshot.size;document.getElementById('visitCount').textContent=visitsSnapshot.size;document.getElementById('agendaCount').textContent=agendaSnapshot.size;renderSchoolPopover(schoolsSnapshot);document.getElementById('dataSummary').hidden=false;renderUpcomingVisits(agendaSnapshot);
     }
     async function loadDataSummary(profile,{force=false}={}) {
@@ -1458,21 +1467,23 @@
         ? collection(db, collectionName)
         : query(collection(db, collectionName), where('supervisorId', '==', supervisorId));
 
-      const cacheName='home-summary',fresh=!force&&getReadCache(currentUser.uid,cacheName);if(fresh){applyDataSummary(profile,fresh.data);return}
+      const cacheName='home-summary-v2',fresh=!force&&getReadCache(currentUser.uid,cacheName);if(fresh){applyDataSummary(profile,fresh.data);return}
       const stale=getReadCache(currentUser.uid,cacheName,{allowExpired:true});
       try {
         if(force&&stale?.sameDay&&stale.savedAt){
           try{
             const since=new Date(Math.max(0,stale.savedAt-60000)),changed=name=>getDocs(query(scopedCollection(name),where('updatedAt','>',since)));
-            const [schoolsDelta,visitsDelta,agendaDelta]=await Promise.all([
-              getDocs(query(collection(db,'schools'),where('updatedAt','>',since))),
+            const [allSchoolsSnapshot,visitsDelta,agendaDelta,pinsSnapshot]=await Promise.all([
+              getDocs(collection(db,'schools')),
               changed('visits'),
-              changed('agenda')
+              changed('agenda'),
+              isAdmin?Promise.resolve(null):getDoc(doc(db,'supervisorSchoolPins',supervisorId)).catch(error=>error?.code==='permission-denied'?null:Promise.reject(error))
             ]);
-            const data={schools:mergeChangedItems(stale.data.schools,schoolsDelta),visits:mergeChangedItems(stale.data.visits,visitsDelta),agenda:mergeChangedItems(stale.data.agenda,agendaDelta)};
+            const pinnedSchoolIds=isAdmin?[]:(pinsSnapshot?.exists?.()?pinsSnapshot.data().schoolIds||[]:[]);
+            const data={schools:allSchoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),pinnedSchoolIds,visits:mergeChangedItems(stale.data.visits,visitsDelta),agenda:mergeChangedItems(stale.data.agenda,agendaDelta)};
             setReadCache(currentUser.uid,cacheName,data);
             const visitCache=getReadCache(currentUser.uid,'visit-form-data-v2',{allowExpired:true});
-            if(visitCache)setReadCache(currentUser.uid,'visit-form-data-v2',{...visitCache.data,schools:mergeChangedItems(visitCache.data.schools,schoolsDelta),visits:mergeChangedItems(visitCache.data.visits,visitsDelta),agenda:mergeChangedItems(visitCache.data.agenda,agendaDelta)});
+            if(visitCache)setReadCache(currentUser.uid,'visit-form-data-v2',{...visitCache.data,schools:data.schools,visits:mergeChangedItems(visitCache.data.visits,visitsDelta),agenda:mergeChangedItems(visitCache.data.agenda,agendaDelta)});
             setReadCache(currentUser.uid,'kanban-schools-v2',data.schools);
             const supervisorIds=isAdmin?[...new Set([...data.agenda,...data.visits].map(item=>item.supervisorId).filter(Boolean))]:[supervisorId];
             supervisorIds.forEach(id=>{const existing=getReadCache(currentUser.uid,`kanban-cloud-${id}`,{allowExpired:true});if(existing)setReadCache(currentUser.uid,`kanban-cloud-${id}`,{...existing.data,agenda:mergeChangedItems(existing.data.agenda,{docs:agendaDelta.docs.filter(item=>item.data().supervisorId===id)}),visits:mergeChangedItems(existing.data.visits,{docs:visitsDelta.docs.filter(item=>item.data().supervisorId===id)})})});
@@ -1480,20 +1491,22 @@
           }catch(incrementalError){console.warn('Atualização incremental indisponível; realizando carga completa.',incrementalError)}
         }
         const supervisorPromise=isAdmin?getDocs(collection(db,'supervisors')):getDoc(doc(db,'supervisors',supervisorId));
-        const [allSchoolsSnapshot, visitsSnapshot, agendaSnapshot, actionsSnapshot, supervisorsResult, correctionsSnapshot] = await Promise.all([
+        const [allSchoolsSnapshot, visitsSnapshot, agendaSnapshot, actionsSnapshot, supervisorsResult, correctionsSnapshot, pinsSnapshot] = await Promise.all([
           getDocs(collection(db, 'schools')),
           getDocs(scopedCollection('visits')),
           getDocs(scopedCollection('agenda')),
           getDocs(collection(db,'actions')),
           supervisorPromise,
-          getDocs(scopedCollection('visitCorrectionRequests')).catch(error=>error?.code==='permission-denied'?{docs:[]}:Promise.reject(error))
+          getDocs(scopedCollection('visitCorrectionRequests')).catch(error=>error?.code==='permission-denied'?{docs:[]}:Promise.reject(error)),
+          isAdmin?Promise.resolve(null):getDoc(doc(db,'supervisorSchoolPins',supervisorId)).catch(error=>error?.code==='permission-denied'?null:Promise.reject(error))
         ]);
 
-        const data={schools:allSchoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()}))};
+        const pinnedSchoolIds=isAdmin?[]:(pinsSnapshot?.exists?.()?pinsSnapshot.data().schoolIds||[]:[]);
+        const data={schools:allSchoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),pinnedSchoolIds,visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()}))};
         const actions=actionsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
         const supervisors=isAdmin?supervisorsResult.docs.map(item=>({id:item.id,...item.data()})):(supervisorsResult.exists()?[{id:supervisorsResult.id,...supervisorsResult.data()}]:[]);
         const corrections=correctionsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
-        setReadCache(currentUser.uid,'home-summary',data);
+        setReadCache(currentUser.uid,'home-summary-v2',data);
         setReadCache(currentUser.uid,'visit-form-data-v2',{schoolReadLimited:false,schools:data.schools,agenda:data.agenda,visits:data.visits,actions});
         setReadCache(currentUser.uid,'kanban-supervisors',supervisors);
         setReadCache(currentUser.uid,'kanban-schools-v2',data.schools);
@@ -1516,7 +1529,7 @@
     }
     async function syncFromHome(){
       if(!currentUser)return;const button=document.getElementById('offlineSyncButton');button.disabled=true;button.textContent='Enviando…';
-      try{const result=await syncVisitOutbox(db,currentUser.uid,{force:true});if(result.synced){expireReadCache(currentUser.uid,'home-summary')}await refreshOfflineSync()}
+      try{const result=await syncVisitOutbox(db,currentUser.uid,{force:true});if(result.synced){expireReadCache(currentUser.uid,'home-summary-v2')}await refreshOfflineSync()}
       finally{button.textContent='Sincronizar';button.disabled=!currentOutboxCount}
     }
 
@@ -1558,7 +1571,7 @@
         profileMessage.hidden = true;
         await validateAccessScope(user, profile);
         await refreshOfflineSync();
-        const syncResult=await syncVisitOutbox(db,user.uid);if(syncResult.synced)expireReadCache(user.uid,'home-summary');await refreshOfflineSync();
+        const syncResult=await syncVisitOutbox(db,user.uid);if(syncResult.synced)expireReadCache(user.uid,'home-summary-v2');await refreshOfflineSync();
         await loadDataSummary(profile);
         sessionLoading.hidden = true;
         profileView.hidden = false;
@@ -1598,7 +1611,7 @@
 
     document.getElementById('offlineSyncButton').addEventListener('click',syncFromHome);
     window.addEventListener('online',syncFromHome);window.addEventListener('supervisor-outbox-change',refreshOfflineSync);
-    document.getElementById('refreshButton').addEventListener('click',async()=>{if(!currentUser)return;const button=document.getElementById('refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(currentUser.uid,'home-summary');await loadDataSummary(currentProfile,{force:true})}finally{button.disabled=false;button.classList.remove('is-syncing')}});
+    document.getElementById('refreshButton').addEventListener('click',async()=>{if(!currentUser)return;const button=document.getElementById('refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(currentUser.uid,'home-summary-v2');await loadDataSummary(currentProfile,{force:true})}finally{button.disabled=false;button.classList.remove('is-syncing')}});
     document.getElementById('logoutButton').addEventListener('click', async () => {
       await refreshOfflineSync();if(currentOutboxCount&&!confirm(`Há ${currentOutboxCount} registro(s) aguardando envio. Eles permanecerão neste dispositivo. Deseja sair?`))return;
       await signOut(auth);
