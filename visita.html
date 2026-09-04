@@ -61,7 +61,7 @@
     .section-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:17px}
     .section-number{width:31px;height:31px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:var(--navy);color:#fff;font-size:.85rem;font-weight:850}
     .section h2{margin:0;font-size:1.08rem;line-height:1.3}.section-head p{margin:3px 0 0;color:var(--muted);font-size:.88rem}
-    .segmented{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:5px;border-radius:14px;background:#edf2f5}
+    .segmented{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:5px;border-radius:14px;background:#edf2f5}
     .segment{min-height:48px;border:0;border-radius:10px;background:transparent;color:#5c7180;font-weight:750;cursor:pointer}
     .segment.is-selected{background:#fff;color:var(--navy);box-shadow:0 3px 12px rgba(31,67,89,.1)}
     .field-grid{display:grid;grid-template-columns:1.5fr .75fr .65fr;gap:14px;margin-top:16px}
@@ -193,6 +193,7 @@
             <div class="segmented" id="sourceMode" role="group" aria-label="Origem da visita">
               <button class="segment is-selected" type="button" data-source="planned">Do planejamento</button>
               <button class="segment" type="button" data-source="direct">Registro direto · todas as escolas</button>
+              <button class="segment" type="button" data-source="private">Registro Escola Privada</button>
             </div>
             <div class="field-grid">
               <div class="field span-all" id="agendaField">
@@ -274,7 +275,7 @@
     const firebaseConfig={apiKey:'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',authDomain:'supervisor-ese.firebaseapp.com',projectId:'supervisor-ese',storageBucket:'supervisor-ese.firebasestorage.app',messagingSenderId:'756390446092',appId:'1:756390446092:web:26a898746dd4e3fab45a29'};
     const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
     const $=(selector)=>document.querySelector(selector);
-    const state={user:null,profile:null,source:'planned',activity:'none',status:'completed',schools:new Map(),ownSchoolIds:new Set(),pinnedSchoolIds:new Set(),schoolReadLimited:false,agenda:[],visits:[],actions:[],selectedActions:new Set(),agendaDateOffset:0,selectedAgendaDate:'',outboxCount:0,syncing:false};
+    const state={user:null,profile:null,source:'planned',activity:'none',status:'completed',schools:new Map(),privateSchools:new Map(),ownSchoolIds:new Set(),pinnedSchoolIds:new Set(),schoolReadLimited:false,agenda:[],visits:[],actions:[],selectedActions:new Set(),agendaDateOffset:0,selectedAgendaDate:'',outboxCount:0,syncing:false};
     const labels={completed:'Realizada',postponed:'Adiada',cancelled:'Cancelada',justified:'Justificada'};
 
     function dateKey(value){if(!value)return'';const date=value.toDate?value.toDate():new Date(value);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
@@ -289,6 +290,7 @@
     function applyLoadedData(data){
       state.schoolReadLimited=data.schoolReadLimited===true;
       state.schools=new Map(data.schools.map(item=>[item.id,item]));
+      state.privateSchools=new Map((data.privateSchools||[]).map(item=>[item.id,item]));
       state.pinnedSchoolIds=new Set(data.pinnedSchoolIds||[]);
       state.ownSchoolIds=state.profile.role==='admin'
         ? new Set([...state.schools.values()].filter(item=>item.active!==false).map(item=>item.id))
@@ -310,8 +312,9 @@
         const pinsPromise=state.profile.role==='admin'
           ? Promise.resolve(null)
           : getDoc(doc(db,'supervisorSchoolPins',state.profile.supervisorId));
-        const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot,pinsSnapshot]=await Promise.all([
+        const [schoolsSnapshot,privateSchoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot,pinsSnapshot]=await Promise.all([
           schoolsPromise,
+          getDocs(collection(db,'privateSchools')),
           getDocs(scoped('agenda')),
           getDocs(scoped('visits')),
           getDocs(collection(db,'actions')),
@@ -320,6 +323,7 @@
         const data={
           schoolReadLimited:state.schoolReadLimited,
           schools:schoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
+          privateSchools:privateSchoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
           agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()})),
           visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
           actions:actionsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
@@ -334,16 +338,17 @@
     function pendingAgenda(){const used=new Set(state.visits.map(item=>item.agendaId).filter(Boolean));return state.agenda.filter(item=>!used.has(item.id)&&!['completed','cancelled','justified'].includes(item.status)).sort((a,b)=>(a.scheduledDate?.seconds||0)-(b.scheduledDate?.seconds||0))}
     function renderProfile(){const name=state.profile.displayName||state.user.email,role=state.profile.role==='admin'?'Administrador':'Supervisor';$('#profileName').textContent=name;$('#profileEmail').textContent=state.profile.email||state.user.email;$('#profileRole').textContent=role;$('#avatar').textContent=initials(name);$('#sidebarAccountAvatar').textContent=initials(name);$('#sidebarAccountName').textContent=name;$('#sidebarAccountRole').textContent=role;$('#sidebarAccount').hidden=false;$('#schoolCount').textContent=state.ownSchoolIds.size;$('#pendingCount').textContent=pendingAgenda().length;$('#schoolAccessNotice').hidden=!state.schoolReadLimited}
     function normalizeSearch(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim()}
-    function availableSchools(){return [...state.schools.values()].filter(item=>item.active!==false&&(state.source==='direct'||state.ownSchoolIds.has(item.id))).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'))}
+    function currentSchoolMap(){return state.source==='private'?state.privateSchools:state.schools}
+    function availableSchools(){const sourceMap=currentSchoolMap();return [...sourceMap.values()].filter(item=>item.active!==false&&(state.source==='direct'||state.source==='private'||state.ownSchoolIds.has(item.id))).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'))}
     function closeSchoolResults(){const results=$('#schoolResults');results.hidden=true;$('#schoolSearch').setAttribute('aria-expanded','false')}
     function chooseSchool(school,{close=true}={}){const select=$('#schoolSelect'),input=$('#schoolSearch');if(!school){select.value='';input.dataset.selectedId='';if(close)closeSchoolResults();return}select.value=school.id;input.value=school.name;input.dataset.selectedId=school.id;if(close)closeSchoolResults()}
     function renderSchools({open=false}={}){
       const select=$('#schoolSelect'),input=$('#schoolSearch'),results=$('#schoolResults'),count=$('#schoolSearchCount'),previousId=select.value,available=availableSchools();
       select.innerHTML='<option value="">Selecione a escola</option>';available.forEach(item=>select.add(new Option(item.name,item.id)));
       if(previousId&&available.some(item=>item.id===previousId))select.value=previousId;else if(previousId)chooseSchool(null,{close:false});
-      if(state.source!=='direct'){results.replaceChildren();closeSchoolResults();count.textContent='';return}
+      if(!['direct','private'].includes(state.source)){results.replaceChildren();closeSchoolResults();count.textContent='';return}
       const term=normalizeSearch(input.value),selectedId=input.dataset.selectedId||'';
-      if(selectedId&&term!==normalizeSearch(state.schools.get(selectedId)?.name||'')){select.value='';input.dataset.selectedId=''}
+      if(selectedId&&term!==normalizeSearch(currentSchoolMap().get(selectedId)?.name||'')){select.value='';input.dataset.selectedId=''}
       const visible=available.filter(item=>!term||normalizeSearch(item.searchName||item.name).includes(term));
       results.replaceChildren();
       if(!visible.length){const empty=document.createElement('div');empty.className='school-results-empty';empty.textContent='Nenhuma escola encontrada.';results.append(empty)}
@@ -384,12 +389,12 @@
     function chooseAgenda(id){$('#agendaSelect').value=id;selectAgenda(id);renderAgendaPicker()}
     function renderActions(){const term=$('#actionSearch').value.trim().toLocaleLowerCase('pt-BR'),list=$('#actionList');list.replaceChildren();const visible=state.actions.filter(item=>!term||item.name.toLocaleLowerCase('pt-BR').includes(term));if(!visible.length){const empty=document.createElement('div');empty.className='action-empty';empty.textContent='Nenhuma ação encontrada.';list.append(empty)}else visible.forEach(item=>{const label=document.createElement('label');label.className='action-option';const input=document.createElement('input');input.type='checkbox';input.checked=state.selectedActions.has(item.id);input.addEventListener('change',()=>{input.checked?state.selectedActions.add(item.id):state.selectedActions.delete(item.id);renderSelectedActions()});const span=document.createElement('span');span.textContent=item.name;label.append(input,span);list.append(label)});renderSelectedActions()}
     function renderSelectedActions(){const area=$('#selectedActions');area.replaceChildren();[...state.selectedActions].forEach(id=>{const item=state.actions.find(action=>action.id===id);if(!item)return;const chip=document.createElement('span');chip.className='chip';chip.textContent=item.name;area.append(chip)})}
-    function setSource(source){state.source=source;document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSearch').disabled=source==='planned';$('#schoolDropdownButton').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=source==='direct';$('#activityMode').hidden=source==='direct';$('#activityMode').dataset.options=source==='direct'?'1':'2';document.querySelector('[data-status="justified"]').hidden=source==='direct';$('#statusGrid').dataset.options=source==='direct'?'3':'4';chooseSchool(null);$('#schoolSearch').value='';renderSchools();if(source==='direct'){setActivity('catalog');if(state.status==='justified')setStatus('completed');$('#agendaSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã';$('#schoolSearchHint').textContent='Digite parte do nome ou abra a lista para escolher entre as 80 escolas.';renderAgendaPicker();setTimeout(()=>$('#schoolSearch').focus(),0)}else{setActivity('none');$('#schoolSearchHint').textContent='A escola será preenchida ao selecionar uma visita planejada.';$('#visitDate').value='';renderAgenda()} }
+    function setSource(source){state.source=source;const directLike=['direct','private'].includes(source);document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSearch').disabled=source==='planned';$('#schoolDropdownButton').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=directLike;$('#activityMode').hidden=directLike;$('#activityMode').dataset.options=directLike?'1':'2';document.querySelector('[data-status="justified"]').hidden=directLike;$('#statusGrid').dataset.options=directLike?'3':'4';chooseSchool(null);$('#schoolSearch').value='';renderSchools();if(directLike){setActivity('catalog');if(state.status==='justified')setStatus('completed');$('#agendaSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã';$('#schoolSearchHint').textContent=source==='private'?`Digite parte do nome ou abra a lista para escolher entre as ${state.privateSchools.size} escolas privadas.`:'Digite parte do nome ou abra a lista para escolher entre as 80 escolas.';renderAgendaPicker();setTimeout(()=>$('#schoolSearch').focus(),0)}else{setActivity('none');$('#schoolSearchHint').textContent='A escola será preenchida ao selecionar uma visita planejada.';$('#visitDate').value='';renderAgenda()} }
     function setActivity(activity){state.activity=activity;document.querySelectorAll('[data-activity]').forEach(button=>button.classList.toggle('is-selected',button.dataset.activity===activity));$('#noActivityPanel').hidden=activity!=='none';$('#catalogPanel').hidden=activity!=='catalog';$('#customPanel').hidden=activity!=='custom'}
     function setStatus(status){state.status=status;document.querySelectorAll('[data-status]').forEach(button=>button.classList.toggle('is-selected',button.dataset.status===status));$('#justificationField').hidden=status==='completed';const reasonConfig={postponed:{label:'Motivo do adiamento',placeholder:'Explique por que a visita será reagendada.',hint:'Este motivo é operacional e não altera o cálculo da meta.'},cancelled:{label:'Motivo do cancelamento',placeholder:'Explique por que a visita foi cancelada.',hint:'Este motivo é operacional e não altera o cálculo da meta.'},justified:{label:'Justificativa para a meta',placeholder:'Explique por que a meta não pôde ser cumprida neste planejamento.',hint:'Será enviada separadamente para validação futura no Gestor-ESE.'}}[status];if(reasonConfig){$('#reasonLabel').textContent=reasonConfig.label;$('#justification').placeholder=reasonConfig.placeholder;$('#reasonHint').textContent=reasonConfig.hint}else{$('#reasonHint').textContent=''}}
     function selectAgenda(id){const item=state.agenda.find(entry=>entry.id===id);if(!item)return;state.selectedAgendaDate=dateKey(item.scheduledDate);const school=state.schools.get(item.schoolId);chooseSchool(school||null);if(!school)$('#schoolSearch').value=item.schoolName||'Escola não encontrada';$('#visitDate').value=dateKey(item.scheduledDate);$('#shiftSelect').value=item.shift||'Manhã'}
     function applyQuerySelection(){const agendaId=new URLSearchParams(location.search).get('agenda');if(agendaId&&pendingAgenda().some(item=>item.id===agendaId)){setSource('planned');chooseAgenda(agendaId)}}
-    function validate(){const school=state.schools.get($('#schoolSelect').value),date=$('#visitDate').value,agendaId=$('#agendaSelect').value; if(state.source==='planned'&&!agendaId)throw new Error('Selecione uma visita do planejamento.');if(!school)throw new Error('Selecione uma escola válida.');if(!date)throw new Error('Informe a data da visita.');if(state.activity==='catalog'&&!state.selectedActions.size)throw new Error('Selecione pelo menos uma ação realizada.');if(state.activity==='custom'&&!$('#customSubject').value.trim())throw new Error('Descreva o assunto novo.');if(state.status!=='completed'&&!$('#justification').value.trim())throw new Error('Informe o motivo do status selecionado.');if(agendaId&&state.visits.some(item=>item.agendaId===agendaId))throw new Error('Este planejamento já possui um registro de visita.');return{school,date,agendaId}}
+    function validate(){const school=currentSchoolMap().get($('#schoolSelect').value),date=$('#visitDate').value,agendaId=$('#agendaSelect').value; if(state.source==='planned'&&!agendaId)throw new Error('Selecione uma visita do planejamento.');if(!school)throw new Error('Selecione uma escola válida.');if(!date)throw new Error('Informe a data da visita.');if(state.activity==='catalog'&&!state.selectedActions.size)throw new Error('Selecione pelo menos uma ação realizada.');if(state.activity==='custom'&&!$('#customSubject').value.trim())throw new Error('Descreva o assunto novo.');if(state.status!=='completed'&&!$('#justification').value.trim())throw new Error('Informe o motivo do status selecionado.');if(agendaId&&state.visits.some(item=>item.agendaId===agendaId))throw new Error('Este planejamento já possui um registro de visita.');return{school,date,agendaId}}
     async function refreshSyncPanel(){
       if(!state.user)return;
       const items=await listVisitOutbox(state.user.uid);state.outboxCount=items.length;
@@ -404,7 +409,7 @@
       state.syncing=true;await refreshSyncPanel();$('#syncNowButton').textContent='Sincronizando…';
       try{
         const result=await syncVisitOutbox(db,state.user.uid,{force});
-        if(result.synced){expireReadCache(state.user.uid,'visit-form-data-v3');if(notify)showToast(`${result.synced} registro(s) sincronizado(s) com o Firebase.`,'success')}
+        if(result.synced){expireReadCache(state.user.uid,'visit-form-data-v4');if(notify)showToast(`${result.synced} registro(s) sincronizado(s) com o Firebase.`,'success')}
         else if(result.pending&&notify)showToast('Os registros continuam protegidos neste dispositivo e serão enviados automaticamente.','error');
         return result;
       }finally{state.syncing=false;$('#syncNowButton').textContent='Sincronizar agora';await refreshSyncPanel()}
@@ -436,7 +441,8 @@
         const visit={
           supervisorId,schoolId:values.school.id,schoolName:values.school.name,
           assignedSupervisorId,
-          isOutsideAssignedPortfolio:!linkedSupervisorIds.includes(supervisorId),
+          isOutsideAssignedPortfolio:state.source==='private'?false:!linkedSupervisorIds.includes(supervisorId),
+          schoolCatalog:state.source==='private'?'private':'state',
           agendaId:values.agendaId||null,visitType:state.source,activityType:state.activity,
           actionIds:state.activity==='catalog'?actionItems.map(item=>item.id):[],
           actionNames:state.activity==='catalog'?actionItems.map(item=>item.name):[],
@@ -465,7 +471,7 @@
         const stillQueued=(await listVisitOutbox(state.user.uid)).some(item=>item.id===operationId);
         state.visits.push({id:visitRef.id,...visit});
         if(values.agendaId)state.agenda=state.agenda.filter(item=>item.id!==values.agendaId);
-        setReadCache(state.user.uid,'visit-form-data-v3',{schoolReadLimited:state.schoolReadLimited,schools:[...state.schools.values()],agenda:state.agenda,visits:state.visits,actions:state.actions});
+        setReadCache(state.user.uid,'visit-form-data-v4',{schoolReadLimited:state.schoolReadLimited,schools:[...state.schools.values()],privateSchools:[...state.privateSchools.values()],agenda:state.agenda,visits:state.visits,actions:state.actions,pinnedSchoolIds:[...state.pinnedSchoolIds]});
         showSaveResult(values,stillQueued);
         if(stillQueued&&result.failed)showToast('Sem conexão ou cota disponível. O registro foi protegido neste dispositivo.','error');
       }catch(error){console.error(error);showToast(queuedLocally?'O registro ficou protegido neste dispositivo e será reenviado.':(error.message||'Não foi possível guardar o registro neste dispositivo.'),'error')}
@@ -486,14 +492,14 @@
     document.querySelectorAll('[data-activity]').forEach(button=>button.addEventListener('click',()=>setActivity(button.dataset.activity)));
     document.querySelectorAll('[data-status]').forEach(button=>button.addEventListener('click',()=>setStatus(button.dataset.status)));
     $('#agendaSelect').addEventListener('change',event=>{selectAgenda(event.target.value);renderAgendaPicker()});$('#agendaPreviousDate').addEventListener('click',()=>moveAgendaDate(-1));$('#agendaNextDate').addEventListener('click',()=>moveAgendaDate(1));
-    $('#schoolSearch').addEventListener('focus',()=>{if(state.source==='direct')renderSchools({open:true})});
-    $('#schoolSearch').addEventListener('input',()=>{if(state.source==='direct')renderSchools({open:true})});
-    $('#schoolSearch').addEventListener('keydown',event=>{if(state.source!=='direct')return;const options=[...document.querySelectorAll('.school-result')];if(event.key==='Escape'){closeSchoolResults();return}if(event.key==='Enter'){const first=options[0];if(first){event.preventDefault();chooseSchool(state.schools.get(first.dataset.schoolId))}}});
-    $('#schoolDropdownButton').addEventListener('click',()=>{if(state.source!=='direct')return;const results=$('#schoolResults');renderSchools({open:results.hidden})});
+    $('#schoolSearch').addEventListener('focus',()=>{if(['direct','private'].includes(state.source))renderSchools({open:true})});
+    $('#schoolSearch').addEventListener('input',()=>{if(['direct','private'].includes(state.source))renderSchools({open:true})});
+    $('#schoolSearch').addEventListener('keydown',event=>{if(!['direct','private'].includes(state.source))return;const options=[...document.querySelectorAll('.school-result')];if(event.key==='Escape'){closeSchoolResults();return}if(event.key==='Enter'){const first=options[0];if(first){event.preventDefault();chooseSchool(currentSchoolMap().get(first.dataset.schoolId))}}});
+    $('#schoolDropdownButton').addEventListener('click',()=>{if(!['direct','private'].includes(state.source))return;const results=$('#schoolResults');renderSchools({open:results.hidden})});
     document.addEventListener('click',event=>{if(!$('#schoolCombobox').contains(event.target))closeSchoolResults()});
     $('#actionSearch').addEventListener('input',renderActions);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);
     $('#syncNowButton').addEventListener('click',()=>synchronizePending({force:true}));
-    $('#refreshButton').addEventListener('click',async()=>{if(!state.user)return;const button=$('#refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(state.user.uid,'visit-form-data-v3');await loadData({force:true});showToast('Dados atualizados pelo Firebase.','success')}finally{button.disabled=false;button.classList.remove('is-syncing')}});
+    $('#refreshButton').addEventListener('click',async()=>{if(!state.user)return;const button=$('#refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(state.user.uid,'visit-form-data-v4');await loadData({force:true});showToast('Dados atualizados pelo Firebase.','success')}finally{button.disabled=false;button.classList.remove('is-syncing')}});
     $('#exportPendingButton').addEventListener('click',async()=>exportPendingVisits(await listVisitOutbox(state.user.uid)));
     $('#signoutButton').addEventListener('click',async()=>{await refreshSyncPanel();if(state.outboxCount&&!confirm(`Há ${state.outboxCount} registro(s) aguardando envio. Eles continuarão guardados neste dispositivo. Deseja sair?`))return;await signOut(auth);redirectLogin()});
     window.addEventListener('supervisor-outbox-change',refreshSyncPanel);

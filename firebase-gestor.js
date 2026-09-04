@@ -837,6 +837,157 @@ export const OFFICIAL_SCHOOLS = Object.freeze([
   "ZÉLIA DULCE DE CAMPOS MAIA - Profª."
 ]);
 
+
+export const PRIVATE_SCHOOLS = Object.freeze([
+  "ADVENTISTA DE SOROCABA COLEGIO",
+  "AGILIZA CURSOS",
+  "AGUIRRE DOM COLEGIO",
+  "AKALANTO KIDS COLEGIO",
+  "AMAS ASSOCIACAO AMIGOS DOS AUTISTAS DE SOROCABA",
+  "ANNA NERY ESCOLA POLITECNICA DE ENFERMAGEM",
+  "APAE SOROCABA SILVIA ISASY VASQUEZ EEE",
+  "ÁPICE INSTITUTO EDUCACIONAL LTDA",
+  "APOLLO COLEGIO",
+  "ASSOCIACAO EDUCACIONAL PRO EX ESCOLA",
+  "AUDAX CURSOS PROFISSIONALIZANTES",
+  "BEIJA FLOR BERCARIO E ESCOLA",
+  "CENEP INTEGRACAO COLEGIO",
+  "CENTRO DE ENSINO GRAU TÉCNICO - UNIDADE SOROCABA",
+  "CENTRO EDUCACIONAL FATBRASIL",
+  "CENTRO EDUCACIONAL TEAMPARO",
+  "CICLO VITTAL ESCOLA DE ENFERMAGEM",
+  "CIENCIAS E LETRAS EDUCACAO",
+  "CLAVE DE SOL INSTITUTO DE EDUCACAO ESPECIAL",
+  "COLEGIO ABAYOMI",
+  "COLÉGIO ABBA",
+  "COLÉGIO ADVENTISTA DE SOROCABA - UNIDADE 2",
+  "COLÉGIO AIRES",
+  "COLÉGIO ATITUDE SOROCABA",
+  "COLÉGIO AUGE SOROCABA",
+  "COLÉGIO BATISTA SOROCABA",
+  "COLÉGIO BE HAPPY",
+  "COLEGIO CASTRO ALVES",
+  "COLÉGIO CONEXÃO SOROCABA",
+  "COLEGIO CONQUISTAR",
+  "COLEGIO CRISTAO ALMEIDA BARROS",
+  "COLEGIO CRISTÃO AQUAS",
+  "COLÉGIO CRISTÃO KUMBAYÁ",
+  "COLÉGIO DE ENSINO FUNDAMENTAL CAMINHO",
+  "COLÉGIO DOM BOSCO SOROCABA",
+  "COLÉGIO DUQUE DE SOUZA",
+  "COLÉGIO EMBAIXADA CRISTÃ",
+  "COLEGIO EUREKA",
+  "COLÉGIO EXPANDE",
+  "COLEGIO GALILEU",
+  "COLÉGIO GALILEU - UNIDADE PARQUE DAS ÁGUAS",
+  "COLEGIO GENESIS",
+  "COLÉGIO HORIZONTE",
+  "COLÉGIO ILUMIARE",
+  "COLEGIO INTEGRADO VERITAS",
+  "COLÉGIO MUNDO SOROCABA",
+  "COLÉGIO NEXUS",
+  "COLÉGIO NOVA ERA",
+  "COLÉGIO OLIVIERI",
+  "COLEGIO OLIVIERI - UNIDADE I",
+  "COLÉGIO QUINTAL DA VILA",
+  "COLÉGIO SAGAZ",
+  "COLEGIO SANTA ESCOLASTICA",
+  "COLÉGIO SÃO JOSÉ DE ANCHIETA",
+  "COLÉGIO SER! UNIDADE BOA VISTA",
+  "COLÉGIO SER! UNIDADE CAMPOLIM",
+  "COLÉGIO SER! UNIDADE SER CRIANÇA",
+  "COLEGIO SFERA LTDA",
+  "COLÉGIO TÉCNICO DE ENFERMAGEM - IEPE UNIMED SOROCABA",
+  "COLÉGIO VIDA UNIDADE MUNDO",
+  "COLÉGIO VOLARE DE EDUCAÇÃO INFANTIL E ENSINO FUNDAMENTAL",
+  "CRESCER APRENDER ENSINO INFANTIL E FUNDAMENTAL LTDA",
+  "DULCE IRMA INSTITUTO POLITECNICO DE ENFERMAGEM",
+  "EDUCANDÁRIO BEZERRA DE MENEZES",
+  "ENFESP ENFERMAGEM ESPECIALIZADA",
+  "ESCOLA DE EDUCAÇÃO INFANTIL E ENSINO FUNDAMENTAL PEQUENOS PASSOS",
+  "ESCOLA IEP SOROCABA",
+  "ESCOLA LUMINOVA",
+  "ESCOLA MAGNUS JUNIOR",
+  "ESCOLA MONTESSORI SEMEAR",
+  "ESCOLA TÉCNICA RESIDÊNCIA SAÚDE",
+  "ESCOLA TECNICA SANTA CLARA",
+  "ESCOLA WALDORF MICAEL DE SOROCABA",
+  "FELIZ IDADE EEIEF",
+  "HUMANUS COLEGIO",
+  "IGUATEMI COLEGIO",
+  "INSTITUTO DE EDUCAÇÃO CIÊNCIAS E LETRAS - PORTAL",
+  "INSTITUTO DE EDUCACAO CIENCIAS E LETRAS - ZONA NORTE",
+  "INSTITUTO EDUCACAO CIENCIAS E LETRAS - CENTRO",
+  "INSTITUTO EDUCACIONAL U",
+  "INTEGRAR - NUCLEO DE EDUCACAO ESPECIAL",
+  "KINGDOM SCHOOL",
+  "LICEU PEDRO II",
+  "MAPLE BEAR CANADIAN SCHOOL SOROCABA",
+  "MARQUES ESCOLA TECNICA DE ENFERMAGEM",
+  "MATERNITA EDUCACAO INFANTIL E FUNDAMENTAL LTDA",
+  "MAXXIMUS COLÉGIO",
+  "MELANIE KLEIN INSTITUTO EDUCACAO ESPECIAL",
+  "MONTESSO COLEGIO",
+  "NIPPO COLEGIO",
+  "NOVA ESCOLA EDUCAÇÃO INFANTIL E ENSINO FUNDAMENTAL",
+  "NOVA GERACAO CENTRO EDUCACIONAL",
+  "O FAROL COLEGIO",
+  "PLENO ENSINO FUNDAMENTAL E MÉDIO COLEGIO",
+  "POLITECNICO DE SOROCABA COLEGIO FUA",
+  "PORTAL COLEGIO",
+  "PRIMEIRO MUNDO COLEGIO",
+  "QUINTAL CRESCER ESCOLA INFANTIL",
+  "RAFON COLEGIO",
+  "RENASCER ARTE ESCOLA",
+  "SANTA RITA DE CASSIA ASSOCIACAO EDUCACIONAL",
+  "SANTA ROSALIA COLEGIO",
+  "SAO JOSE COLEGIO SALESIANO",
+  "SAO RAPHAEL ESCOLA TECNICA PROTESE DENTARIA",
+  "SEDEEDU CURSOS PROFISSIONALIZANTES",
+  "SIRIUS COLEGIO",
+  "SISTEMA EDUCACIONAL SOROCABA",
+  "SOROCABA COLEGIO ENSINO INFANTIL E FUNDAMENTAL",
+  "SOROCABANA ORGANIZACAO DE ENSINO INSTITUTO EDUCACAO",
+  "TABLEAU COLEGIO SOROCABA",
+  "TALENTOS COLEGIO",
+  "UIRAPURU COLEGIO",
+  "VERITAS COLEGIO INTEGRADO",
+  "VERITAS ENSINO MEDIO",
+  "VICTORIA COLEGIO",
+  "VIVER E APRENDER EEI E ENSINO FUNDAMENTAL"
+]);
+
+async function installPrivateSchools(session) {
+  const now = serverTimestamp();
+  for (let index = 0; index < PRIVATE_SCHOOLS.length; index += 400) {
+    const batch = writeBatch(db);
+    PRIVATE_SCHOOLS.slice(index, index + 400).forEach((name) => {
+      const id = documentId(name) || `privada-${crypto.randomUUID().slice(0, 8)}`;
+      batch.set(doc(db, 'privateSchools', id), { name, searchName: searchable(name), active: true, source: 'private_catalog_2026', catalogVersion: '2026-09-04', schemaVersion: 1, createdByUid: session.user.uid, createdAt: now, updatedAt: now });
+    });
+    await batch.commit();
+  }
+}
+
+async function deletePrivateSchoolCatalog() {
+  const snapshot = await getDocs(collection(db, 'privateSchools'));
+  for (let index = 0; index < snapshot.docs.length; index += 450) { const batch = writeBatch(db); snapshot.docs.slice(index, index + 450).forEach((item) => batch.delete(item.ref)); await batch.commit(); }
+  return snapshot.docs.length;
+}
+
+async function verifyPrivateSchoolCatalog() {
+  const snapshot = await getDocs(collection(db, 'privateSchools'));
+  const expected = new Set(PRIVATE_SCHOOLS.map(searchable));
+  const actual = snapshot.docs.map((item) => item.data()).filter((item) => item.active !== false);
+  const actualNames = new Set(actual.map((item) => searchable(item.name)));
+  const missing = PRIVATE_SCHOOLS.filter((name) => !actualNames.has(searchable(name)));
+  const unexpected = actual.filter((item) => !expected.has(searchable(item.name))).map((item) => item.name || '(sem nome)');
+  if (actual.length !== PRIVATE_SCHOOLS.length || missing.length || unexpected.length) { const error = new Error(`Catálogo privado inconsistente após a gravação. Encontradas ${actual.length} escolas; esperadas ${PRIVATE_SCHOOLS.length}.`); error.code = 'data/private-school-catalog-inconsistent'; error.details = { missing, unexpected, actualCount: actual.length }; throw error; }
+  return actual.length;
+}
+
+export async function replacePrivateSchoolsWithOfficialCatalog() { const session = await requireAdmin(); const removed = await deletePrivateSchoolCatalog(); await installPrivateSchools(session); const installed = await verifyPrivateSchoolCatalog(); invalidateDataCache({ discard: true }); return { removed, schoolsInstalled: installed }; }
+
 async function optionalAdminCollection(name) {
   try {
     return await getDocs(collection(db, name));
