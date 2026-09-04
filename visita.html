@@ -258,7 +258,7 @@
     </div>
 
     <aside class="side">
-      <section class="card profile"><div class="profile-head"><span class="avatar" id="avatar">—</span><div><h2 id="profileName">Carregando…</h2><p id="profileEmail"></p></div></div><dl class="profile-dl"><div><dt>Perfil</dt><dd id="profileRole">—</dd></div><div><dt>Escolas vinculadas</dt><dd id="schoolCount">—</dd></div><div><dt>Visitas pendentes</dt><dd id="pendingCount">—</dd></div></dl><p class="notice" id="passwordNotice" hidden>Conta marcada para troca de senha no primeiro acesso.</p><p class="notice" id="schoolAccessNotice" hidden>Visualização temporária: publique as novas regras para liberar todas as escolas no registro direto.</p></section>
+      <section class="card profile"><div class="profile-head"><span class="avatar" id="avatar">—</span><div><h2 id="profileName">Carregando…</h2><p id="profileEmail"></p></div></div><dl class="profile-dl"><div><dt>Perfil</dt><dd id="profileRole">—</dd></div><div><dt>Escolas vinculadas</dt><dd id="schoolCount">—</dd></div><div><dt>Visitas pendentes</dt><dd id="pendingCount">—</dd></div></dl><p class="notice" id="schoolAccessNotice" hidden>Visualização temporária: publique as novas regras para liberar todas as escolas no registro direto.</p></section>
       <section class="card sync-card" id="syncCard" hidden><h2>Sincronização</h2><div class="sync-summary"><strong class="sync-count" id="syncCount">0</strong><p class="sync-copy" id="syncText">Todos os registros foram enviados.</p></div><div class="sync-actions"><button class="sync-button" type="button" id="syncNowButton">Sincronizar agora</button><button class="sync-button secondary" type="button" id="exportPendingButton" title="Baixar uma cópia dos registros pendentes">Exportar</button></div></section>
       <section class="card legend"><h2>Padrão de status</h2><div class="legend-row" style="--color:var(--planned)"><b>P</b>Planejada</div><div class="legend-row" style="--color:var(--completed)"><b>V</b>Visitada</div><div class="legend-row" style="--color:var(--justified)"><b>J</b>Justificada</div><div class="legend-row" style="--color:var(--postponed)"><b>A</b>Adiada</div><div class="legend-row" style="--color:var(--cancelled)"><b>C</b>Cancelada</div></section>
     </aside>
@@ -274,7 +274,7 @@
     const firebaseConfig={apiKey:'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',authDomain:'supervisor-ese.firebaseapp.com',projectId:'supervisor-ese',storageBucket:'supervisor-ese.firebasestorage.app',messagingSenderId:'756390446092',appId:'1:756390446092:web:26a898746dd4e3fab45a29'};
     const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
     const $=(selector)=>document.querySelector(selector);
-    const state={user:null,profile:null,source:'planned',activity:'none',status:'completed',schools:new Map(),ownSchoolIds:new Set(),schoolReadLimited:false,agenda:[],visits:[],actions:[],selectedActions:new Set(),agendaDateOffset:0,selectedAgendaDate:'',outboxCount:0,syncing:false};
+    const state={user:null,profile:null,source:'planned',activity:'none',status:'completed',schools:new Map(),ownSchoolIds:new Set(),pinnedSchoolIds:new Set(),schoolReadLimited:false,agenda:[],visits:[],actions:[],selectedActions:new Set(),agendaDateOffset:0,selectedAgendaDate:'',outboxCount:0,syncing:false};
     const labels={completed:'Realizada',postponed:'Adiada',cancelled:'Cancelada',justified:'Justificada'};
 
     function dateKey(value){if(!value)return'';const date=value.toDate?value.toDate():new Date(value);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
@@ -289,7 +289,10 @@
     function applyLoadedData(data){
       state.schoolReadLimited=data.schoolReadLimited===true;
       state.schools=new Map(data.schools.map(item=>[item.id,item]));
-      state.ownSchoolIds=new Set([...state.schools.values()].filter(item=>state.profile.role==='admin'||schoolHasSupervisor(item,state.profile.supervisorId)).map(item=>item.id));
+      state.pinnedSchoolIds=new Set(data.pinnedSchoolIds||[]);
+      state.ownSchoolIds=state.profile.role==='admin'
+        ? new Set([...state.schools.values()].filter(item=>item.active!==false).map(item=>item.id))
+        : new Set([...state.pinnedSchoolIds].filter(id=>state.schools.get(id)?.active!==false));
       state.agenda=data.agenda;
       state.visits=data.visits;
       state.actions=data.actions.filter(item=>item.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||a.name.localeCompare(b.name,'pt-BR'));
@@ -297,15 +300,31 @@
     }
     function mergeChangedItems(current,snapshot){const map=new Map((current||[]).map(item=>[item.id,item]));snapshot.docs.forEach(item=>map.set(item.id,{id:item.id,...item.data()}));return[...map.values()].filter(item=>item.deleted!==true)}
     async function loadData({force=false}={}){
-      const cacheName='visit-form-data-v3',fresh=!force&&getReadCache(state.user.uid,cacheName);
-      if(fresh){applyLoadedData(fresh.data);return}
+      const cacheName='visit-form-data-v4';
       const stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
       try{
-        // Atualização manual usa carga completa para também refletir exclusões/recriações de escolas.
+        // Nesta tela, agenda e escolas fixadas precisam refletir imediatamente o Planejamento.
+        // Por isso a abertura sempre consulta o Firestore; o cache fica apenas como fallback offline.
         state.schoolReadLimited=false;
         const schoolsPromise=(async()=>{try{return await getDocs(collection(db,'schools'))}catch(error){if(error?.code!=='permission-denied'||state.profile.role==='admin')throw error;state.schoolReadLimited=true;return getDocs(scoped('schools'))}})();
-        const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot]=await Promise.all([schoolsPromise,getDocs(scoped('agenda')),getDocs(scoped('visits')),getDocs(collection(db,'actions'))]);
-        const data={schoolReadLimited:state.schoolReadLimited,schools:schoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()})),visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),actions:actionsSnapshot.docs.map(item=>({id:item.id,...item.data()}))};
+        const pinsPromise=state.profile.role==='admin'
+          ? Promise.resolve(null)
+          : getDoc(doc(db,'supervisorSchoolPins',state.profile.supervisorId));
+        const [schoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot,pinsSnapshot]=await Promise.all([
+          schoolsPromise,
+          getDocs(scoped('agenda')),
+          getDocs(scoped('visits')),
+          getDocs(collection(db,'actions')),
+          pinsPromise
+        ]);
+        const data={
+          schoolReadLimited:state.schoolReadLimited,
+          schools:schoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
+          agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()})),
+          visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
+          actions:actionsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
+          pinnedSchoolIds:pinsSnapshot?.exists()?pinsSnapshot.data().schoolIds||[]:[]
+        };
         setReadCache(state.user.uid,cacheName,data);applyLoadedData(data);
       }catch(error){
         if(!stale)throw error;
@@ -313,7 +332,7 @@
       }
     }
     function pendingAgenda(){const used=new Set(state.visits.map(item=>item.agendaId).filter(Boolean));return state.agenda.filter(item=>!used.has(item.id)&&!['completed','cancelled','justified'].includes(item.status)).sort((a,b)=>(a.scheduledDate?.seconds||0)-(b.scheduledDate?.seconds||0))}
-    function renderProfile(){const name=state.profile.displayName||state.user.email,role=state.profile.role==='admin'?'Administrador':'Supervisor';$('#profileName').textContent=name;$('#profileEmail').textContent=state.profile.email||state.user.email;$('#profileRole').textContent=role;$('#avatar').textContent=initials(name);$('#sidebarAccountAvatar').textContent=initials(name);$('#sidebarAccountName').textContent=name;$('#sidebarAccountRole').textContent=role;$('#sidebarAccount').hidden=false;$('#schoolCount').textContent=state.ownSchoolIds.size;$('#pendingCount').textContent=pendingAgenda().length;$('#passwordNotice').hidden=state.profile.mustChangePassword!==true;$('#schoolAccessNotice').hidden=!state.schoolReadLimited}
+    function renderProfile(){const name=state.profile.displayName||state.user.email,role=state.profile.role==='admin'?'Administrador':'Supervisor';$('#profileName').textContent=name;$('#profileEmail').textContent=state.profile.email||state.user.email;$('#profileRole').textContent=role;$('#avatar').textContent=initials(name);$('#sidebarAccountAvatar').textContent=initials(name);$('#sidebarAccountName').textContent=name;$('#sidebarAccountRole').textContent=role;$('#sidebarAccount').hidden=false;$('#schoolCount').textContent=state.ownSchoolIds.size;$('#pendingCount').textContent=pendingAgenda().length;$('#schoolAccessNotice').hidden=!state.schoolReadLimited}
     function normalizeSearch(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim()}
     function availableSchools(){return [...state.schools.values()].filter(item=>item.active!==false&&(state.source==='direct'||state.ownSchoolIds.has(item.id))).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'))}
     function closeSchoolResults(){const results=$('#schoolResults');results.hidden=true;$('#schoolSearch').setAttribute('aria-expanded','false')}
