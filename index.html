@@ -1115,9 +1115,15 @@
               </aside>
             </div>
             <div class="data-metric">
-              <div class="metric-copy"><strong id="visitCount">—</strong><span>Visitas concluídas</span></div>
+              <div class="metric-copy"><strong id="stateVisitCount">—</strong><span>Visitas escolas estaduais</span></div>
               <span class="metric-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+              </span>
+            </div>
+            <div class="data-metric">
+              <div class="metric-copy"><strong id="privateVisitCount">—</strong><span>Visitas escolas particulares</span></div>
+              <span class="metric-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l8-4 8 4v13"/><path d="M8 21v-5h8v5M8 10h.01M12 10h.01M16 10h.01"/></svg>
               </span>
             </div>
             <div class="data-metric">
@@ -1458,7 +1464,15 @@
       const popoverTitle=schoolMetric?.querySelector('.school-popover-title');
       if(schoolMetric)schoolMetric.setAttribute('aria-label',isAdmin?'Escolas institucionais ativas. Passe o mouse ou pressione Tab para visualizar os nomes.':'Minhas escolas fixadas. Passe o mouse ou pressione Tab para visualizar os nomes.');
       if(popoverTitle)popoverTitle.textContent=isAdmin?'Escolas institucionais':'Minhas escolas fixadas';
-      document.getElementById('schoolCount').textContent=schoolsSnapshot.size;document.getElementById('visitCount').textContent=visitsSnapshot.size;document.getElementById('agendaCount').textContent=agendaSnapshot.size;renderSchoolPopover(schoolsSnapshot);document.getElementById('dataSummary').hidden=false;renderUpcomingVisits(agendaSnapshot);
+      const stateVisitCount=data.visits.filter(item=>item.visitType==='planned'||item.visitType==='direct').length;
+      const privateVisitCount=data.visits.filter(item=>item.visitType==='private').length;
+      document.getElementById('schoolCount').textContent=schoolsSnapshot.size;
+      document.getElementById('stateVisitCount').textContent=stateVisitCount;
+      document.getElementById('privateVisitCount').textContent=privateVisitCount;
+      document.getElementById('agendaCount').textContent=agendaSnapshot.size;
+      renderSchoolPopover(schoolsSnapshot);
+      document.getElementById('dataSummary').hidden=false;
+      renderUpcomingVisits(agendaSnapshot);
     }
     async function loadDataSummary(profile,{force=false}={}) {
       const isAdmin = profile.role === 'admin';
@@ -1467,7 +1481,7 @@
         ? collection(db, collectionName)
         : query(collection(db, collectionName), where('supervisorId', '==', supervisorId));
 
-      const cacheName='home-summary-v2',fresh=!force&&getReadCache(currentUser.uid,cacheName);if(fresh){applyDataSummary(profile,fresh.data);return}
+      const cacheName='home-summary-v3',fresh=!force&&getReadCache(currentUser.uid,cacheName);if(fresh){applyDataSummary(profile,fresh.data);return}
       const stale=getReadCache(currentUser.uid,cacheName,{allowExpired:true});
       try {
         if(force&&stale?.sameDay&&stale.savedAt){
@@ -1506,7 +1520,7 @@
         const actions=actionsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
         const supervisors=isAdmin?supervisorsResult.docs.map(item=>({id:item.id,...item.data()})):(supervisorsResult.exists()?[{id:supervisorsResult.id,...supervisorsResult.data()}]:[]);
         const corrections=correctionsSnapshot.docs.map(item=>({id:item.id,...item.data()}));
-        setReadCache(currentUser.uid,'home-summary-v2',data);
+        setReadCache(currentUser.uid,'home-summary-v3',data);
         setReadCache(currentUser.uid,'visit-form-data-v2',{schoolReadLimited:false,schools:data.schools,agenda:data.agenda,visits:data.visits,actions});
         setReadCache(currentUser.uid,'kanban-supervisors',supervisors);
         setReadCache(currentUser.uid,'kanban-schools-v2',data.schools);
@@ -1529,7 +1543,7 @@
     }
     async function syncFromHome(){
       if(!currentUser)return;const button=document.getElementById('offlineSyncButton');button.disabled=true;button.textContent='Enviando…';
-      try{const result=await syncVisitOutbox(db,currentUser.uid,{force:true});if(result.synced){expireReadCache(currentUser.uid,'home-summary-v2')}await refreshOfflineSync()}
+      try{const result=await syncVisitOutbox(db,currentUser.uid,{force:true});if(result.synced){expireReadCache(currentUser.uid,'home-summary-v3')}await refreshOfflineSync()}
       finally{button.textContent='Sincronizar';button.disabled=!currentOutboxCount}
     }
 
@@ -1571,7 +1585,7 @@
         profileMessage.hidden = true;
         await validateAccessScope(user, profile);
         await refreshOfflineSync();
-        const syncResult=await syncVisitOutbox(db,user.uid);if(syncResult.synced)expireReadCache(user.uid,'home-summary-v2');await refreshOfflineSync();
+        const syncResult=await syncVisitOutbox(db,user.uid);if(syncResult.synced)expireReadCache(user.uid,'home-summary-v3');await refreshOfflineSync();
         await loadDataSummary(profile);
         sessionLoading.hidden = true;
         profileView.hidden = false;
@@ -1611,7 +1625,7 @@
 
     document.getElementById('offlineSyncButton').addEventListener('click',syncFromHome);
     window.addEventListener('online',syncFromHome);window.addEventListener('supervisor-outbox-change',refreshOfflineSync);
-    document.getElementById('refreshButton').addEventListener('click',async()=>{if(!currentUser)return;const button=document.getElementById('refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(currentUser.uid,'home-summary-v2');await loadDataSummary(currentProfile,{force:true})}finally{button.disabled=false;button.classList.remove('is-syncing')}});
+    document.getElementById('refreshButton').addEventListener('click',async()=>{if(!currentUser)return;const button=document.getElementById('refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(currentUser.uid,'home-summary-v3');await loadDataSummary(currentProfile,{force:true})}finally{button.disabled=false;button.classList.remove('is-syncing')}});
     document.getElementById('logoutButton').addEventListener('click', async () => {
       await refreshOfflineSync();if(currentOutboxCount&&!confirm(`Há ${currentOutboxCount} registro(s) aguardando envio. Eles permanecerão neste dispositivo. Deseja sair?`))return;
       await signOut(auth);
