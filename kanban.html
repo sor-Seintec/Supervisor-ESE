@@ -897,6 +897,20 @@
         .correction-head,.correction-actions { border-color:var(--border); }
         :root[data-theme="peach"] body { background:radial-gradient(ellipse at 18% 8%,rgba(28,31,34,.08),transparent 30%),radial-gradient(ellipse at 82% 72%,rgba(92,98,103,.09),transparent 34%),#f7f7f5; }
 
+        /*
+         * Modo compacto para notebooks: preserva a grade completa do Kanban
+         * e ocupa toda a área visível sem exigir redução manual do navegador.
+         * Em telas baixas, 75% reproduz a densidade usada na visualização ideal.
+         */
+        @media (min-width:901px) and (max-height:900px) {
+            html { overflow:hidden; }
+            body {
+                width:133.333333%;
+                height:133.333333vh;
+                zoom:.75;
+            }
+        }
+
         @media (max-width:900px) {
             body { height:auto; min-height:100vh; overflow:auto; }
             .header { align-items:flex-start; padding:13px 15px; }
