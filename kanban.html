@@ -911,6 +911,17 @@
             }
         }
 
+        /* Notebooks com escala de tela do Windows em 125% ou mais precisam
+           de densidade adicional para manter 3 a 4 escolas visíveis. */
+        @media (min-width:901px) and (max-width:1920px) and (min-resolution:1.25dppx) {
+            html { overflow:hidden; }
+            body {
+                width:200%;
+                height:200vh;
+                zoom:.5;
+            }
+        }
+
         @media (max-width:900px) {
             body { height:auto; min-height:100vh; overflow:auto; }
             .header { align-items:flex-start; padding:13px 15px; }
