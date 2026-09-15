@@ -1115,19 +1115,19 @@
               </aside>
             </div>
             <div class="data-metric">
-              <div class="metric-copy"><strong id="stateVisitCount">—</strong><span>Visitas escolas estaduais</span></div>
+              <div class="metric-copy"><strong id="stateVisitCount">—</strong><span>Visitas estaduais no mês</span></div>
               <span class="metric-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
               </span>
             </div>
             <div class="data-metric">
-              <div class="metric-copy"><strong id="privateVisitCount">—</strong><span>Visitas escolas particulares</span></div>
+              <div class="metric-copy"><strong id="privateVisitCount">—</strong><span>Visitas particulares no mês</span></div>
               <span class="metric-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l8-4 8 4v13"/><path d="M8 21v-5h8v5M8 10h.01M12 10h.01M16 10h.01"/></svg>
               </span>
             </div>
             <div class="data-metric">
-              <div class="metric-copy"><strong id="agendaCount">—</strong><span>Visitas agendadas</span></div>
+              <div class="metric-copy"><strong id="agendaCount">—</strong><span>Agendadas no mês</span></div>
               <span class="metric-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="16" height="16" rx="2"/><path d="M7 3v4m8-4v4M3 10h16M8 14h.01M12 14h.01M8 17h.01"/><circle cx="18" cy="18" r="4" fill="white"/><path d="M18 16v2l1.5 1"/></svg>
               </span>
@@ -1452,6 +1452,15 @@
     function snapshotFromItems(items){return{size:items.length,docs:items.map(item=>({id:item.id,data:()=>item}))}}
     function mergeChangedItems(current,snapshot){const map=new Map((current||[]).map(item=>[item.id,item]));snapshot.docs.forEach(item=>map.set(item.id,{id:item.id,...item.data()}));return[...map.values()].filter(item=>item.deleted!==true)}
     function activeSchools(items=[]){return items.filter(item=>item.active!==false)}
+    function asPanelDate(value){
+      if(value==null)return null;
+      const date=value instanceof Date?value:(typeof value?.toDate==='function'?value.toDate():new Date(value));
+      return date instanceof Date&&!Number.isNaN(date.getTime())?date:null;
+    }
+    function belongsToCurrentMonth(value,now=new Date()){
+      const date=asPanelDate(value);
+      return Boolean(date)&&date.getFullYear()===now.getFullYear()&&date.getMonth()===now.getMonth();
+    }
     function applyDataSummary(profile,data){
       const isAdmin=profile.role==='admin';
       const pinnedIds=new Set(Array.isArray(data.pinnedSchoolIds)?data.pinnedSchoolIds:[]);
@@ -1464,12 +1473,14 @@
       const popoverTitle=schoolMetric?.querySelector('.school-popover-title');
       if(schoolMetric)schoolMetric.setAttribute('aria-label',isAdmin?'Escolas institucionais ativas. Passe o mouse ou pressione Tab para visualizar os nomes.':'Minhas escolas fixadas. Passe o mouse ou pressione Tab para visualizar os nomes.');
       if(popoverTitle)popoverTitle.textContent=isAdmin?'Escolas institucionais':'Minhas escolas fixadas';
-      const stateVisitCount=data.visits.filter(item=>item.visitType==='planned'||item.visitType==='direct').length;
-      const privateVisitCount=data.visits.filter(item=>item.visitType==='private').length;
+      const currentMonthVisits=data.visits.filter(item=>belongsToCurrentMonth(item.visitDate));
+      const currentMonthAgenda=data.agenda.filter(item=>belongsToCurrentMonth(item.scheduledDate));
+      const stateVisitCount=currentMonthVisits.filter(item=>item.visitType==='planned'||item.visitType==='direct').length;
+      const privateVisitCount=currentMonthVisits.filter(item=>item.visitType==='private').length;
       document.getElementById('schoolCount').textContent=schoolsSnapshot.size;
       document.getElementById('stateVisitCount').textContent=stateVisitCount;
       document.getElementById('privateVisitCount').textContent=privateVisitCount;
-      document.getElementById('agendaCount').textContent=agendaSnapshot.size;
+      document.getElementById('agendaCount').textContent=currentMonthAgenda.length;
       renderSchoolPopover(schoolsSnapshot);
       document.getElementById('dataSummary').hidden=false;
       renderUpcomingVisits(agendaSnapshot);
