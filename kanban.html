@@ -1452,7 +1452,7 @@
             if (!supervisorId) { schoolSearchResults.classList.remove('open'); return; }
             const term = normalizeSchoolSearch(schoolPortfolioSearch.value);
             const all = [...state.allSchools.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
-            const matches = all.filter((school) => !term || normalizeSchoolSearch(`${school.name} ${school.searchName || ''}`).includes(term)).slice(0, 30);
+            const matches = all.filter((school) => !term || normalizeSchoolSearch(`${school.name} ${school.searchName || ''}`).includes(term));
             schoolSearchResults.innerHTML = '';
             if (!matches.length) {
                 schoolSearchResults.innerHTML = '<div class="empty-schools" style="padding:12px">Nenhuma escola encontrada.</div>';
