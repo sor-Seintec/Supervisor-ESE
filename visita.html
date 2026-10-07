@@ -94,6 +94,9 @@
     .action-option{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;border-bottom:1px solid #e5edf1;cursor:pointer}.action-option:last-child{border:0}.action-option:hover{background:#eef6fa}
     .action-option input{width:19px;height:19px;min-height:0;margin:2px 0 0;accent-color:var(--blue)}
     .action-option span{font-size:.9rem;font-weight:650}.action-empty{padding:24px;color:var(--muted);text-align:center}
+    .action-option .action-name{flex:1;min-width:0;font-size:.9rem;font-weight:650;cursor:pointer}.action-info-button{flex:none;width:29px;height:29px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--navy);font-size:.9rem;font-weight:900;cursor:pointer}.action-info-button:hover,.action-info-button:focus-visible{border-color:var(--blue);background:var(--blue-soft)}
+    .action-hover-info{position:fixed;z-index:60;width:min(330px,calc(100vw - 24px));max-height:min(340px,70vh);padding:14px 17px;overflow:auto;border:1px solid #b7d4e5;border-radius:13px;background:#fff;box-shadow:0 14px 38px rgba(12,47,69,.24);color:var(--ink);pointer-events:none}.action-hover-info strong{display:block;margin-bottom:7px;font-size:.9rem}.action-hover-info ul{margin:0;padding-left:20px;font-size:.8rem;line-height:1.5}
+    .action-dialog{width:min(510px,calc(100vw - 28px));max-height:min(680px,calc(100vh - 28px));padding:0;border:1px solid #b7d4e5;border-radius:17px;background:#fff;color:var(--ink);box-shadow:0 25px 70px rgba(12,47,69,.3)}.action-dialog::backdrop{background:rgba(8,32,48,.58)}.action-dialog-content{padding:23px}.action-dialog h3{margin:0 0 8px;font-size:1.15rem}.action-dialog p{margin:0 0 12px;color:var(--muted);font-size:.83rem}.action-dialog ul{margin:0;padding-left:22px;line-height:1.7}.action-dialog .dialog-close{display:block;min-height:39px;margin:20px 0 0 auto;padding:0 18px;border:0;border-radius:10px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer}
     .selected-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--blue-soft);color:var(--navy);font-size:.78rem;font-weight:750}
     .status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
     .status-grid[data-options="3"]{grid-template-columns:repeat(3,1fr)}
@@ -219,14 +222,16 @@
             <div class="section-head"><span class="section-number">2</span><div><h2>Qual foi a atividade?</h2><p>Registre uma passagem simples ou selecione as ações realizadas.</p></div></div>
             <div class="segmented" id="activityMode" role="group" aria-label="Tipo de atividade">
               <button class="segment is-selected" type="button" data-activity="none">Acompanhamento simples</button>
-              <button class="segment" type="button" data-activity="catalog">Ações cadastradas</button>
+              <button class="segment" type="button" data-activity="catalog">Temário da visita</button>
               <button class="segment" type="button" data-activity="custom" hidden>Assunto novo</button>
             </div>
             <div id="noActivityPanel"><p class="hint" style="margin-top:13px">Use esta opção quando a visita planejada não estiver vinculada a uma ação específica.</p></div>
             <div id="catalogPanel" hidden>
-              <div class="action-toolbar"><input type="search" id="actionSearch" placeholder="Pesquisar entre as ações disponíveis" autocomplete="off"></div>
-              <div class="action-list" id="actionList" aria-label="Lista de ações"></div>
+              <div class="action-toolbar"><input type="search" id="actionSearch" placeholder="Pesquisar tema ou assunto" autocomplete="off"></div>
+              <div class="action-list" id="actionList" aria-label="Temários disponíveis"></div>
+              <div class="action-hover-info" id="actionHoverInfo" role="tooltip" hidden></div>
               <div class="selected-actions" id="selectedActions"></div>
+              <dialog class="action-dialog" id="actionDialog" aria-labelledby="actionDialogTitle"><div class="action-dialog-content"><h3 id="actionDialogTitle"></h3><p>Assuntos contemplados neste temário:</p><ul id="actionDialogTopics"></ul><form method="dialog"><button class="dialog-close" type="submit">Entendi</button></form></div></dialog>
             </div>
             <div class="field" id="customPanel" hidden><label for="customSubject">Descrição do assunto novo</label><textarea id="customSubject" maxlength="800" placeholder="Descreva com clareza o assunto trabalhado na escola."></textarea><p class="hint">O texto ficará disponível para consulta e acompanhamento do gestor.</p></div>
             <div class="field" style="margin-top:15px"><label for="notes">Resumo da atividade <span style="font-weight:600;color:var(--muted)">(opcional)</span></label><textarea id="notes" maxlength="1200" placeholder="Registre observações importantes, encaminhamentos ou próximos passos."></textarea></div>
@@ -271,6 +276,7 @@
     import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js';
     import { collection, doc, getDoc, getDocs, getFirestore, query, where } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
     import { createOperationId, expireReadCache, exportPendingVisits, getReadCache, listVisitOutbox, queueVisitOperation, setReadCache, syncVisitOutbox } from './supervisor-offline.js';
+    import { temarioVisitas } from './temario-visitas.js';
 
     const firebaseConfig={apiKey:'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',authDomain:'supervisor-ese.firebaseapp.com',projectId:'supervisor-ese',storageBucket:'supervisor-ese.firebasestorage.app',messagingSenderId:'756390446092',appId:'1:756390446092:web:26a898746dd4e3fab45a29'};
     const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -297,7 +303,9 @@
         : new Set([...state.pinnedSchoolIds].filter(id=>state.schools.get(id)?.active!==false));
       state.agenda=data.agenda;
       state.visits=data.visits;
-      state.actions=data.actions.filter(item=>item.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||a.name.localeCompare(b.name,'pt-BR'));
+      // O catálogo antigo continua no Firestore e nos registros históricos.
+      // Novas visitas usam apenas os macrotemas oficiais deste aplicativo.
+      state.actions=temarioVisitas;
       renderSchools();renderAgenda();renderActions();renderProfile();applyQuerySelection();
     }
     function mergeChangedItems(current,snapshot){const map=new Map((current||[]).map(item=>[item.id,item]));snapshot.docs.forEach(item=>map.set(item.id,{id:item.id,...item.data()}));return[...map.values()].filter(item=>item.deleted!==true)}
@@ -312,12 +320,11 @@
         const pinsPromise=state.profile.role==='admin'
           ? Promise.resolve(null)
           : getDoc(doc(db,'supervisorSchoolPins',state.profile.supervisorId));
-        const [schoolsSnapshot,privateSchoolsSnapshot,agendaSnapshot,visitsSnapshot,actionsSnapshot,pinsSnapshot]=await Promise.all([
+        const [schoolsSnapshot,privateSchoolsSnapshot,agendaSnapshot,visitsSnapshot,pinsSnapshot]=await Promise.all([
           schoolsPromise,
           getDocs(collection(db,'privateSchools')),
           getDocs(scoped('agenda')),
           getDocs(scoped('visits')),
-          getDocs(collection(db,'actions')),
           pinsPromise
         ]);
         const data={
@@ -326,7 +333,7 @@
           privateSchools:privateSchoolsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
           agenda:agendaSnapshot.docs.map(item=>({id:item.id,...item.data()})),
           visits:visitsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
-          actions:actionsSnapshot.docs.map(item=>({id:item.id,...item.data()})),
+          actions:temarioVisitas,
           pinnedSchoolIds:pinsSnapshot?.exists()?pinsSnapshot.data().schoolIds||[]:[]
         };
         setReadCache(state.user.uid,cacheName,data);applyLoadedData(data);
@@ -387,7 +394,46 @@
     function selectAgendaDate(key){const dates=agendaDates(),selected=state.agenda.find(item=>item.id===$('#agendaSelect').value);state.selectedAgendaDate=key;state.agendaDateOffset=Math.max(0,dates.indexOf(key)-1);if(!selected||dateKey(selected.scheduledDate)!==key){$('#agendaSelect').value='';chooseSchool(null);$('#schoolSearch').value='';$('#visitDate').value=''}renderAgendaPicker()}
     function moveAgendaDate(direction){const dates=agendaDates(),index=dates.indexOf(state.selectedAgendaDate),next=Math.max(0,Math.min(dates.length-1,index+direction));if(dates[next])selectAgendaDate(dates[next])}
     function chooseAgenda(id){$('#agendaSelect').value=id;selectAgenda(id);renderAgendaPicker()}
-    function renderActions(){const term=$('#actionSearch').value.trim().toLocaleLowerCase('pt-BR'),list=$('#actionList');list.replaceChildren();const visible=state.actions.filter(item=>!term||item.name.toLocaleLowerCase('pt-BR').includes(term));if(!visible.length){const empty=document.createElement('div');empty.className='action-empty';empty.textContent='Nenhuma ação encontrada.';list.append(empty)}else visible.forEach(item=>{const label=document.createElement('label');label.className='action-option';const input=document.createElement('input');input.type='checkbox';input.checked=state.selectedActions.has(item.id);input.addEventListener('change',()=>{input.checked?state.selectedActions.add(item.id):state.selectedActions.delete(item.id);renderSelectedActions()});const span=document.createElement('span');span.textContent=item.name;label.append(input,span);list.append(label)});renderSelectedActions()}
+    function fillActionTopics(container,item){container.replaceChildren();item.topics.forEach(topic=>{const line=document.createElement('li');line.textContent=topic;container.append(line)})}
+    function hideActionHover(){$('#actionHoverInfo').hidden=true}
+    function showActionHover(item,anchor){
+      const popup=$('#actionHoverInfo');popup.replaceChildren();
+      const title=document.createElement('strong');title.textContent=item.name;
+      const topics=document.createElement('ul');fillActionTopics(topics,item);
+      popup.append(title,topics);popup.hidden=false;
+      const rect=anchor.getBoundingClientRect();
+      popup.style.left=`${Math.max(12,Math.min(rect.left,window.innerWidth-popup.offsetWidth-12))}px`;
+      popup.style.top=`${rect.bottom+popup.offsetHeight+8<=window.innerHeight?rect.bottom+8:Math.max(12,rect.top-popup.offsetHeight-8)}px`;
+    }
+    function showActionDialog(item){
+      hideActionHover();
+      $('#actionDialogTitle').textContent=item.name;
+      fillActionTopics($('#actionDialogTopics'),item);
+      const dialog=$('#actionDialog');if(!dialog.open)dialog.showModal();
+    }
+    function renderActions(){
+      hideActionHover();
+      const term=normalizeSearch($('#actionSearch').value),list=$('#actionList');list.replaceChildren();
+      const visible=state.actions.filter(item=>!term||normalizeSearch(`${item.name} ${item.topics.join(' ')}`).includes(term));
+      if(!visible.length){const empty=document.createElement('div');empty.className='action-empty';empty.textContent='Nenhum temário encontrado.';list.append(empty)}
+      else visible.forEach(item=>{
+        const option=document.createElement('div');option.className='action-option';
+        const input=document.createElement('input');input.type='checkbox';input.id=`action-${item.id}`;input.checked=state.selectedActions.has(item.id);
+        input.addEventListener('change',()=>{
+          input.checked?state.selectedActions.add(item.id):state.selectedActions.delete(item.id);
+          renderSelectedActions();if(input.checked)showActionDialog(item);
+        });
+        input.addEventListener('focus',()=>showActionHover(item,option));
+        input.addEventListener('blur',hideActionHover);
+        const name=document.createElement('label');name.className='action-name';name.htmlFor=input.id;name.textContent=item.name;
+        const info=document.createElement('button');info.type='button';info.className='action-info-button';info.textContent='i';info.setAttribute('aria-label',`Ver assuntos de ${item.name}`);
+        info.addEventListener('click',()=>showActionDialog(item));
+        option.addEventListener('mouseenter',()=>showActionHover(item,option));
+        option.addEventListener('mouseleave',hideActionHover);
+        option.append(input,name,info);list.append(option);
+      });
+      renderSelectedActions();
+    }
     function renderSelectedActions(){const area=$('#selectedActions');area.replaceChildren();[...state.selectedActions].forEach(id=>{const item=state.actions.find(action=>action.id===id);if(!item)return;const chip=document.createElement('span');chip.className='chip';chip.textContent=item.name;area.append(chip)})}
     function setSource(source){state.source=source;const directLike=['direct','private'].includes(source);document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSearch').disabled=source==='planned';$('#schoolDropdownButton').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=directLike;$('#activityMode').hidden=directLike;$('#activityMode').dataset.options=directLike?'1':'2';document.querySelector('[data-status="justified"]').hidden=directLike;$('#statusGrid').dataset.options=directLike?'3':'4';chooseSchool(null);$('#schoolSearch').value='';renderSchools();if(directLike){setActivity('catalog');if(state.status==='justified')setStatus('completed');$('#agendaSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã';$('#schoolSearchHint').textContent=source==='private'?`Digite parte do nome ou abra a lista para escolher entre as ${state.privateSchools.size} escolas privadas.`:'Digite parte do nome ou abra a lista para escolher entre as 80 escolas.';renderAgendaPicker();setTimeout(()=>$('#schoolSearch').focus(),0)}else{setActivity('none');$('#schoolSearchHint').textContent='A escola será preenchida ao selecionar uma visita planejada.';$('#visitDate').value='';renderAgenda()} }
     function setActivity(activity){state.activity=activity;document.querySelectorAll('[data-activity]').forEach(button=>button.classList.toggle('is-selected',button.dataset.activity===activity));$('#noActivityPanel').hidden=activity!=='none';$('#catalogPanel').hidden=activity!=='catalog';$('#customPanel').hidden=activity!=='custom'}
@@ -497,7 +543,7 @@
     $('#schoolSearch').addEventListener('keydown',event=>{if(!['direct','private'].includes(state.source))return;const options=[...document.querySelectorAll('.school-result')];if(event.key==='Escape'){closeSchoolResults();return}if(event.key==='Enter'){const first=options[0];if(first){event.preventDefault();chooseSchool(currentSchoolMap().get(first.dataset.schoolId))}}});
     $('#schoolDropdownButton').addEventListener('click',()=>{if(!['direct','private'].includes(state.source))return;const results=$('#schoolResults');renderSchools({open:results.hidden})});
     document.addEventListener('click',event=>{if(!$('#schoolCombobox').contains(event.target))closeSchoolResults()});
-    $('#actionSearch').addEventListener('input',renderActions);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);
+    $('#actionSearch').addEventListener('input',renderActions);$('#actionList').addEventListener('scroll',hideActionHover);$('#visitForm').addEventListener('submit',saveVisit);$('#newRecordButton').addEventListener('click',resetForm);
     $('#syncNowButton').addEventListener('click',()=>synchronizePending({force:true}));
     $('#refreshButton').addEventListener('click',async()=>{if(!state.user)return;const button=$('#refreshButton');button.disabled=true;button.classList.add('is-syncing');try{expireReadCache(state.user.uid,'visit-form-data-v4');await loadData({force:true});showToast('Dados atualizados pelo Firebase.','success')}finally{button.disabled=false;button.classList.remove('is-syncing')}});
     $('#exportPendingButton').addEventListener('click',async()=>exportPendingVisits(await listVisitOutbox(state.user.uid)));
