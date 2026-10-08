@@ -1001,7 +1001,6 @@
         </div>
 
         <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
-            <a href="ausencias.html" class="btn-back" id="absenceLink">Ausências e histórico</a>
             <span id="absenceLoadStatus" role="status" style="font-size:12px;color:#965c08"></span>
             <span id="statusBadge" class="badge-local" role="status" aria-live="polite">Salvo</span>
         </div>
@@ -1551,7 +1550,6 @@
         async function loadCloudData({useCache=false}={}) {
             const supervisorId = currentSupervisorId();
             state.absences = [];
-            document.getElementById('absenceLink').href = `ausencias.html?supervisor=${encodeURIComponent(supervisorId || '')}`;
             // Carga independente: uma regra ainda não publicada não bloqueia as visitas.
             if (supervisorId) loadAbsences(supervisorId);
             if (!supervisorId) return;
@@ -1981,8 +1979,7 @@
                 const cardList = document.createElement('div');
                 cardList.className = 'cards-list';
                 state.absences.filter(item => coversDay(item, dayKey)).forEach(item => {
-                    const badge = document.createElement('a');
-                    badge.href = `ausencias.html?supervisor=${encodeURIComponent(currentSupervisorId())}#historico`;
+                    const badge = document.createElement('div');
                     badge.draggable = false;
                     badge.style.cssText = 'display:block;padding:10px;border:1px solid #e8c994;border-radius:8px;background:#fff4e4;color:#80500c;font-size:12px;line-height:1.5;text-decoration:none;overflow-wrap:anywhere';
                     badge.textContent = `Ausência informada · ${item.reason} · ${item.shift}`;

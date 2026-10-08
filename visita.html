@@ -160,6 +160,12 @@
     @media(max-width:1080px){.layout{grid-template-columns:1fr;max-width:940px}.side{position:static;grid-template-columns:1fr 1fr}.steps span{display:inline}.form-card{padding:30px 34px}}
     @media(max-width:720px){html{font-size:16px}.topbar{padding:10px 13px}.brand small,.top-actions .nav-link:first-child{display:none}.sidebar-account-avatar{display:none}.sidebar-account{grid-template-columns:36px;padding-left:5px}.layout{padding:22px 12px 42px}.form-card{padding:18px}.steps span{display:none}.field-grid,.status-grid{grid-template-columns:1fr}.side{grid-template-columns:1fr}.submit-row{align-items:stretch;flex-direction:column}.primary{width:100%}.section{padding:21px 0}.segmented,#activityMode,#activityMode[data-options="2"]{grid-template-columns:1fr}.segment{min-height:44px}.agenda-date-nav{grid-template-columns:30px minmax(0,1fr) 30px;gap:5px;padding:8px}.agenda-date-tabs{gap:5px}.agenda-date-tab{padding-inline:4px}.agenda-option{grid-template-columns:18px 1fr}.agenda-school{grid-column:2;white-space:normal}.agenda-shift{grid-column:2}}
 
+    #activityMode .absence-segment{background:#fff0f1;color:#a63240;border:1px solid #f2c6cc}
+    #activityMode .absence-segment:hover{background:#fce1e5}
+    #activityMode .absence-segment.is-selected{background:#f8d7dd;border-color:#dc8e9b;color:#8d2433;box-shadow:0 3px 10px #a6324015}
+    #absencePanel .action-option{color:#97313e;background:#fff7f8}
+    #absencePanel .action-option:hover{background:#fce8ec}
+    #absencePanel input[type=radio]{accent-color:#b64253}
   </style>
 </head>
 <body>
@@ -223,8 +229,21 @@
             <div class="segmented" id="activityMode" role="group" aria-label="Tipo de atividade">
               <button class="segment is-selected" type="button" data-activity="none">Acompanhamento simples</button>
               <button class="segment" type="button" data-activity="catalog">Temário da visita</button>
-              <a class="segment" href="ausencias.html">Informar ausência</a>
+              <button class="segment absence-segment" type="button" data-activity="absence">Informar ausência</button>
               <button class="segment" type="button" data-activity="custom" hidden>Assunto novo</button>
+            </div>
+            <div id="absencePanel" hidden>
+              <p class="hint">Ausência informada, sem aprovação e sem contar na meta. Não é necessário selecionar escola. Os planejamentos existentes serão mantidos.</p>
+              <div class="action-toolbar"><input type="search" id="absenceSearch" placeholder="Pesquisar motivo da ausência" autocomplete="off"></div>
+              <div class="action-list" id="absenceReasons" aria-label="Motivo da ausência"></div>
+              <div class="field" id="absenceSupervisorField" hidden><label for="absenceSupervisor">Supervisor</label><select id="absenceSupervisor"><option value="">Selecione o supervisor</option></select></div>
+              <div class="field-grid" style="margin-top:15px">
+                <div class="field"><label for="absenceStart">Data inicial</label><input type="date" id="absenceStart"></div>
+                <div class="field"><label for="absenceEnd">Data final</label><input type="date" id="absenceEnd"><p class="hint">Para um dia, use a mesma data.</p></div>
+                <div class="field"><label for="absenceShift">Turno</label><select id="absenceShift"></select></div>
+              </div>
+              <div class="field"><label for="absenceNotes">Observação (opcional)</label><textarea id="absenceNotes" maxlength="800" placeholder="Não informe diagnóstico, CID ou detalhes médicos."></textarea></div>
+              <p class="hint" id="absenceFeedback" role="status" aria-live="polite"></p>
             </div>
             <div id="noActivityPanel"><p class="hint" style="margin-top:13px">Use esta opção quando a visita planejada não estiver vinculada a uma ação específica.</p></div>
             <div id="catalogPanel" hidden>
@@ -278,12 +297,14 @@
     import { collection, doc, getDoc, getDocs, getFirestore, query, where } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
     import { createOperationId, expireReadCache, exportPendingVisits, getReadCache, listVisitOutbox, queueVisitOperation, setReadCache, syncVisitOutbox } from './supervisor-offline.js';
     import { temarioVisitas } from './temario-visitas.js';
+    import { setupInlineAbsence } from './ausencias-inline.js';
 
     const firebaseConfig={apiKey:'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',authDomain:'supervisor-ese.firebaseapp.com',projectId:'supervisor-ese',storageBucket:'supervisor-ese.firebasestorage.app',messagingSenderId:'756390446092',appId:'1:756390446092:web:26a898746dd4e3fab45a29'};
     const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
     const $=(selector)=>document.querySelector(selector);
     const state={user:null,profile:null,source:'planned',activity:'none',status:'completed',schools:new Map(),privateSchools:new Map(),ownSchoolIds:new Set(),pinnedSchoolIds:new Set(),schoolReadLimited:false,agenda:[],visits:[],actions:[],selectedActions:new Set(),agendaDateOffset:0,selectedAgendaDate:'',outboxCount:0,syncing:false};
     const labels={completed:'Realizada',postponed:'Adiada',cancelled:'Cancelada',justified:'Justificada'};
+    const inlineAbsence = setupInlineAbsence({db, state, showToast});
 
     function dateKey(value){if(!value)return'';const date=value.toDate?value.toDate():new Date(value);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
     function formatDate(value){const key=dateKey(value);if(!key)return'—';return new Intl.DateTimeFormat('pt-BR').format(new Date(`${key}T12:00:00`))}
@@ -437,7 +458,7 @@
     }
     function renderSelectedActions(){const area=$('#selectedActions');area.replaceChildren();[...state.selectedActions].forEach(id=>{const item=state.actions.find(action=>action.id===id);if(!item)return;const chip=document.createElement('span');chip.className='chip';chip.textContent=item.name;area.append(chip)})}
     function setSource(source){state.source=source;const directLike=['direct','private'].includes(source);document.querySelectorAll('[data-source]').forEach(button=>button.classList.toggle('is-selected',button.dataset.source===source));$('#agendaField').hidden=source!=='planned';$('#schoolSearch').disabled=source==='planned';$('#schoolDropdownButton').disabled=source==='planned';document.querySelector('[data-activity="none"]').hidden=directLike;$('#activityMode').hidden=false;$('#activityMode').dataset.options=directLike?'2':'3';document.querySelector('[data-status="justified"]').hidden=directLike;$('#statusGrid').dataset.options=directLike?'3':'4';chooseSchool(null);$('#schoolSearch').value='';renderSchools();if(directLike){setActivity('catalog');if(state.status==='justified')setStatus('completed');$('#agendaSelect').value='';$('#visitDate').value=dateKey(new Date());$('#shiftSelect').value='Manhã';$('#schoolSearchHint').textContent=source==='private'?`Digite parte do nome ou abra a lista para escolher entre as ${state.privateSchools.size} escolas privadas.`:'Digite parte do nome ou abra a lista para escolher entre as 80 escolas.';renderAgendaPicker();setTimeout(()=>$('#schoolSearch').focus(),0)}else{setActivity('none');$('#schoolSearchHint').textContent='A escola será preenchida ao selecionar uma visita planejada.';$('#visitDate').value='';renderAgenda()} }
-    function setActivity(activity){state.activity=activity;document.querySelectorAll('[data-activity]').forEach(button=>button.classList.toggle('is-selected',button.dataset.activity===activity));$('#noActivityPanel').hidden=activity!=='none';$('#catalogPanel').hidden=activity!=='catalog';$('#customPanel').hidden=activity!=='custom'}
+    function setActivity(activity){state.activity=activity;document.querySelectorAll('[data-activity]').forEach(button=>button.classList.toggle('is-selected',button.dataset.activity===activity));$('#noActivityPanel').hidden=activity!=='none';$('#catalogPanel').hidden=activity!=='catalog';$('#customPanel').hidden=activity!=='custom';inlineAbsence.toggle(activity==='absence')}
     function setStatus(status){state.status=status;document.querySelectorAll('[data-status]').forEach(button=>button.classList.toggle('is-selected',button.dataset.status===status));$('#justificationField').hidden=status==='completed';const reasonConfig={postponed:{label:'Motivo do adiamento',placeholder:'Explique por que a visita será reagendada.',hint:'Este motivo é operacional e não altera o cálculo da meta.'},cancelled:{label:'Motivo do cancelamento',placeholder:'Explique por que a visita foi cancelada.',hint:'Este motivo é operacional e não altera o cálculo da meta.'},justified:{label:'Justificativa para a meta',placeholder:'Explique por que a meta não pôde ser cumprida neste planejamento.',hint:'Será enviada separadamente para validação futura no Gestor-ESE.'}}[status];if(reasonConfig){$('#reasonLabel').textContent=reasonConfig.label;$('#justification').placeholder=reasonConfig.placeholder;$('#reasonHint').textContent=reasonConfig.hint}else{$('#reasonHint').textContent=''}}
     function selectAgenda(id){const item=state.agenda.find(entry=>entry.id===id);if(!item)return;state.selectedAgendaDate=dateKey(item.scheduledDate);const school=state.schools.get(item.schoolId);chooseSchool(school||null);if(!school)$('#schoolSearch').value=item.schoolName||'Escola não encontrada';$('#visitDate').value=dateKey(item.scheduledDate);$('#shiftSelect').value=item.shift||'Manhã'}
     function applyQuerySelection(){const agendaId=new URLSearchParams(location.search).get('agenda');if(agendaId&&pendingAgenda().some(item=>item.id===agendaId)){setSource('planned');chooseAgenda(agendaId)}}
@@ -470,6 +491,7 @@
     }
     async function saveVisit(event){
       event.preventDefault();
+      if(state.activity==='absence'){await inlineAbsence.save();return}
       let values;
       try{values=validate()}catch(error){showToast(error.message,'error');return}
       const button=$('#saveButton');button.disabled=true;button.textContent='Salvando…';
