@@ -85,7 +85,7 @@
     .agenda-options{display:grid;gap:8px;min-height:84px;max-height:260px;padding:11px;overflow-y:auto;background:#fff}
     .agenda-option{width:100%;min-height:48px;display:grid;grid-template-columns:18px auto minmax(0,1fr);align-items:center;gap:8px;padding:9px 11px;border:1px solid #c8dbe5;border-radius:9px;color:var(--ink);background:#edf6fa;text-align:left;cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease,background .15s ease}
     .agenda-option:hover{transform:translateY(-1px);border-color:var(--blue);box-shadow:0 5px 13px rgba(28,65,88,.09)}.agenda-option.is-selected{border-color:var(--blue);box-shadow:0 0 0 2px rgba(50,116,154,.13)}
-    .agenda-option[data-shift="tarde"]{border-color:#efd2ad;background:#fff1df}.agenda-option[data-shift="noite"]{border-color:#d8c6ef;background:#f5effc}.agenda-option[data-shift="integral"]{border-color:#bcdcca;background:#edf8f1}
+    .agenda-option[data-shift="tarde"]{border-color:#efd2ad;background:#fff1df}.agenda-option[data-shift="noite"]{border-color:#d8c6ef;background:#f5effc}.agenda-option[data-shift="integral"]{border-color:#bcdcca;background:#edf8f1}.agenda-option[data-shift="flexivel"]{border-color:#b9d9e9;background:#eaf7fc}
     .agenda-radio{width:14px;height:14px;border:2px solid #9bb1bf;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 3px #fff}.agenda-option.is-selected .agenda-radio{border-color:var(--blue);background:var(--blue)}
     .agenda-shift{font-size:.78rem;font-weight:850;white-space:nowrap}.agenda-school{min-width:0;overflow:hidden;font-size:.79rem;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
     .agenda-empty{display:grid;place-items:center;min-height:78px;padding:18px;color:var(--muted);font-size:.79rem;text-align:center}
@@ -149,7 +149,7 @@
     .agenda-date-nav{border-bottom-color:var(--line);background:color-mix(in srgb,var(--theme-light) 48%,#fff)}
     .agenda-date-tab:hover{border-color:var(--blue);background:color-mix(in srgb,var(--theme-medium) 38%,#fff)}
     .agenda-date-tab.is-selected{background:color-mix(in srgb,var(--theme-medium) 62%,#fff)}
-    .agenda-option:not([data-shift="tarde"]):not([data-shift="noite"]):not([data-shift="integral"]){border-color:var(--line);background:color-mix(in srgb,var(--theme-medium) 38%,#fff)}
+    .agenda-option:not([data-shift="tarde"]):not([data-shift="noite"]):not([data-shift="integral"]):not([data-shift="flexivel"]){border-color:var(--line);background:color-mix(in srgb,var(--theme-medium) 38%,#fff)}
     .action-option{border-bottom-color:var(--line)}.action-option:hover{background:color-mix(in srgb,var(--theme-medium) 34%,#fff)}
     .status{background:color-mix(in srgb,var(--theme-light) 52%,#fff)}
     .section,.submit-row,.profile-dl div{border-color:var(--line)}
@@ -214,7 +214,7 @@
               </div>
               <div class="field"><label for="schoolSearch">Escola</label><div class="school-combobox" id="schoolCombobox"><input class="school-combobox-input" id="schoolSearch" type="search" placeholder="Pesquisar ou selecionar uma escola" autocomplete="off" disabled role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="schoolResults"><button class="school-combobox-chevron" id="schoolDropdownButton" type="button" aria-label="Abrir lista de escolas" disabled>▾</button><div class="school-results" id="schoolResults" role="listbox" hidden></div><select class="school-native-select" id="schoolSelect" tabindex="-1" aria-hidden="true"><option value="">Selecione a escola</option></select></div><div class="school-field-meta" id="schoolSearchMeta"><span class="hint" id="schoolSearchHint">Selecione uma visita do planejamento.</span><span class="school-search-count" id="schoolSearchCount"></span></div></div>
               <div class="field"><label for="visitDate">Data da visita</label><input id="visitDate" type="date" required></div>
-              <div class="field"><label for="shiftSelect">Turno</label><select id="shiftSelect"><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Integral</option></select></div>
+              <div class="field"><label for="shiftSelect">Turno</label><select id="shiftSelect"><option>Manhã</option><option>Tarde</option><option>Noite</option><option>Integral</option><option>Flexível</option></select></div>
             </div>
           </section>
 

@@ -1302,7 +1302,7 @@
         }
 
         function makeShiftSelector(selectedShift) {
-            return ['Manhã', 'Tarde', 'Integral']
+            return ['Manhã', 'Tarde', 'Noite', 'Integral', 'Flexível']
                 .map((shift) => `<option value="${shift}" ${shift === selectedShift ? 'selected' : ''}>${shift}</option>`)
                 .join('');
         }
