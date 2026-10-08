@@ -1001,6 +1001,8 @@
         </div>
 
         <div style="display:flex;align-items:center;gap:12px;margin-left:auto;">
+            <a href="ausencias.html" class="btn-back" id="absenceLink">Ausências e histórico</a>
+            <span id="absenceLoadStatus" role="status" style="font-size:12px;color:#965c08"></span>
             <span id="statusBadge" class="badge-local" role="status" aria-live="polite">Salvo</span>
         </div>
     </div>
@@ -1099,6 +1101,8 @@
             writeBatch
         } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
         import { expireReadCache, getReadCache, setReadCache, syncVisitOutbox } from './supervisor-offline.js';
+        import { coversDay, formatPeriod } from './ausencias-model.js';
+        import { getDocsFromServer } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: 'AIzaSyBwV4kS3BpzAL8q8yMFvsFqh5xIhV0ZR-E',
@@ -1121,6 +1125,7 @@
             allSchools: new Map(),
             pinnedSchoolIds: new Set(),
             agendaCloud: [],
+            absences: [],
             visits: [],
             correctionRequests: [],
             correctionVisit: null,
@@ -1545,6 +1550,10 @@
 
         async function loadCloudData({useCache=false}={}) {
             const supervisorId = currentSupervisorId();
+            state.absences = [];
+            document.getElementById('absenceLink').href = `ausencias.html?supervisor=${encodeURIComponent(supervisorId || '')}`;
+            // Carga independente: uma regra ainda não publicada não bloqueia as visitas.
+            if (supervisorId) loadAbsences(supervisorId);
             if (!supervisorId) return;
             const cacheName=`kanban-cloud-${supervisorId}`,cached=useCache&&getReadCache(state.user.uid,cacheName),stale=getReadCache(state.user.uid,cacheName,{allowExpired:true});
             if(cached){state.agendaCloud=cached.data.agenda;state.visits=cached.data.visits;state.correctionRequests=cached.data.corrections;renderCalendar();return}
@@ -1572,6 +1581,24 @@
             state.correctionRequests = correctionSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
             setReadCache(state.user.uid,cacheName,{agenda:state.agendaCloud,visits:state.visits,corrections:state.correctionRequests});
             renderCalendar();
+        }
+
+        let absenceLoadVersion = 0;
+        async function loadAbsences(supervisorId) {
+            const version = ++absenceLoadVersion;
+            const notice = document.getElementById('absenceLoadStatus');
+            notice.textContent = 'Carregando ausências…';
+            try {
+                const snapshot = await getDocsFromServer(query(collection(db, 'absences'), where('supervisorId', '==', supervisorId)));
+                if (version !== absenceLoadVersion || supervisorId !== currentSupervisorId()) return;
+                state.absences = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+                notice.textContent = '';
+                renderCalendar();
+            } catch (error) {
+                if (version !== absenceLoadVersion || supervisorId !== currentSupervisorId()) return;
+                notice.textContent = 'Ausências indisponíveis. Verifique a conexão e a regra do Firebase.';
+                console.warn('Falha ao consultar ausências', error.code);
+            }
         }
 
         function persistCloudState() {
@@ -1953,6 +1980,15 @@
 
                 const cardList = document.createElement('div');
                 cardList.className = 'cards-list';
+                state.absences.filter(item => coversDay(item, dayKey)).forEach(item => {
+                    const badge = document.createElement('a');
+                    badge.href = `ausencias.html?supervisor=${encodeURIComponent(currentSupervisorId())}#historico`;
+                    badge.draggable = false;
+                    badge.style.cssText = 'display:block;padding:10px;border:1px solid #e8c994;border-radius:8px;background:#fff4e4;color:#80500c;font-size:12px;line-height:1.5;text-decoration:none;overflow-wrap:anywhere';
+                    badge.textContent = `Ausência informada · ${item.reason} · ${item.shift}`;
+                    badge.title = `${formatPeriod(item)}. Não conta como visita e não altera a meta.`;
+                    cardList.appendChild(badge);
+                });
                 cardsForDate(dayKey).forEach((item) => appendCalendarCard(cardList, dayKey, item));
                 cell.appendChild(cardList);
 
