@@ -1021,6 +1021,10 @@
             <div class="schools-container" id="schoolsContainer">
                 <div class="empty-schools">Pesquise uma escola acima e clique em Fixar.</div>
             </div>
+            <section class="status-legend" aria-label="Informar ausência">
+                <button type="button" id="absenceFolder" style="width:100%;padding:14px;border:1px solid #efbdc5;border-radius:10px;background:#fce4e8;color:#913142;cursor:pointer;font-weight:700">📁 Informar ausência</button>
+                <div id="absenceTemplate"></div>
+            </section>
             <section class="status-legend" aria-labelledby="statusLegendTitle">
                 <h2 id="statusLegendTitle">Padrão de status</h2>
                 <div class="status-legend-grid">
@@ -1101,6 +1105,7 @@
         } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
         import { expireReadCache, getReadCache, setReadCache, syncVisitOutbox } from './supervisor-offline.js';
         import { coversDay, formatPeriod } from './ausencias-model.js';
+        import { setupAbsencePlanning } from './ausencias-planejamento.js';
         import { getDocsFromServer } from 'https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js';
 
         const firebaseConfig = {
@@ -1978,14 +1983,7 @@
 
                 const cardList = document.createElement('div');
                 cardList.className = 'cards-list';
-                state.absences.filter(item => coversDay(item, dayKey)).forEach(item => {
-                    const badge = document.createElement('div');
-                    badge.draggable = false;
-                    badge.style.cssText = 'display:block;padding:10px;border:1px solid #e8c994;border-radius:8px;background:#fff4e4;color:#80500c;font-size:12px;line-height:1.5;text-decoration:none;overflow-wrap:anywhere';
-                    badge.textContent = `Ausência informada · ${item.reason} · ${item.shift}`;
-                    badge.title = `${formatPeriod(item)}. Não conta como visita e não altera a meta.`;
-                    cardList.appendChild(badge);
-                });
+                state.absences.filter(item => coversDay(item, dayKey)).forEach(item => cardList.appendChild(absencePlanning.card(item, dayKey)));
                 cardsForDate(dayKey).forEach((item) => appendCalendarCard(cardList, dayKey, item));
                 cell.appendChild(cardList);
 
@@ -1997,6 +1995,7 @@
                 cell.addEventListener('drop', async (event) => {
                     event.preventDefault();
                     cell.classList.remove('drag-over');
+                    if (await absencePlanning.drop(event, dayKey)) return;
                     if (!state.dragging) return;
                     const dragged = { ...state.dragging };
                     if (state.saving) {
@@ -2018,6 +2017,8 @@
             }
             calendarBody.appendChild(weekRow);
         }
+
+        const absencePlanning = setupAbsencePlanning({db, state, currentSupervisorId, renderCalendar, showToast});
 
         async function changeSupervisor() {
             supervisorFilter.value = selectSupervisor.value;
