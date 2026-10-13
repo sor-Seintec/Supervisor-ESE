@@ -20,16 +20,46 @@ export function setupAbsencePlanning({db,state,currentSupervisorId,renderCalenda
   for(const shift of absenceShifts)field('shift').add(new Option(shift,shift));
   let editing=null, owner='', busy=false, dragging=null;
   const gallery=document.createElement('dialog');gallery.className='absence-dialog absence-gallery';gallery.setAttribute('aria-label','Motivos de ausência');
-  gallery.innerHTML='<div class="absence-gallery-head"><h2>Informar ausência</h2><button type="button" data-gallery-close aria-label="Fechar">×</button></div><p>Escolha o período e arraste um motivo para o dia no calendário. Você também pode clicar no card para escolher a data.</p><div class="absence-gallery-period"><label>Período / turno<select data-gallery-shift></select></label><label>Dias<input data-gallery-days type="number" min="1" max="366" value="1"></label></div><div class="absence-gallery-grid"></div><p data-gallery-feedback role="status">Ausência informada · sem impacto na meta.</p>';
+  gallery.innerHTML='<div class="absence-gallery-head" tabindex="0" aria-label="Mover popup: arraste o título ou use as setas do teclado" title="Arraste aqui para mover o popup"><h2>Informar ausência</h2><button type="button" data-gallery-close aria-label="Fechar">×</button></div><p>Escolha o período e arraste um motivo para o dia no calendário. Você também pode clicar no card para escolher a data.</p><div class="absence-gallery-period"><label>Período / turno<select data-gallery-shift></select></label></div><div class="absence-gallery-grid"></div><p data-gallery-feedback role="status">Ausência informada · sem impacto na meta.</p>';
   document.body.append(gallery);
-  const galleryShift=gallery.querySelector('[data-gallery-shift]'),galleryDays=gallery.querySelector('[data-gallery-days]');
+  const galleryShift=gallery.querySelector('[data-gallery-shift]');
+  style.textContent += '.absence-gallery-period{display:block}.absence-gallery-head{cursor:move;touch-action:none;user-select:none;position:sticky;top:-24px;padding:10px 0;background:#fff;z-index:1}.absence-gallery-head:focus-visible{outline:2px solid #ae425b;outline-offset:3px}.absence-gallery-head button{cursor:pointer}';
+  const handle=gallery.querySelector('.absence-gallery-head');
+  let moving=null,positioned=false;
+  function place(left,top){
+    const rect=gallery.getBoundingClientRect(),gap=8;
+    gallery.style.left=`${Math.max(gap,Math.min(left,Math.max(gap,window.innerWidth-rect.width-gap)))}px`;
+    gallery.style.top=`${Math.max(gap,Math.min(top,Math.max(gap,window.innerHeight-rect.height-gap)))}px`;
+    gallery.style.right='auto';gallery.style.bottom='auto';positioned=true;
+  }
+  handle.addEventListener('pointerdown',event=>{
+    if(event.target.closest('button')||event.button!==0)return;
+    const rect=gallery.getBoundingClientRect();
+    moving={id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top};
+    handle.setPointerCapture(event.pointerId);event.preventDefault();
+  });
+  handle.addEventListener('pointermove',event=>{
+    if(moving?.id!==event.pointerId)return;
+    place(moving.left+event.clientX-moving.x,moving.top+event.clientY-moving.y);
+  });
+  function stopMoving(event){
+    if(moving?.id!==event.pointerId)return;
+    moving=null;if(handle.hasPointerCapture(event.pointerId))handle.releasePointerCapture(event.pointerId);
+  }
+  handle.addEventListener('pointerup',stopMoving);handle.addEventListener('pointercancel',stopMoving);
+  handle.addEventListener('lostpointercapture',()=>moving=null);
+  handle.addEventListener('keydown',event=>{
+    if(event.target!==handle)return;
+    const delta={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[event.key];
+    if(!delta)return;
+    event.preventDefault();const rect=gallery.getBoundingClientRect();place(rect.left+delta[0],rect.top+delta[1]);
+  });
+  window.addEventListener('resize',()=>{if(gallery.open&&positioned){const rect=gallery.getBoundingClientRect();place(rect.left,rect.top);}});
   for(const shift of absenceShifts)galleryShift.add(new Option(shift,shift));
   let galleryOwner='';
   function template(reason){
-    const days=Number(galleryDays.value);
-    if(!Number.isInteger(days)||days<1||days>366)throw new Error('Escolha de 1 a 366 dias.');
     const startDate='2026-01-01';
-    const endDate=new Date(Date.parse(`${startDate}T12:00:00Z`)+(days-1)*86400000).toISOString().slice(0,10);
+    const endDate=startDate;
     const data=validateAbsence({supervisorId:galleryOwner,reason,shift:galleryShift.value,startDate,endDate,notes:''});
     return {data,owner:galleryOwner,sourceDay:startDate};
   }
@@ -37,6 +67,7 @@ export function setupAbsencePlanning({db,state,currentSupervisorId,renderCalenda
     if(busy||state.saving)return;
     galleryOwner=currentSupervisorId();if(!galleryOwner){showToast('Selecione um supervisor.');return;}
     gallery.hidden=false;if(!gallery.open)gallery.show();
+    if(positioned){const rect=gallery.getBoundingClientRect();place(rect.left,rect.top);}
   }
   gallery.querySelector('[data-gallery-close]').addEventListener('click',()=>gallery.close());
   for(const reason of absenceReasons){
