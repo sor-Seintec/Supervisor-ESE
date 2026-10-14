@@ -1,7 +1,7 @@
 // Ausências são informativas: nunca são convertidas em visitas ou créditos de meta.
 export const absenceReasons = Object.freeze([
   'Atestado médico', 'Ausência médica', 'Doação de sangue', 'Exame médico',
-  'Falta médica', 'Férias', 'Feriado', 'Licença médica', 'Licença prêmio', 'Ponto Facultativo'
+  'TRE', 'Férias', 'Feriado', 'Licença médica', 'Licença prêmio', 'Ponto Facultativo'
 ]);
 export const absenceShifts = Object.freeze(['Dia inteiro', 'Manhã', 'Tarde', 'Integral', 'Flexível']);
 export function validDate(value) {
@@ -11,7 +11,8 @@ export function validDate(value) {
 }
 export function validateAbsence(input) {
   if (!input.supervisorId) throw new Error('Selecione o supervisor.');
-  if (!absenceReasons.includes(input.reason)) throw new Error('Selecione o motivo da ausência.');
+  // Mantém compatibilidade com registros históricos, sem oferecer o motivo antigo no catálogo.
+  if (!absenceReasons.includes(input.reason) && input.reason !== 'Falta médica') throw new Error('Selecione o motivo da ausência.');
   if (!validDate(input.startDate) || !validDate(input.endDate)) throw new Error('Informe datas válidas para o início e o fim.');
   if (input.endDate < input.startDate) throw new Error('A data final não pode ser anterior à inicial.');
   if (!absenceShifts.includes(input.shift)) throw new Error('Selecione o turno.');
