@@ -11,6 +11,7 @@ export function setupAbsencePlanning({db,state,currentSupervisorId,renderCalenda
   const style=document.createElement('style');
   style.textContent='.absence-card{display:block;width:100%;text-align:left;margin-top:8px;padding:12px;border:1px solid #efbdc5;border-radius:10px;background:#fff0f3;color:#913142;cursor:grab;font:inherit;font-size:12px;white-space:pre-line}.absence-dialog{width:min(480px,94vw);max-height:90vh;overflow:auto;border:1px solid #efbdc5;border-radius:16px;padding:24px;color:#305770}.absence-dialog::backdrop{background:#16334588}.absence-dialog label{display:block;margin:12px 0;font-weight:600}.absence-dialog input,.absence-dialog select,.absence-dialog textarea{display:block;width:100%;box-sizing:border-box;padding:10px;margin-top:5px;border:1px solid #cbdbe5;border-radius:7px;font:inherit}.absence-dialog button{padding:10px;margin:5px;border:1px solid #efbdc5;border-radius:8px;background:#fce4e8;color:#913142;cursor:pointer}.absence-dialog button:disabled{opacity:.5;cursor:wait}';
   document.head.append(style);
+  style.textContent += '.absence-saved{position:relative}.absence-saved>.absence-card{padding-right:38px}.absence-remove{position:absolute;right:6px;top:6px;width:26px;height:26px;padding:0;border:1px solid #e9acb8;border-radius:7px;background:#fff7f9;color:#a02d43;font-size:19px;line-height:1;cursor:pointer;opacity:0;transition:opacity .15s}.absence-saved:hover>.absence-remove,.absence-saved:focus-within>.absence-remove{opacity:1}.absence-remove:focus-visible{outline:2px solid #ae425b;outline-offset:2px}.absence-remove:disabled{cursor:wait;opacity:.6}@media(hover:none){.absence-remove{opacity:1}}';
   style.textContent += '.absence-card{background:radial-gradient(ellipse at 15% 20%,#f2a7b449,transparent 65%),radial-gradient(ellipse at 90% 80%,#dc6f8340,transparent 60%),linear-gradient(135deg,#fff5f6,#fbdde4);border-color:#e9acb8;box-shadow:0 3px 9px #9131420b}.absence-gallery{position:fixed;inset:auto 22px 22px auto;margin:0;width:min(440px,calc(100vw - 32px));max-height:80vh;z-index:10030;box-shadow:0 15px 55px #30577040}.absence-gallery[hidden]{display:none!important}.absence-gallery-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.absence-gallery-head h2{margin:0;font-size:20px}.absence-gallery-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.absence-gallery .absence-mini{margin:0;min-height:76px;font-weight:700;line-height:1.35;color:#913142;text-align:left;cursor:grab;background:radial-gradient(ellipse at 10% 20%,#eda3b152,transparent 65%),radial-gradient(ellipse at 95% 80%,#df6c7f38,transparent 65%),linear-gradient(135deg,#fff7f8,#f9d8e1);border:1px solid #e9b4be}.absence-mini:hover{border-color:#d57f92;box-shadow:0 4px 12px #91314218}.absence-gallery-period{display:grid;grid-template-columns:1fr 100px;gap:12px}.absence-mini:focus-visible{outline:3px solid #ae425b;outline-offset:2px}@media(max-width:520px){.absence-gallery{right:16px;bottom:16px;padding:18px;max-height:85vh}}';
   const dialog=document.createElement('dialog');dialog.className='absence-dialog';
   dialog.innerHTML='<form><h2>Informar ausência</h2><label>Motivo<select name="reason"></select></label><label>Período / turno<select name="shift"></select></label><label>Data inicial<input name="startDate" type="date" required></label><label>Data final<input name="endDate" type="date" required></label><label>Observação (opcional)<textarea name="notes" maxlength="800" placeholder="Não inclua diagnóstico ou CID."></textarea></label><p data-feedback role="status"></p><button type="submit">Salvar no dia escolhido</button><button type="button" data-close>Fechar</button></form>';
@@ -130,7 +131,38 @@ export function setupAbsencePlanning({db,state,currentSupervisorId,renderCalenda
   }
   function errorText(error){return error.code==='permission-denied'?'Permissão negada. Confira a regra de ausências no Firebase.':error.message;}
   form.addEventListener('submit',async event=>{event.preventDefault();try{await persist(values(),editing?.id,editing?.id?editing:null);dialog.close();}catch(error){feedback.textContent=errorText(error);}});
-  function card(item,day){const button=document.createElement('button');button.type='button';button.className='absence-card';button.textContent=`Ausência informada\n${item.reason}\n${item.shift}`;button.title=`${formatPeriod(item)}. Clique para editar; arraste para mover o período inteiro.`;draggable(button,{data:item,id:item.id,owner:item.supervisorId,sourceDay:day});button.addEventListener('click',()=>open(item));return button;}
+  async function removeAbsence(item,button){
+    if(busy||state.saving){showToast('Aguarde o salvamento atual.');return;}
+    if(item.supervisorId!==currentSupervisorId()){showToast('O supervisor mudou. Atualize o planejamento.');return;}
+    const periodNote=item.startDate!==item.endDate?'\nA exclusão removerá a ausência de todo esse período.':'';
+    if(!window.confirm(`Excluir esta ausência?\n\n${item.reason}\n${formatPeriod(item)} · ${item.shift}${periodNote}\n\nEsta ação não pode ser desfeita.`))return;
+    if(!navigator.onLine){showToast('Conecte-se à internet para excluir.');return;}
+    busy=true;button.disabled=true;
+    try{
+      await runTransaction(db,async tx=>{
+        const ref=doc(db,'absences',item.id),snapshot=await tx.get(ref);
+        if(!snapshot.exists())return;
+        const live=snapshot.data();
+        if(live.supervisorId!==item.supervisorId)throw new Error('Supervisor incompatível. Atualize o planejamento.');
+        if(['startDate','endDate','reason','shift','notes'].some(key=>live[key]!==item[key]))throw new Error('Este registro foi alterado em outra tela. Atualize antes de excluir.');
+        tx.delete(ref);
+      });
+      if(currentSupervisorId()===item.supervisorId){state.absences=state.absences.filter(x=>x.id!==item.id);renderCalendar();}
+      if(editing?.id===item.id){dialog.close();editing=null;}
+      showToast('Ausência excluída.');
+    }catch(error){showToast(errorText(error));}
+    finally{busy=false;button.disabled=false;}
+  }
+  function card(item,day){
+    const wrapper=document.createElement('div');wrapper.className='absence-saved';
+    const button=document.createElement('button');button.type='button';button.className='absence-card';button.textContent=`Ausência informada\n${item.reason}\n${item.shift}`;button.title=`${formatPeriod(item)}. Clique para editar; arraste para mover o período inteiro.`;
+    draggable(wrapper,{data:item,id:item.id,owner:item.supervisorId,sourceDay:day});button.addEventListener('click',()=>open(item));
+    const remove=document.createElement('button');remove.type='button';remove.className='absence-remove';remove.textContent='×';remove.title='Excluir ausência';remove.setAttribute('aria-label',`Excluir ausência: ${item.reason}`);remove.draggable=false;
+    remove.addEventListener('pointerdown',event=>event.stopPropagation());
+    remove.addEventListener('dragstart',event=>{event.preventDefault();event.stopPropagation();});
+    remove.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();return removeAbsence(item,remove);});
+    wrapper.append(button,remove);return wrapper;
+  }
   async function drop(event,day){
     if(!dragging)return false;
     const payload=dragging;dragging=null;state.dragging=null;
